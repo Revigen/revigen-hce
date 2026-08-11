@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>REVIGEN · Historia Clínica</title>
+<style>
+  :root{
+    --bg:#f4f6f8;--panel:#fff;--ink:#1f2a37;--muted:#6b7280;--line:#e5e9ef;
+    --brand:#0f766e;--brand-d:#0b5b54;--brand-soft:#e6f3f1;--accent:#a21caf;
+    --danger:#b91c1c;--ok:#15803d;--warn:#b45309;--warn-soft:#fef3c7;
+    --shadow:0 1px 3px rgba(16,24,40,.08),0 1px 2px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+  button{font-family:inherit;cursor:pointer}
+  input,textarea,select{font-family:inherit;font-size:14px;width:100%;padding:9px 11px;border:1px solid var(--line);
+    border-radius:9px;background:#fff;color:var(--ink);outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  textarea{resize:vertical;min-height:60px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 5px;text-transform:uppercase;letter-spacing:.02em}
+  .btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 13px;border-radius:9px;font-size:13px;
+    font-weight:600;display:inline-flex;align-items:center;gap:7px;justify-content:center}
+  .btn:hover{background:#f9fafb}
+  .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+  .btn.brand:hover{background:var(--brand-d)}
+  .btn.sm{padding:6px 10px;font-size:12px}
+  .btn.dg:hover{background:#fef2f2;border-color:#fecaca;color:var(--danger)}
+  .hidden{display:none!important}
+  .muted{color:var(--muted)}
+  .err{color:var(--danger);font-size:13px;margin-top:8px}
+  .ok{color:var(--ok);font-size:13px}
+
+  /* AUTH */
+  .auth-wrap{min-height:100vh;display:grid;place-items:center;padding:20px}
+  .auth-card{background:#fff;border-radius:18px;box-shadow:0 10px 40px rgba(16,24,40,.12);width:100%;max-width:420px;overflow:hidden}
+  .auth-head{background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;padding:26px 26px 22px;text-align:center}
+  .auth-head .logo{width:52px;height:52px;border-radius:13px;background:rgba(255,255,255,.15);display:inline-grid;place-items:center;
+    font-weight:800;letter-spacing:.05em;margin-bottom:10px;border:1px solid rgba(255,255,255,.25)}
+  .auth-head h1{margin:0;font-size:20px;letter-spacing:.04em}
+  .auth-head p{margin:4px 0 0;opacity:.9;font-size:13px}
+  .auth-body{padding:22px}
+  .auth-body .field{margin-bottom:13px}
+  .auth-tabs{display:flex;gap:6px;margin-bottom:18px;background:#f1f5f4;padding:4px;border-radius:11px}
+  .auth-tabs button{flex:1;border:none;background:none;padding:9px;border-radius:8px;font-weight:700;font-size:13px;color:var(--muted)}
+  .auth-tabs button.on{background:#fff;color:var(--brand-d);box-shadow:var(--shadow)}
+
+  /* SHELL */
+  .top{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;
+    justify-content:space-between;gap:12px;padding:10px 16px}
+  .top .brand{display:flex;align-items:center;gap:10px}
+  .top .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--brand-d));color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:12px}
+  .top .brand b{font-size:15px;letter-spacing:.03em}
+  .top .brand span{display:block;font-size:11px;color:var(--muted)}
+  .top .who{display:flex;align-items:center;gap:10px}
+  .top .who .nm{font-size:13px;font-weight:600;text-align:right}
+  .top .who .rl{font-size:11px;color:var(--muted)}
+  .chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--brand-soft);color:var(--brand-d)}
+  .nav{display:flex;gap:6px;padding:8px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:55px;z-index:9}
+  .nav button{border:none;background:none;padding:7px 12px;border-radius:8px;font-weight:700;font-size:13px;color:var(--muted)}
+  .nav button.on{background:var(--brand-soft);color:var(--brand-d)}
+  .wrap{max-width:960px;margin:0 auto;padding:16px}
+
+  /* LIST */
+  .toolbar{display:flex;gap:9px;margin-bottom:14px}
+  .search{position:relative;flex:1}
+  .search input{padding-left:34px}
+  .search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted)}
+  .p-row{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;
+    display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+  .p-row:hover{border-color:#cfe8e4;background:#fafffe}
+  .p-hc{font-size:12px;font-weight:800;color:var(--brand-d);background:var(--brand-soft);border-radius:8px;padding:4px 8px;min-width:40px;text-align:center}
+  .p-row .nm{font-weight:700}
+  .p-row .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .empty{text-align:center;color:var(--muted);padding:40px 16px}
+
+  /* DETAIL */
+  .back{margin-bottom:12px}
+  .phead{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .phead h2{margin:0;font-size:19px}
+  .phead .sub{font-size:13px;color:var(--muted);margin-top:3px}
+  .subnav{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px}
+  .subnav button{white-space:nowrap;border:1px solid var(--line);background:#fff;padding:7px 12px;border-radius:20px;font-size:13px;font-weight:600;color:var(--muted)}
+  .subnav button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+  .card h3{margin:0;padding:12px 16px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-d);
+    background:var(--brand-soft);border-bottom:1px solid #d7ebe8}
+  .card .body{padding:14px 16px}
+  .grid{display:grid;gap:12px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}
+  .full{grid-column:1/-1}
+  @media(max-width:640px){.g2,.g3{grid-template-columns:1fr}}
+  .savebar{display:flex;justify-content:flex-end;gap:10px;align-items:center;margin-top:4px}
+
+  .note{border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;padding:11px 13px;margin-bottom:10px;background:#fff}
+  .note.conf{border-left-color:var(--accent);background:#fdf4ff}
+  .note .hd{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+  .note .who{font-size:12px;font-weight:700;color:var(--brand-d)}
+  .note .dt{font-size:12px;color:var(--muted)}
+  .note .tx{white-space:pre-wrap;font-size:14px}
+  .badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em}
+  .badge.disc{background:#eef2f7;color:#475467}
+  .badge.conf{background:#fbe8fb;color:var(--accent)}
+
+  .vitc-row{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px}
+  .vitc-row b{color:var(--brand-d)}
+  .g6pd{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+  .g6pd.no_evaluado{background:var(--warn-soft);color:var(--warn)}
+  .g6pd.normal{background:#dcfce7;color:var(--ok)}
+  .g6pd.deficiente{background:#fee2e2;color:var(--danger)}
+  .banner{padding:10px 13px;border-radius:10px;font-size:13px;margin-bottom:12px}
+  .banner.warn{background:var(--warn-soft);color:var(--warn)}
+
+  .team-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:#fff;flex-wrap:wrap}
+  .team-row .nm{font-weight:700}
+  .pending{border-color:#fde68a;background:#fffdf5}
+  .spacer{flex:1}
+
+  .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:11px 18px;border-radius:10px;
+    font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .25s;z-index:50;pointer-events:none}
+  .toast.show{opacity:1}
+  .modal-bg{position:fixed;inset:0;background:rgba(16,24,40,.45);display:none;place-items:center;z-index:40;padding:16px}
+  .modal-bg.show{display:grid}
+  .modal{background:#fff;border-radius:15px;width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 20px 40px rgba(0,0,0,.25)}
+  .modal h3{margin:0;padding:15px 18px;font-size:16px;border-bottom:1px solid var(--line)}
+  .modal .mb{padding:16px 18px;display:grid;gap:12px}
+  .modal .mf{padding:13px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:9px;position:sticky;bottom:0;background:#fff}
+  .loading{text-align:center;padding:50px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- ===== AUTH ===== -->
+<div id="viewAuth" class="auth-wrap hidden">
+  <div class="auth-card">
+    <div class="auth-head">
+      <div class="logo">RVG</div>
+      <h1>REVIGEN</h1>
+      <p>Historia Clínica Electrónica</p>
+    </div>
+    <div class="auth-body">
+      <div class="auth-tabs">
+        <button id="tabLogin" class="on" onclick="setAuthMode('login')">Ingresar</button>
+        <button id="tabSignup" onclick="setAuthMode('signup')">Registrarme</button>
+      </div>
+      <div id="signupFields" class="hidden">
+        <div class="field"><label>Nombre y apellido</label><input id="suName" placeholder="Ej: Dra. Ana Gómez"></div>
+        <div class="field"><label>Rol en el centro</label>
+          <select id="suRole">
+            <option value="oncologo">Médico oncólogo</option>
+            <option value="director_medico">Director médico</option>
+            <option value="enfermeria">Enfermería</option>
+            <option value="nutricion">Nutrición</option>
+            <option value="psicooncologia">Psicooncología</option>
+            <option value="ejercicio">Actividad física</option>
+          </select>
+        </div>
+        <div class="field"><label>Matrícula (opcional)</label><input id="suLicense" placeholder="Ej: MP 12345"></div>
+      </div>
+      <div class="field"><label>Email</label><input id="auEmail" type="email" autocomplete="username" placeholder="tu@email.com"></div>
+      <div class="field"><label>Contraseña</label><input id="auPass" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres"></div>
+      <button class="btn brand" style="width:100%;margin-top:6px" id="auBtn" onclick="doAuth()">Ingresar</button>
+      <div id="auErr" class="err"></div>
+      <p id="signupHint" class="muted hidden" style="font-size:12px;margin:12px 2px 0">
+        El primer registro queda como <b>Director médico</b> y podrá aprobar al resto del equipo. Los demás quedan pendientes hasta que el director los active.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PENDING ===== -->
+<div id="viewPending" class="auth-wrap hidden">
+  <div class="auth-card">
+    <div class="auth-head"><div class="logo">RVG</div><h1>Cuenta pendiente</h1></div>
+    <div class="auth-body" style="text-align:center">
+      <p>Tu cuenta fue creada correctamente. <br>Está <b>pendiente de aprobación</b> por el director médico del centro.</p>
+      <p class="muted" style="font-size:13px">Cuando te activen vas a poder ingresar a las historias clínicas.</p>
+      <button class="btn" style="width:100%;margin-top:8px" onclick="doSignOut()">Salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="viewApp" class="hidden">
+  <div class="top">
+    <div class="brand">
+      <div class="logo">RVG</div>
+      <div><b>REVIGEN</b><span>Historia Clínica</span></div>
+    </div>
+    <div class="who">
+      <div><div class="nm" id="meName">—</div><div class="rl" id="meRole">—</div></div>
+      <button class="btn sm" onclick="doSignOut()">Salir</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button id="navPac" class="on" onclick="goList()">Pacientes</button>
+    <button id="navTeam" class="hidden" onclick="goTeam()">Equipo</button>
+  </div>
+
+  <!-- LIST -->
+  <div id="viewList" class="wrap">
+    <div class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+        <input id="q" placeholder="Buscar por nombre o documento…" oninput="renderPatients()">
+      </div>
+      <button id="btnNew" class="btn brand" onclick="newPatient()">＋ Nuevo</button>
+    </div>
+    <div id="patientList"></div>
+  </div>
+
+  <!-- DETAIL -->
+  <div id="viewDetail" class="wrap hidden">
+    <button class="btn sm back" onclick="goList()">← Volver a pacientes</button>
+    <div class="phead">
+      <h2 id="dName">—</h2>
+      <div class="sub" id="dSub">—</div>
+      <div style="margin-top:10px"><button class="btn sm" onclick="printPatient()">🖨 Imprimir / PDF</button></div>
+    </div>
+    <div class="subnav">
+      <button class="on" data-tab="ficha" onclick="setTab('ficha')">Historia clínica</button>
+      <button data-tab="evol" onclick="setTab('evol')">Evoluciones</button>
+      <button data-tab="vitc" onclick="setTab('vitc')">Vitamina C</button>
+      <button data-tab="enf" onclick="setTab('enf')">Enfermería</button>
+      <button data-tab="indic" onclick="setTab('indic')">Indicaciones</button>
+      <button data-tab="estudios" onclick="setTab('estudios')">Estudios</button>
+      <button data-tab="audit" class="hidden" id="tabAuditBtn" onclick="setTab('audit')">Auditoría</button>
+    </div>
+    <div id="tabContent"></div>
+  </div>
+
+  <!-- TEAM -->
+  <div id="viewTeam" class="wrap hidden">
+    <div class="banner warn">Como director médico, aprobás y gestionás al equipo. Los pendientes aparecen resaltados.</div>
+    <div id="teamList"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<div class="modal-bg" id="modal"><div class="modal"><h3 id="mTitle"></h3><div class="mb" id="mBody"></div><div class="mf" id="mFoot"></div></div></div>
+
+<div id="booting" class="loading">Cargando…</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://mesfpdcqdxhastqfvtkw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_V4qGJGi_WOaX6pTjDuRMbw_R4w9agYT';
+const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
+const DB = () => SB.schema('clinica');
+
+const ROLE_LABEL = {director_medico:'Director médico', oncologo:'Médico oncólogo', enfermeria:'Enfermería',
+  nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
+const DISC_LABEL = {oncologia:'Oncología', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Act. física'};
+const ROLE_TO_DISC = {director_medico:'oncologia', oncologo:'oncologia', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
+const G6PD_LABEL = {no_evaluado:'G6PD no evaluado', normal:'G6PD normal', deficiente:'G6PD deficiente'};
+
+let ME=null, DIR={}, PATIENTS=[], CUR=null, authMode='login', curTab='ficha';
+
+const $ = id => document.getElementById(id);
+const esc = s => (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function show(v){['viewAuth','viewPending','viewApp'].forEach(x=>$(x).classList.add('hidden'));$('booting').classList.add('hidden');$(v).classList.remove('hidden');}
+function fmt(d){if(!d)return '—';const x=new Date(d);if(isNaN(x))return d;return x.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function fmtDT(d){if(!d)return '';const x=new Date(d);if(isNaN(x))return '';return x.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+x.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}
+function edad(d){if(!d)return '';const b=new Date(d);if(isNaN(b))return '';let a=new Date().getFullYear()-b.getFullYear();const m=new Date().getMonth()-b.getMonth();if(m<0||(m===0&&new Date().getDate()<b.getDate()))a--;return a>=0&&a<130?a+' años':'';}
+
+// permisos
+const can = {
+  createPatient:()=>['director_medico','oncologo','enfermeria'].includes(ME.role),
+  editPatient:()=>['director_medico','oncologo','enfermeria'].includes(ME.role),
+  indicate:()=>['director_medico','oncologo'].includes(ME.role),
+  vitc:()=>['enfermeria','director_medico'].includes(ME.role),
+  confidential:()=>['psicooncologia','director_medico'].includes(ME.role),
+  director:()=>ME.role==='director_medico'
+};
+
+/* ---------- AUTH ---------- */
+function setAuthMode(m){authMode=m;
+  $('tabLogin').classList.toggle('on',m==='login');$('tabSignup').classList.toggle('on',m==='signup');
+  $('signupFields').classList.toggle('hidden',m!=='signup');
+  $('signupHint').classList.toggle('hidden',m!=='signup');
+  $('auBtn').textContent=m==='login'?'Ingresar':'Crear mi cuenta';
+  $('auErr').textContent='';
+}
+async function doAuth(){
+  const email=$('auEmail').value.trim(), pass=$('auPass').value;
+  $('auErr').textContent='';
+  if(!email||!pass){$('auErr').textContent='Completá email y contraseña.';return;}
+  $('auBtn').disabled=true;
+  try{
+    if(authMode==='signup'){
+      const name=$('suName').value.trim();
+      if(!name){$('auErr').textContent='Ingresá tu nombre.';return;}
+      const {error}=await SB.auth.signUp({email,password:pass,options:{data:{
+        full_name:name, role:$('suRole').value, license:$('suLicense').value.trim()}}});
+      if(error) throw error;
+      const {error:e2}=await SB.auth.signInWithPassword({email,password:pass});
+      if(e2) throw e2;
+    }else{
+      const {error}=await SB.auth.signInWithPassword({email,password:pass});
+      if(error) throw error;
+    }
+  }catch(e){
+    let m=e.message||'Error';
+    if(/Invalid login/i.test(m)) m='Email o contraseña incorrectos.';
+    if(/already registered/i.test(m)) m='Ese email ya está registrado. Probá ingresar.';
+    if(/at least 6/i.test(m)) m='La contraseña debe tener al menos 6 caracteres.';
+    $('auErr').textContent=m;
+  }finally{$('auBtn').disabled=false;}
+}
+async function doSignOut(){await SB.auth.signOut();ME=null;location.reload();}
+
+/* ---------- BOOT ---------- */
+async function loadMe(){
+  const {data:{user}}=await SB.auth.getUser();
+  if(!user){show('viewAuth');return;}
+  const {data,error}=await DB().from('staff').select('*').eq('user_id',user.id).maybeSingle();
+  if(error){show('viewAuth');$('auErr').textContent=error.message;return;}
+  if(!data){show('viewAuth');return;}
+  if(!data.is_active){show('viewPending');return;}
+  ME=data; ME.email=user.email;
+  $('meName').textContent=ME.full_name||user.email;
+  $('meRole').textContent=ROLE_LABEL[ME.role]||ME.role;
+  $('navTeam').classList.toggle('hidden',!can.director());
+  $('btnNew').classList.toggle('hidden',!can.createPatient());
+  await loadDirectory();
+  show('viewApp'); goList();
+}
+async function loadDirectory(){
+  const {data}=await DB().from('staff').select('user_id,full_name,role');
+  DIR={}; (data||[]).forEach(s=>DIR[s.user_id]=s);
+}
+
+/* ---------- PACIENTES ---------- */
+async function loadPatients(){
+  const {data,error}=await DB().from('patients').select('id,hc_number,full_name,doc_id,base_diagnosis,stage')
+    .is('deleted_at',null).order('hc_number',{ascending:true});
+  if(error){toast('Error cargando pacientes');return;}
+  PATIENTS=data||[]; renderPatients();
+}
+function renderPatients(){
+  const term=($('q').value||'').toLowerCase().trim();
+  let arr=PATIENTS;
+  if(term) arr=arr.filter(p=>((p.full_name||'')+' '+(p.doc_id||'')).toLowerCase().includes(term));
+  const el=$('patientList');
+  if(!arr.length){el.innerHTML='<div class="empty">'+(PATIENTS.length?'Sin resultados.':'Todavía no hay pacientes cargados.')+'</div>';return;}
+  el.innerHTML=arr.map(p=>`<div class="p-row" onclick="openPatient('${p.id}')">
+    <div class="p-hc">${p.hc_number||'—'}</div>
+    <div style="flex:1">
+      <div class="nm">${esc(p.full_name||'(sin nombre)')}</div>
+      <div class="meta">${p.doc_id?'Doc. '+esc(p.doc_id):''}${p.base_diagnosis?' · '+esc(p.base_diagnosis):''}${p.stage?' · '+esc(p.stage):''}</div>
+    </div>
+    <div style="color:#cbd5e1">›</div>
+  </div>`).join('');
+}
+function goList(){CUR=null;$('viewList').classList.remove('hidden');$('viewDetail').classList.add('hidden');$('viewTeam').classList.add('hidden');
+  $('navPac').classList.add('on');$('navTeam').classList.remove('on');loadPatients();}
+function goTeam(){$('viewList').classList.add('hidden');$('viewDetail').classList.add('hidden');$('viewTeam').classList.remove('hidden');
+  $('navPac').classList.remove('on');$('navTeam').classList.add('on');loadTeam();}
+
+async function newPatient(){
+  if(!can.createPatient()){toast('Tu rol no puede crear pacientes');return;}
+  const {data,error}=await DB().from('patients').insert({full_name:'Nuevo paciente',created_by:ME.user_id}).select().single();
+  if(error){toast(error.message);return;}
+  await openPatient(data.id);
+  toast('Paciente creado — completá los datos');
+}
+async function openPatient(id){
+  const {data,error}=await DB().from('patients').select('*').eq('id',id).single();
+  if(error){toast(error.message);return;}
+  CUR=data;
+  $('viewList').classList.add('hidden');$('viewTeam').classList.add('hidden');$('viewDetail').classList.remove('hidden');
+  $('tabAuditBtn').classList.toggle('hidden',!can.director());
+  $('dName').textContent=(CUR.full_name||'(sin nombre)')+'  · HC '+(CUR.hc_number||'—');
+  const bits=[]; if(CUR.birth_date&&edad(CUR.birth_date))bits.push(edad(CUR.birth_date));
+  if(CUR.doc_id)bits.push('Doc. '+CUR.doc_id); if(CUR.base_diagnosis)bits.push(CUR.base_diagnosis); if(CUR.stage)bits.push('Estadio '+CUR.stage);
+  $('dSub').textContent=bits.join(' · ')||'Sin datos cargados';
+  setTab('ficha');
+}
+function setTab(t){curTab=t;document.querySelectorAll('.subnav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  const map={ficha:renderFicha,evol:renderEvol,vitc:renderVitc,enf:renderEnf,indic:renderIndic,estudios:renderEstudios,audit:renderAudit};(map[t]||renderFicha)();}
+
+/* ---------- FICHA (historia clínica) ---------- */
+function fld(lbl,key,type){const ro=can.editPatient()?'':'readonly';
+  const v=esc(CUR[key]??'');
+  if(type==='textarea')return `<div class="field full"><label>${lbl}</label><textarea data-k="${key}" ${ro}>${v}</textarea></div>`;
+  if(type==='date')return `<div class="field"><label>${lbl}</label><input type="date" data-k="${key}" value="${v}" ${ro}></div>`;
+  return `<div class="field"><label>${lbl}</label><input data-k="${key}" value="${v}" ${ro}></div>`;
+}
+function sel(lbl,key,opts){const ro=can.editPatient()?'':'disabled';
+  return `<div class="field"><label>${lbl}</label><select data-k="${key}" ${ro}>`+
+    opts.map(([v,t])=>`<option value="${v}" ${CUR[key]===v?'selected':''}>${t}</option>`).join('')+`</select></div>`;}
+function renderFicha(){
+  const c=$('tabContent');
+  c.innerHTML=`
+  <div class="card"><h3>Datos filiatorios</h3><div class="body"><div class="grid g2">
+    ${fld('Nombre y apellido','full_name')}${fld('Documento','doc_id')}
+    ${sel('Sexo','sex',[['','—'],['F','Femenino'],['M','Masculino'],['X','Otro']])}
+    ${fld('Fecha de nacimiento','birth_date','date')}
+    ${fld('Nacionalidad','nationality')}${fld('Estado civil','marital_status')}
+    ${fld('Ocupación','occupation')}${fld('Teléfono','phone')}
+    ${fld('Email','email')}${fld('Domicilio','address')}
+    ${fld('Localidad','city')}${fld('Provincia','province')}
+    ${fld('Obra social / Prepaga','coverage')}${fld('Plan','coverage_plan')}
+    ${fld('N° de afiliado','affiliate_number')}
+    ${fld('Contacto de emergencia','emergency_contact_name')}
+    ${fld('Vínculo','emergency_contact_relation')}${fld('Tel. emergencia','emergency_contact_phone')}
+  </div></div></div>
+
+  <div class="card"><h3>Antecedentes y hábitos</h3><div class="body"><div class="grid g2">
+    ${fld('Antecedentes personales','personal_history','textarea')}
+    ${fld('Antecedentes familiares','family_history','textarea')}
+    ${fld('Hábitos tóxicos','toxic_habits','textarea')}
+    ${fld('Medicación habitual','usual_medication','textarea')}
+    ${fld('Alergias','allergies','textarea')}
+  </div></div></div>
+
+  <div class="card"><h3>Diagnóstico y enfermedad actual</h3><div class="body"><div class="grid g2">
+    ${fld('Diagnóstico','base_diagnosis')}${fld('Fecha de diagnóstico','diagnosis_date','date')}
+    ${fld('Oncólogo/a tratante','treating_oncologist')}${fld('Estadificación','stage')}
+    ${fld('Enfermedad actual','current_illness','textarea')}
+    ${fld('Biopsia y protocolo','biopsy_protocol','textarea')}
+    ${fld('Histología','histology','textarea')}
+  </div></div></div>
+
+  <div class="card"><h3>Tratamiento y plan</h3><div class="body"><div class="grid g2">
+    ${fld('Tratamiento','treatment','textarea')}
+    ${fld('Plan','care_plan','textarea')}
+  </div></div></div>
+
+  <div class="card"><h3>Seguridad para vitamina C</h3><div class="body"><div class="grid g2">
+    ${sel('Screening G6PD','g6pd_status',[['no_evaluado','No evaluado'],['normal','Normal'],['deficiente','Deficiente']])}
+    ${sel('Consentimiento HC compartida','consent_shared_hc',[['false','No'],['true','Sí']])}
+  </div></div></div>
+
+  ${can.editPatient()?`<div class="savebar">
+     <span class="muted" style="font-size:12px">${CUR.updated_at?'Última edición: '+fmtDT(CUR.updated_at):''}</span>
+     <button class="btn brand" onclick="savePatient()">💾 Guardar historia</button></div>`
+   :`<div class="banner warn">Tu rol puede consultar pero no editar la ficha del paciente.</div>`}
+  <div style="height:20px"></div>`;
+}
+async function savePatient(){
+  const upd={updated_by:ME.user_id};
+  $('tabContent').querySelectorAll('[data-k]').forEach(el=>{
+    let v=el.value; if(v==='')v=null;
+    if(el.dataset.k==='consent_shared_hc')v=(v==='true');
+    upd[el.dataset.k]=v;
+  });
+  const {data,error}=await DB().from('patients').update(upd).eq('id',CUR.id).select().single();
+  if(error){toast(error.message);return;}
+  CUR=data; toast('Historia guardada');
+  $('dName').textContent=(CUR.full_name||'(sin nombre)')+'  · HC '+(CUR.hc_number||'—');
+}
+
+/* ---------- EVOLUCIONES (notes) ---------- */
+async function renderEvol(){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando evoluciones…</div>';
+  const {data,error}=await DB().from('notes').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
+  if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  const list=(data||[]).map(n=>{
+    const a=DIR[n.author_id]; const who=a?`${esc(a.full_name)} · ${ROLE_LABEL[a.role]||''}`:'Profesional';
+    return `<div class="note ${n.is_confidential?'conf':''}">
+      <div class="hd"><span class="who">${who}</span><span class="dt">${fmtDT(n.created_at)}</span></div>
+      <div style="margin-bottom:6px">
+        <span class="badge disc">${DISC_LABEL[n.discipline]||n.discipline}</span>
+        ${n.is_confidential?'<span class="badge conf">Confidencial</span>':''}
+      </div>
+      <div class="tx">${esc(n.content)}</div></div>`;
+  }).join('') || '<div class="empty">Sin evoluciones registradas.</div>';
+  c.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn brand" onclick="openNoteModal()">＋ Nueva evolución</button></div>
+    <div class="banner warn">Las evoluciones quedan firmadas con tu nombre y fecha, y no se pueden borrar (trazabilidad).</div>
+    ${list}<div style="height:20px"></div>`;
+}
+function openNoteModal(){
+  const confRow=can.confidential()?`<div class="field"><label>Confidencialidad</label>
+    <select id="nConf"><option value="false">Normal (todo el equipo)</option><option value="true">Confidencial (solo psicooncología y dirección)</option></select></div>`:'';
+  modalOpen('Nueva evolución',
+    `<div class="field"><label>Disciplina</label><input value="${DISC_LABEL[ROLE_TO_DISC[ME.role]]}" disabled></div>
+     ${confRow}
+     <div class="field"><label>Nota de evolución</label><textarea id="nText" style="min-height:130px" placeholder="Evolución, hallazgos, indicaciones…"></textarea></div>`,
+    'Agregar', addNote);
+}
+async function addNote(){
+  const txt=$('nText').value.trim(); if(!txt){toast('Escribí la nota');return false;}
+  const rec={patient_id:CUR.id, discipline:ROLE_TO_DISC[ME.role], content:txt,
+    author_id:ME.user_id, created_by:ME.user_id,
+    is_confidential: $('nConf')? $('nConf').value==='true' : false};
+  const {error}=await DB().from('notes').insert(rec);
+  if(error){toast(error.message);return false;}
+  toast('Evolución agregada'); renderEvol(); return true;
+}
+
+/* ---------- VITAMINA C ---------- */
+async function renderVitc(){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
+  const {data,error}=await DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:false});
+  const g=CUR.g6pd_status||'no_evaluado';
+  let gate='';
+  if(g!=='normal') gate=`<div class="banner warn">⚠️ ${g==='deficiente'?'Paciente con déficit de G6PD: la administración está contraindicada y el sistema la bloquea.':'Falta cargar el screening de G6PD. Hasta que no figure como “normal” en la ficha, el sistema no permite registrar administraciones.'}</div>`;
+  const rows=(data||[]).map(v=>{
+    const by=DIR[v.administered_by];
+    return `<div class="vitc-row">
+      <b>${fmtDT(v.administered_at)}</b> — Dosis <b>${v.dose_g} g</b>${v.dilution_ml?` en ${v.dilution_ml} ml`:''}${v.rate_g_min?` · ${v.rate_g_min} g/min`:''}<br>
+      <span class="muted">Pre:</span> FC ${v.hr_pre??'—'} · TA ${v.bp_pre??'—'} · Gluc ${v.glucose_pre??'—'} &nbsp;
+      <span class="muted">Post:</span> FC ${v.hr_post??'—'} · TA ${v.bp_post??'—'} · Gluc ${v.glucose_post??'—'}
+      ${v.adverse_events?`<br><span style="color:var(--danger)">Eventos: ${esc(v.adverse_events)}</span>`:''}
+      <br><span class="muted" style="font-size:12px">Administró: ${by?esc(by.full_name):'—'}</span>
+    </div>`;
+  }).join('')||'<div class="empty">Sin administraciones registradas.</div>';
+  c.innerHTML=`<div class="card"><h3>Estado G6PD</h3><div class="body">
+      <span class="g6pd ${g}">${G6PD_LABEL[g]}</span>
+      <span class="muted" style="font-size:12px;margin-left:8px">Se edita en la pestaña Historia clínica → Seguridad.</span></div></div>
+    ${gate}
+    ${can.vitc()?`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn brand" onclick="openVitcModal()" ${g!=='normal'?'disabled title="Requiere G6PD normal"':''}>＋ Registrar administración</button></div>`
+     :'<div class="banner warn">Solo enfermería y dirección registran administraciones de vitamina C.</div>'}
+    ${rows}<div style="height:20px"></div>`;
+}
+function openVitcModal(){
+  modalOpen('Administración de vitamina C',
+    `<div class="grid g2">
+      <div class="field"><label>Dosis (g)</label><input id="vDose" type="number" step="0.1"></div>
+      <div class="field"><label>Dilución (ml)</label><input id="vDil" type="number"></div>
+      <div class="field"><label>Velocidad (g/min)</label><input id="vRate" type="number" step="0.1"></div>
+      <div class="field"><label>&nbsp;</label><div class="muted" style="font-size:12px;padding-top:9px">Signos vitales:</div></div>
+      <div class="field"><label>FC pre</label><input id="vHrPre" type="number"></div>
+      <div class="field"><label>TA pre</label><input id="vBpPre" placeholder="120/80"></div>
+      <div class="field"><label>Glucemia pre</label><input id="vGluPre" type="number"></div>
+      <div class="field"><label>FC post</label><input id="vHrPost" type="number"></div>
+      <div class="field"><label>TA post</label><input id="vBpPost" placeholder="120/80"></div>
+      <div class="field"><label>Glucemia post</label><input id="vGluPost" type="number"></div>
+     </div>
+     <div class="field"><label>Eventos adversos</label><textarea id="vAdv" placeholder="Ninguno / describir"></textarea></div>`,
+    'Registrar', addVitc);
+}
+async function addVitc(){
+  const num=id=>{const v=$(id).value;return v===''?null:Number(v);};
+  const dose=num('vDose'); if(!dose){toast('Ingresá la dosis');return false;}
+  const rec={patient_id:CUR.id, dose_g:dose, dilution_ml:num('vDil'), rate_g_min:num('vRate'),
+    hr_pre:num('vHrPre'), bp_pre:$('vBpPre').value||null, glucose_pre:num('vGluPre'),
+    hr_post:num('vHrPost'), bp_post:$('vBpPost').value||null, glucose_post:num('vGluPost'),
+    adverse_events:$('vAdv').value||null, administered_by:ME.user_id, created_by:ME.user_id};
+  const {error}=await DB().from('vitc_administrations').insert(rec);
+  if(error){toast(error.message.includes('G6PD')?'Bloqueado: revisá el G6PD del paciente':error.message);return false;}
+  toast('Administración registrada'); renderVitc(); return true;
+}
+
+/* ---------- INDICACIONES ---------- */
+async function renderIndic(){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
+  const {data,error}=await DB().from('indications').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
+  if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  const rows=(data||[]).map(i=>{
+    const by=DIR[i.prescribed_by];
+    return `<div class="vitc-row">
+      <b>${i.kind==='vitamina_c'?'Vitamina C':'General'}</b> ${i.active?'<span class="badge disc" style="background:#dcfce7;color:var(--ok)">Activa</span>':'<span class="badge disc">Inactiva</span>'}
+      ${i.vitc_target_dose_g?` · objetivo ${i.vitc_target_dose_g} g`:''}<br>
+      ${esc(i.detail||'')}<br><span class="muted" style="font-size:12px">${fmtDT(i.created_at)} · ${by?esc(by.full_name):'—'}</span>
+    </div>`;}).join('')||'<div class="empty">Sin indicaciones cargadas.</div>';
+  c.innerHTML=`${can.indicate()?`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+      <button class="btn brand" onclick="openIndicModal()">＋ Nueva indicación</button></div>`
+     :'<div class="banner warn">Solo los médicos cargan indicaciones.</div>'}
+    ${rows}<div style="height:20px"></div>`;
+}
+function openIndicModal(){
+  modalOpen('Nueva indicación',
+    `<div class="field"><label>Tipo</label><select id="iKind">
+        <option value="general">General</option><option value="vitamina_c">Vitamina C</option></select></div>
+     <div class="field"><label>Dosis objetivo vitamina C (g) — opcional</label><input id="iDose" type="number" step="0.1"></div>
+     <div class="field"><label>Detalle</label><textarea id="iDetail" placeholder="Indicación…"></textarea></div>`,
+    'Guardar', addIndic);
+}
+async function addIndic(){
+  const rec={patient_id:CUR.id, kind:$('iKind').value, detail:$('iDetail').value||null,
+    vitc_target_dose_g:$('iDose').value===''?null:Number($('iDose').value),
+    prescribed_by:ME.user_id, created_by:ME.user_id, active:true};
+  const {error}=await DB().from('indications').insert(rec);
+  if(error){toast(error.message);return false;}
+  toast('Indicación guardada'); renderIndic(); return true;
+}
+
+/* ---------- AUDITORÍA ---------- */
+async function renderAudit(){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
+  const {data,error}=await DB().from('audit_log').select('*').eq('row_id',CUR.id).order('at',{ascending:false}).limit(200);
+  if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  const rows=(data||[]).map(a=>{
+    const who=DIR[a.actor];
+    return `<div class="vitc-row"><b>${a.action}</b> · ${esc(a.table_name)}<br>
+      <span class="muted" style="font-size:12px">${fmtDT(a.at)} · ${who?esc(who.full_name):(a.actor||'sistema')} ${a.actor_role?'('+ (ROLE_LABEL[a.actor_role]||a.actor_role) +')':''}</span></div>`;
+  }).join('')||'<div class="empty">Sin registros de auditoría para esta ficha.</div>';
+  c.innerHTML=`<div class="banner warn">Registro de cambios de la ficha del paciente (visible solo para dirección).</div>${rows}<div style="height:20px"></div>`;
+}
+
+/* ---------- EQUIPO ---------- */
+async function loadTeam(){
+  const el=$('teamList');el.innerHTML='<div class="loading">Cargando equipo…</div>';
+  const {data,error}=await DB().from('staff').select('*').order('created_at',{ascending:true});
+  if(error){el.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  el.innerHTML=(data||[]).map(s=>`
+    <div class="team-row ${s.is_active?'':'pending'}">
+      <div style="min-width:180px"><div class="nm">${esc(s.full_name||'—')}</div>
+        <div class="muted" style="font-size:12px">${s.license_number?'Mat. '+esc(s.license_number):''}</div></div>
+      <select onchange="setRole('${s.user_id}',this.value)" ${s.user_id===ME.user_id?'disabled':''}>
+        ${Object.entries(ROLE_LABEL).map(([v,t])=>`<option value="${v}" ${s.role===v?'selected':''}>${t}</option>`).join('')}
+      </select>
+      <div class="spacer"></div>
+      ${s.is_active?'<span class="chip">Activo</span>':'<span class="badge" style="background:#fde68a;color:var(--warn)">Pendiente</span>'}
+      ${s.user_id===ME.user_id?'':`<button class="btn sm" onclick="toggleActive('${s.user_id}',${!s.is_active})">${s.is_active?'Desactivar':'Activar'}</button>`}
+    </div>`).join('');
+}
+async function setRole(uid,role){const {error}=await DB().from('staff').update({role}).eq('user_id',uid);
+  if(error){toast(error.message);loadTeam();return;}toast('Rol actualizado');loadDirectory();}
+async function toggleActive(uid,val){const {error}=await DB().from('staff').update({is_active:val}).eq('user_id',uid);
+  if(error){toast(error.message);return;}toast(val?'Usuario activado':'Usuario desactivado');loadTeam();loadDirectory();}
+
+/* ---------- MODAL ---------- */
+let modalCb=null;
+function modalOpen(title,body,okLabel,cb){
+  $('mTitle').textContent=title;$('mBody').innerHTML=body;
+  $('mFoot').innerHTML=`<button class="btn" onclick="modalClose()">Cancelar</button>
+    <button class="btn brand" id="mOk">${okLabel}</button>`;
+  modalCb=cb;$('modal').classList.add('show');
+  $('mOk').onclick=async()=>{$('mOk').disabled=true;const ok=await cb();$('mOk').disabled=false;if(ok!==false)modalClose();};
+}
+function modalClose(){$('modal').classList.remove('show');modalCb=null;}
+
+/* ---------- INIT ---------- */
+/* ---------- ESTUDIOS (adjuntos) ---------- */
+async function renderEstudios(){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
+  const {data,error}=await DB().from('attachments').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
+  if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  const rows=(data||[]).map(a=>{const by=DIR[a.uploaded_by];
+    return `<div class="vitc-row"><b>${esc(a.title||'Archivo')}</b>${a.discipline?' · '+esc(DISC_LABEL[a.discipline]||a.discipline):''}<br>
+      <span class="muted" style="font-size:12px">${fmtDT(a.created_at)} · ${by?esc(by.full_name):'—'}</span>
+      <button class="btn sm" style="margin-left:8px" onclick="verEstudio('${(a.storage_path||'').replace(/'/g,'')}')">Ver / descargar</button></div>`;
+  }).join('')||'<div class="empty">Sin estudios adjuntos.</div>';
+  c.innerHTML=`<div class="card"><h3>Subir estudio</h3><div class="body">
+    <div class="field"><label>Título / descripción</label><input id="atTitle" placeholder="Ej: Biopsia mama 03/2026, TAC, laboratorio…"></div>
+    <div class="field"><label>Archivo (PDF, imagen, etc.)</label><input id="atFile" type="file"></div>
+    <div style="text-align:right"><button class="btn brand" id="atBtn" onclick="uploadEstudio()">⬆ Subir estudio</button></div>
+  </div></div>${rows}<div style="height:20px"></div>`;
+}
+async function uploadEstudio(){
+  const f=$('atFile').files[0]; if(!f){toast('Elegí un archivo');return;}
+  if(f.size>25*1024*1024){toast('El archivo supera los 25 MB');return;}
+  $('atBtn').disabled=true;
+  const clean=f.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path=CUR.id+'/'+Date.now()+'_'+clean;
+  const {error:e1}=await SB.storage.from('estudios').upload(path,f,{upsert:false});
+  if(e1){toast(e1.message);$('atBtn').disabled=false;return;}
+  const {error:e2}=await DB().from('attachments').insert({patient_id:CUR.id, title:($('atTitle').value||f.name),
+    discipline:ROLE_TO_DISC[ME.role], storage_path:path, uploaded_by:ME.user_id});
+  if(e2){toast(e2.message);$('atBtn').disabled=false;return;}
+  toast('Estudio subido'); renderEstudios();
+}
+async function verEstudio(path){
+  const {data,error}=await SB.storage.from('estudios').createSignedUrl(path,120);
+  if(error){toast(error.message);return;}
+  window.open(data.signedUrl,'_blank');
+}
+
+/* ---------- IMPRIMIR / PDF ---------- */
+async function printPatient(){
+  const [{data:notes},{data:vitc}]=await Promise.all([
+    DB().from('notes').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:true}),
+    DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:true})
+  ]);
+  const row=(l,v)=> (v||v===0)?`<tr><td class="k">${esc(l)}</td><td>${esc(v)}</td></tr>`:'';
+  const sec=(t,rows)=> rows?`<h3>${t}</h3><table>${rows}</table>`:'';
+  const notesHtml=(notes||[]).map(n=>{const a=DIR[n.author_id];
+    return `<div class="pn"><b>${fmtDT(n.created_at)}</b> — ${esc(a?a.full_name:'Profesional')} (${DISC_LABEL[n.discipline]||n.discipline})${n.is_confidential?' · CONFIDENCIAL':''}<br>${esc(n.content)}</div>`;}).join('')||'<p>Sin evoluciones.</p>';
+  const vitcHtml=(vitc||[]).map(v=>`<div class="pn"><b>${fmtDT(v.administered_at)}</b> — ${v.dose_g} g${v.dilution_ml?' / '+v.dilution_ml+' ml':''}. Pre: FC ${v.hr_pre??'—'} TA ${v.bp_pre??'—'} Gluc ${v.glucose_pre??'—'}; Post: FC ${v.hr_post??'—'} TA ${v.bp_post??'—'} Gluc ${v.glucose_post??'—'}${v.adverse_events?'. Eventos: '+esc(v.adverse_events):''}</div>`).join('')||'<p>Sin administraciones.</p>';
+  const html=`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>HC ${CUR.hc_number||''} - ${esc(CUR.full_name||'')}</title>
+  <style>body{font-family:Arial,Helvetica,sans-serif;color:#1f2a37;max-width:800px;margin:0 auto;padding:24px;font-size:13px;line-height:1.5}
+  h1{color:#0b5b54;border-bottom:2px solid #0f766e;padding-bottom:8px;margin:0 0 4px;font-size:20px}
+  .meta{color:#666;font-size:12px;margin-bottom:14px}
+  h3{background:#e6f3f1;color:#0b5b54;padding:6px 10px;border-radius:5px;margin:18px 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  table{width:100%;border-collapse:collapse;margin-bottom:6px}
+  td{padding:4px 8px;vertical-align:top;border-bottom:1px solid #eee}
+  td.k{width:210px;color:#666;font-weight:bold}
+  .pn{border-left:3px solid #0f766e;padding:6px 10px;margin-bottom:8px;background:#fafafa;white-space:pre-wrap}
+  @media print{.noprint{display:none}}</style></head><body>
+  <h1>REVIGEN — Historia Clínica</h1>
+  <div class="meta">HC N° ${CUR.hc_number||'—'} · Emitido ${fmtDT(new Date().toISOString())} · por ${esc(ME.full_name)} (${ROLE_LABEL[ME.role]})</div>
+  ${sec('Datos filiatorios',
+    row('Nombre y apellido',CUR.full_name)+row('Documento',CUR.doc_id)+row('Sexo',CUR.sex)+
+    row('Nacimiento',CUR.birth_date?fmt(CUR.birth_date)+' ('+edad(CUR.birth_date)+')':'')+
+    row('Nacionalidad',CUR.nationality)+row('Estado civil',CUR.marital_status)+row('Ocupación',CUR.occupation)+
+    row('Teléfono',CUR.phone)+row('Email',CUR.email)+row('Domicilio',CUR.address)+row('Localidad',CUR.city)+row('Provincia',CUR.province)+
+    row('Obra social',CUR.coverage)+row('Plan',CUR.coverage_plan)+row('N° afiliado',CUR.affiliate_number)+
+    row('Contacto emergencia',[CUR.emergency_contact_name,CUR.emergency_contact_relation,CUR.emergency_contact_phone].filter(Boolean).join(' · ')))}
+  ${sec('Antecedentes y hábitos',
+    row('Antecedentes personales',CUR.personal_history)+row('Antecedentes familiares',CUR.family_history)+
+    row('Hábitos tóxicos',CUR.toxic_habits)+row('Medicación habitual',CUR.usual_medication)+row('Alergias',CUR.allergies))}
+  ${sec('Diagnóstico y enfermedad actual',
+    row('Diagnóstico',CUR.base_diagnosis)+row('Fecha de diagnóstico',CUR.diagnosis_date?fmt(CUR.diagnosis_date):'')+
+    row('Oncólogo tratante',CUR.treating_oncologist)+row('Estadificación',CUR.stage)+
+    row('Enfermedad actual',CUR.current_illness)+row('Biopsia y protocolo',CUR.biopsy_protocol)+row('Histología',CUR.histology))}
+  ${sec('Tratamiento y plan', row('Tratamiento',CUR.treatment)+row('Plan',CUR.care_plan))}
+  ${sec('Seguridad', row('G6PD',G6PD_LABEL[CUR.g6pd_status||'no_evaluado'])+row('Consentimiento HC compartida',CUR.consent_shared_hc?'Sí':'No'))}
+  <h3>Evoluciones</h3>${notesHtml}
+  <h3>Administraciones de vitamina C</h3>${vitcHtml}
+  <p class="noprint" style="text-align:center;margin-top:22px"><button onclick="window.print()">Imprimir / Guardar como PDF</button></p>
+  <script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script>
+  </body></html>`;
+  const w=window.open('','_blank');
+  if(!w){toast('Permití las ventanas emergentes para imprimir');return;}
+  w.document.write(html); w.document.close();
+}
+
+async function renderEnf(){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
+  const r=await Promise.all([
+    DB().from('vitals').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:false}),
+    DB().from('medications').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:false})
+  ]);
+  const vit=r[0].data||[], med=r[1].data||[];
+  const vitRows=vit.map(function(x){var by=DIR[x.recorded_by];
+    return '<div class="vitc-row"><b>'+fmtDT(x.measured_at)+'</b> — TA '+(x.ta||'—')+' · FC '+(x.fc??'—')+' · FR '+(x.fr??'—')+' · T '+(x.temp??'—')+'° · SatO₂ '+(x.sat_o2??'—')+'% · HGT '+(x.hgt??'—')+
+      (x.notes?'<br>'+esc(x.notes):'')+'<br><span class="muted" style="font-size:12px">'+(by?esc(by.full_name):'—')+'</span></div>';
+  }).join('')||'<div class="empty">Sin registros de signos vitales.</div>';
+  const medRows=med.map(function(x){var by=DIR[x.administered_by];
+    return '<div class="vitc-row"><b>'+fmtDT(x.administered_at)+'</b> — '+esc(x.medicamento)+(x.dosis?' · '+esc(x.dosis):'')+(x.dilucion_via?' · '+esc(x.dilucion_via):'')+(x.tiempo_infusion?' · '+esc(x.tiempo_infusion):'')+
+      (x.obs?'<br>'+esc(x.obs):'')+'<br><span class="muted" style="font-size:12px">'+(by?esc(by.full_name):'—')+'</span></div>';
+  }).join('')||'<div class="empty">Sin medicación registrada.</div>';
+  c.innerHTML=
+   '<div class="card"><h3>Control de signos vitales</h3><div class="body">'+
+     '<div class="grid g3">'+
+       '<div class="field"><label>T.A. (mmHg)</label><input id="viTa" placeholder="120/80"></div>'+
+       '<div class="field"><label>F.C. (x min)</label><input id="viFc" type="number"></div>'+
+       '<div class="field"><label>F.R. (x min)</label><input id="viFr" type="number"></div>'+
+       '<div class="field"><label>Temp. Ax. (°C)</label><input id="viTemp" type="number" step="0.1"></div>'+
+       '<div class="field"><label>Sat. O₂ (%)</label><input id="viSat" type="number"></div>'+
+       '<div class="field"><label>HGT (mg/dL)</label><input id="viHgt" type="number"></div>'+
+     '</div>'+
+     '<div class="field"><label>Observación (opcional)</label><input id="viNotes"></div>'+
+     '<div style="text-align:right"><button class="btn brand" onclick="addVital()">＋ Registrar signos vitales</button></div>'+
+   '</div></div>'+vitRows+
+   '<div class="card" style="margin-top:14px"><h3>Registro de medicación administrada</h3><div class="body">'+
+     '<div class="grid g2">'+
+       '<div class="field"><label>Medicamento</label><input id="mdName"></div>'+
+       '<div class="field"><label>Dosis</label><input id="mdDose"></div>'+
+       '<div class="field"><label>Dilución / Vía</label><input id="mdDil" placeholder="100 ml SF / EV"></div>'+
+       '<div class="field"><label>Tiempo de infusión</label><input id="mdTime" placeholder="20 min"></div>'+
+     '</div>'+
+     '<div class="field"><label>Observaciones</label><input id="mdObs"></div>'+
+     '<div style="text-align:right"><button class="btn brand" onclick="addMed()">＋ Registrar medicación</button></div>'+
+   '</div></div>'+medRows+'<div style="height:20px"></div>';
+}
+async function addVital(){
+  var num=function(id){var v=$(id).value;return v===''?null:Number(v);};
+  var rec={patient_id:CUR.id, ta:$('viTa').value||null, fc:num('viFc'), fr:num('viFr'),
+    temp:num('viTemp'), sat_o2:num('viSat'), hgt:num('viHgt'), notes:$('viNotes').value||null, recorded_by:ME.user_id};
+  if(!rec.ta&&!rec.fc&&!rec.fr&&!rec.temp&&!rec.sat_o2&&!rec.hgt){toast('Cargá al menos un valor');return;}
+  var res=await DB().from('vitals').insert(rec); if(res.error){toast(res.error.message);return;}
+  toast('Signos vitales registrados'); renderEnf();
+}
+async function addMed(){
+  var name=$('mdName').value.trim(); if(!name){toast('Ingresá el medicamento');return;}
+  var rec={patient_id:CUR.id, medicamento:name, dosis:$('mdDose').value||null,
+    dilucion_via:$('mdDil').value||null, tiempo_infusion:$('mdTime').value||null, obs:$('mdObs').value||null, administered_by:ME.user_id};
+  var res=await DB().from('medications').insert(rec); if(res.error){toast(res.error.message);return;}
+  toast('Medicación registrada'); renderEnf();
+}
+setAuthMode('login');
+SB.auth.getSession().then(({data})=>{ if(data.session) loadMe(); else show('viewAuth'); });
+</script>
+</body>
+</html>
