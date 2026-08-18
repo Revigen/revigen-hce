@@ -203,13 +203,15 @@
     </div>
     <div class="who">
       <div><div class="nm" id="meName">—</div><div class="rl" id="meRole">—</div></div>
-      <button class="btn sm" onclick="openChangePass()">Contraseña</button>
+      <button class="btn sm" onclick="openAccount()">Mi cuenta</button>
       <button class="btn sm" onclick="doSignOut()">Salir</button>
     </div>
   </div>
   <div class="nav">
     <button id="navPac" class="on" onclick="goList()">Pacientes</button>
+    <button id="navAgenda" onclick="goAgenda()">Agenda</button>
     <button id="navTeam" class="hidden" onclick="goTeam()">Equipo</button>
+    <button id="navArchived" class="hidden" onclick="goArchived()">Archivados</button>
   </div>
 
   <!-- LIST -->
@@ -230,15 +232,21 @@
     <div class="phead">
       <h2 id="dName">—</h2>
       <div class="sub" id="dSub">—</div>
-      <div style="margin-top:10px"><button class="btn sm" onclick="printPatient()">🖨 Imprimir / PDF</button></div>
+      <div style="margin-top:10px">
+        <button class="btn sm" onclick="printPatient()">🖨 Imprimir / PDF</button>
+        <button class="btn sm hidden" id="btnArchive" onclick="archivePatient()">🗄 Archivar</button>
+      </div>
     </div>
     <div class="subnav">
       <button class="on" data-tab="ficha" onclick="setTab('ficha')">Historia clínica</button>
       <button data-tab="evol" onclick="setTab('evol')">Evoluciones</button>
       <button data-tab="vitc" onclick="setTab('vitc')">Vitamina C</button>
       <button data-tab="enf" onclick="setTab('enf')">Enfermería</button>
+      <button data-tab="nutri" onclick="setTab('nutri')">Nutrición</button>
+      <button data-tab="psico" onclick="setTab('psico')">Psicooncología</button>
       <button data-tab="indic" onclick="setTab('indic')">Indicaciones</button>
       <button data-tab="estudios" onclick="setTab('estudios')">Estudios</button>
+      <button data-tab="consent" onclick="setTab('consent')">Consentimientos</button>
       <button data-tab="audit" class="hidden" id="tabAuditBtn" onclick="setTab('audit')">Auditoría</button>
     </div>
     <div id="tabContent"></div>
@@ -248,6 +256,21 @@
   <div id="viewTeam" class="wrap hidden">
     <div class="banner warn">Como director médico, aprobás y gestionás al equipo. Los pendientes aparecen resaltados.</div>
     <div id="teamList"></div>
+  </div>
+
+  <!-- AGENDA -->
+  <div id="viewAgenda" class="wrap hidden">
+    <div class="toolbar">
+      <div style="flex:1"><b style="font-size:16px">Agenda de turnos</b></div>
+      <button class="btn brand" onclick="openApptModal()">＋ Nuevo turno</button>
+    </div>
+    <div id="agendaList"></div>
+  </div>
+
+  <!-- ARCHIVADOS -->
+  <div id="viewArchived" class="wrap hidden">
+    <div class="banner warn">Pacientes archivados. Solo vos (director) podés verlos y recuperarlos.</div>
+    <div id="archivedList"></div>
   </div>
 </div>
 
@@ -306,12 +329,22 @@ async function doAuth(){
   try{
     if(authMode==='signup'){
       const name=$('suName').value.trim();
-      if(!name){$('auErr').textContent='Ingresá tu nombre.';return;}
-      const {error}=await SB.auth.signUp({email,password:pass,options:{data:{
+      if(!name){$('auErr').textContent='Ingresá tu nombre.';$('auBtn').disabled=false;return;}
+      if(pass.length<6){$('auErr').textContent='La contraseña debe tener al menos 6 caracteres.';$('auBtn').disabled=false;return;}
+      const {data:su, error}=await SB.auth.signUp({email,password:pass,options:{data:{
         full_name:name, role:$('suRole').value, license:$('suLicense').value.trim()}}});
       if(error) throw error;
+      if(su && su.user && Array.isArray(su.user.identities) && su.user.identities.length===0){
+        $('auErr').style.color='';
+        $('auErr').textContent='Ese email ya tiene una cuenta. Usá "Ingresar", o "¿Olvidaste tu contraseña?".';
+        setAuthMode('login'); $('auBtn').disabled=false; return;
+      }
       const {error:e2}=await SB.auth.signInWithPassword({email,password:pass});
-      if(e2) throw e2;
+      if(e2){
+        $('auErr').style.color='var(--ok)';
+        $('auErr').textContent='¡Cuenta creada! Si no sos el primer usuario, queda pendiente de que el director te active.';
+        setAuthMode('login'); $('auBtn').disabled=false; return;
+      }
     }else{
       const {error}=await SB.auth.signInWithPassword({email,password:pass});
       if(error) throw error;
@@ -354,6 +387,11 @@ async function changePass(){
 async function loadMe(){
   const {data:{user}}=await SB.auth.getUser();
   if(!user){show('viewAuth');return;}
+  // Verificación en dos pasos (2FA): si tiene un factor activo y la sesión aún no es aal2, pedir el código
+  try{
+    const {data:aal}=await SB.auth.mfa.getAuthenticatorAssuranceLevel();
+    if(aal && aal.nextLevel==='aal2' && aal.currentLevel!=='aal2'){ await promptMfaChallenge(); return; }
+  }catch(e){}
   const {data,error}=await DB().from('staff').select('*').eq('user_id',user.id).maybeSingle();
   if(error){show('viewAuth');$('auErr').textContent=error.message;return;}
   if(!data){show('viewAuth');return;}
@@ -362,6 +400,7 @@ async function loadMe(){
   $('meName').textContent=ME.full_name||user.email;
   $('meRole').textContent=ROLE_LABEL[ME.role]||ME.role;
   $('navTeam').classList.toggle('hidden',!can.director());
+  $('navArchived').classList.toggle('hidden',!can.director());
   $('btnNew').classList.toggle('hidden',!can.createPatient());
   await loadDirectory();
   show('viewApp'); goList();
@@ -393,32 +432,101 @@ function renderPatients(){
     <div style="color:#cbd5e1">›</div>
   </div>`).join('');
 }
-function goList(){CUR=null;$('viewList').classList.remove('hidden');$('viewDetail').classList.add('hidden');$('viewTeam').classList.add('hidden');
-  $('navPac').classList.add('on');$('navTeam').classList.remove('on');loadPatients();}
-function goTeam(){$('viewList').classList.add('hidden');$('viewDetail').classList.add('hidden');$('viewTeam').classList.remove('hidden');
-  $('navPac').classList.remove('on');$('navTeam').classList.add('on');loadTeam();}
-
-async function newPatient(){
-  if(!can.createPatient()){toast('Tu rol no puede crear pacientes');return;}
-  const {data,error}=await DB().from('patients').insert({full_name:'Nuevo paciente',created_by:ME.user_id}).select().single();
+function showView(v, navBtn){
+  ['viewList','viewDetail','viewTeam','viewAgenda','viewArchived'].forEach(x=>$(x).classList.add('hidden'));
+  $(v).classList.remove('hidden');
+  ['navPac','navAgenda','navTeam','navArchived'].forEach(n=>{const b=$(n); if(b)b.classList.remove('on');});
+  if(navBtn){const b=$(navBtn); if(b)b.classList.add('on');}
+}
+function goList(){CUR=null;showView('viewList','navPac');loadPatients();}
+function goTeam(){showView('viewTeam','navTeam');loadTeam();}
+function goAgenda(){showView('viewAgenda','navAgenda');loadAgenda();}
+function goArchived(){if(!can.director())return;showView('viewArchived','navArchived');loadArchived();}
+async function loadArchived(){
+  const el=$('archivedList');el.innerHTML='<div class="loading">Cargando…</div>';
+  const {data,error}=await DB().from('patients').select('id,hc_number,full_name,doc_type,doc_id,deleted_at').not('deleted_at','is',null).order('deleted_at',{ascending:false});
+  if(error){el.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  el.innerHTML=(data||[]).map(p=>'<div class="p-row"><div class="p-hc">'+(p.hc_number||'—')+'</div>'+
+    '<div style="flex:1"><div class="nm">'+esc(p.full_name||'(sin nombre)')+'</div>'+
+    '<div class="meta">'+((p.doc_type||'Doc')+' '+esc(p.doc_id||''))+' · archivado '+fmtDate(p.deleted_at)+'</div></div>'+
+    '<button class="btn brand sm" onclick="restorePatient(\''+p.id+'\')">Recuperar</button></div>').join('')||'<div class="empty">No hay pacientes archivados.</div>';
+}
+async function restorePatient(id){
+  const {error}=await DB().from('patients').update({deleted_at:null,deleted_by:null}).eq('id',id);
   if(error){toast(error.message);return;}
-  await openPatient(data.id);
-  toast('Paciente creado — completá los datos');
+  toast('Paciente recuperado'); loadArchived();
+}
+
+function newPatient(){
+  if(!can.createPatient()){toast('Tu rol no puede crear pacientes');return;}
+  modalOpen('Nuevo paciente',
+    '<div class="grid g2">'+
+      '<div class="field"><label>Apellido *</label><input id="npLast"></div>'+
+      '<div class="field"><label>Nombre *</label><input id="npFirst"></div>'+
+      '<div class="field"><label>Tipo de documento *</label><select id="npDocType"><option value="DNI">DNI</option><option value="LE">Libreta de enrolamiento</option><option value="Pasaporte">Pasaporte</option></select></div>'+
+      '<div class="field"><label>N° de documento *</label><input id="npDoc" inputmode="numeric"></div>'+
+      '<div class="field"><label>Fecha de nacimiento *</label><input id="npBirth" type="date"></div>'+
+      '<div class="field"><label>Teléfono *</label><input id="npPhone"></div>'+
+      '<div class="field full"><label>Obra social / Prepaga *</label><input id="npCoverage"></div>'+
+    '</div>'+
+    '<div id="npDup" class="banner warn hidden" style="margin-top:8px"></div>',
+    'Crear paciente', createPatient);
+}
+async function createPatient(){
+  const last=$('npLast').value.trim(), first=$('npFirst').value.trim(), dtype=$('npDocType').value,
+    doc=$('npDoc').value.trim(), birth=$('npBirth').value, phone=$('npPhone').value.trim(), cov=$('npCoverage').value.trim();
+  const faltan=[];
+  if(!last)faltan.push('apellido'); if(!first)faltan.push('nombre'); if(!doc)faltan.push('documento');
+  if(!birth)faltan.push('fecha de nacimiento'); if(!phone)faltan.push('teléfono'); if(!cov)faltan.push('obra social');
+  if(faltan.length){toast('Faltan datos: '+faltan.join(', '));return false;}
+  const {data:dups}=await DB().from('patients').select('id,full_name,hc_number').eq('doc_id',doc);
+  if(dups&&dups.length){
+    const d=dups[0], box=$('npDup'); box.classList.remove('hidden');
+    box.innerHTML='⚠️ Ya existe un paciente con ese documento: <b>'+esc(d.full_name||'')+'</b> (HC '+(d.hc_number||'—')+').<br>'+
+      '<button class="btn sm" style="margin-top:6px" onclick="modalClose();openPatient(\''+d.id+'\')">Abrir el existente</button> '+
+      '<button class="btn brand sm" style="margin-top:6px" id="npForce">Crear igual (es otro paciente)</button>';
+    $('npForce').onclick=()=>doCreatePatient(last,first,dtype,doc,birth,phone,cov);
+    return false;
+  }
+  await doCreatePatient(last,first,dtype,doc,birth,phone,cov); return true;
+}
+async function doCreatePatient(last,first,dtype,doc,birth,phone,cov){
+  const rec={full_name:last+', '+first, last_name:last, first_name:first, doc_type:dtype, doc_id:doc,
+    birth_date:birth, phone:phone, coverage:cov, created_by:ME.user_id};
+  const {data,error}=await DB().from('patients').insert(rec).select().single();
+  if(error){toast(error.message);return;}
+  modalClose(); await openPatient(data.id); toast('Paciente creado');
 }
 async function openPatient(id){
   const {data,error}=await DB().from('patients').select('*').eq('id',id).single();
   if(error){toast(error.message);return;}
   CUR=data;
-  $('viewList').classList.add('hidden');$('viewTeam').classList.add('hidden');$('viewDetail').classList.remove('hidden');
+  ['viewList','viewTeam','viewAgenda','viewArchived'].forEach(v=>$(v).classList.add('hidden'));
+  $('viewDetail').classList.remove('hidden');
   $('tabAuditBtn').classList.toggle('hidden',!can.director());
-  $('dName').textContent=(CUR.full_name||'(sin nombre)')+'  · HC '+(CUR.hc_number||'—');
-  const bits=[]; if(CUR.birth_date&&edad(CUR.birth_date))bits.push(edad(CUR.birth_date));
-  if(CUR.doc_id)bits.push('Doc. '+CUR.doc_id); if(CUR.base_diagnosis)bits.push(CUR.base_diagnosis); if(CUR.stage)bits.push('Estadio '+CUR.stage);
-  $('dSub').textContent=bits.join(' · ')||'Sin datos cargados';
+  $('btnArchive').classList.toggle('hidden',!can.director());
+  updatePatientHeader();
   setTab('ficha');
 }
+function updatePatientHeader(){
+  $('dName').textContent=(CUR.full_name||'(sin nombre)')+'  · HC '+(CUR.hc_number||'—');
+  const bits=[]; if(CUR.birth_date&&edad(CUR.birth_date))bits.push(edad(CUR.birth_date));
+  if(CUR.doc_id)bits.push((CUR.doc_type||'Doc')+' '+CUR.doc_id);
+  if(CUR.base_diagnosis)bits.push(CUR.base_diagnosis); if(CUR.stage)bits.push('Estadio '+CUR.stage);
+  $('dSub').textContent=bits.join(' · ')||'Sin datos cargados';
+}
 function setTab(t){curTab=t;document.querySelectorAll('.subnav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  const map={ficha:renderFicha,evol:renderEvol,vitc:renderVitc,enf:renderEnf,indic:renderIndic,estudios:renderEstudios,audit:renderAudit};(map[t]||renderFicha)();}
+  const map={ficha:renderFicha,evol:renderEvol,vitc:renderVitc,enf:renderEnf,
+    nutri:function(){renderDiscTab('nutricion');},psico:function(){renderDiscTab('psicooncologia');},
+    indic:renderIndic,estudios:renderEstudios,consent:renderConsent,audit:renderAudit};
+  (map[t]||renderFicha)();}
+async function archivePatient(){
+  if(!can.director())return;
+  if(!confirm('¿Archivar a '+(CUR.full_name||'este paciente')+'? Deja de aparecer en la lista, pero lo recuperás desde "Archivados".'))return;
+  const {error}=await DB().from('patients').update({deleted_at:new Date().toISOString(),deleted_by:ME.user_id}).eq('id',CUR.id);
+  if(error){toast(error.message);return;}
+  toast('Paciente archivado'); goList();
+}
 
 /* ---------- FICHA (historia clínica) ---------- */
 function fld(lbl,key,type){const ro=can.editPatient()?'':'readonly';
@@ -434,9 +542,11 @@ function renderFicha(){
   const c=$('tabContent');
   c.innerHTML=`
   <div class="card"><h3>Datos filiatorios</h3><div class="body"><div class="grid g2">
-    ${fld('Nombre y apellido','full_name')}${fld('Documento','doc_id')}
+    ${fld('Apellido','last_name')}${fld('Nombre','first_name')}
+    ${sel('Tipo de documento','doc_type',[['DNI','DNI'],['LE','Libreta de enrolamiento'],['Pasaporte','Pasaporte']])}
+    ${fld('N° de documento','doc_id')}
     ${sel('Sexo','sex',[['','—'],['F','Femenino'],['M','Masculino'],['X','Otro']])}
-    ${fld('Fecha de nacimiento','birth_date','date')}
+    <div class="field"><label>Fecha de nacimiento</label><input type="date" data-k="birth_date" value="${esc(CUR.birth_date??'')}" ${can.editPatient()?'':'readonly'}><div class="muted" id="ageOut" style="font-size:12px;margin-top:4px"></div></div>
     ${fld('Nacionalidad','nationality')}${fld('Estado civil','marital_status')}
     ${fld('Ocupación','occupation')}${fld('Teléfono','phone')}
     ${fld('Email','email')}${fld('Domicilio','address')}
@@ -470,65 +580,104 @@ function renderFicha(){
 
   <div class="card"><h3>Seguridad para vitamina C</h3><div class="body"><div class="grid g2">
     ${sel('Screening G6PD','g6pd_status',[['no_evaluado','No evaluado'],['normal','Normal'],['deficiente','Deficiente']])}
-    ${sel('Consentimiento HC compartida','consent_shared_hc',[['false','No'],['true','Sí']])}
   </div></div></div>
 
-  ${can.editPatient()?`<div class="savebar">
-     <span class="muted" style="font-size:12px">${CUR.updated_at?'Última edición: '+fmtDT(CUR.updated_at):''}</span>
-     <button class="btn brand" onclick="savePatient()">💾 Guardar historia</button></div>`
-   :`<div class="banner warn">Tu rol puede consultar pero no editar la ficha del paciente.</div>`}
+  ${can.editPatient()
+    ? `<div class="savebar"><span class="muted" id="saveNote" style="font-size:12px">Los cambios se guardan automáticamente</span></div>`
+    : `<div class="banner warn">Tu rol puede consultar pero no editar la ficha del paciente.</div>`}
   <div style="height:20px"></div>`;
+  refreshAge();
+  if(can.editPatient()) wireAutosave();
 }
-async function savePatient(){
-  const upd={updated_by:ME.user_id};
-  $('tabContent').querySelectorAll('[data-k]').forEach(el=>{
-    let v=el.value; if(v==='')v=null;
-    if(el.dataset.k==='consent_shared_hc')v=(v==='true');
-    upd[el.dataset.k]=v;
-  });
+function refreshAge(){const o=$('ageOut'); if(o) o.textContent=(CUR.birth_date&&edad(CUR.birth_date))?('Edad: '+edad(CUR.birth_date)):'';}
+function wireAutosave(){
+  $('tabContent').querySelectorAll('[data-k]').forEach(el=>{ el.addEventListener('change',()=>saveField(el)); });
+}
+async function saveField(el){
+  const key=el.dataset.k; let v=el.value; if(v==='')v=null;
+  const upd={updated_by:ME.user_id}; upd[key]=v;
+  if(key==='first_name'||key==='last_name'){
+    const ln=(key==='last_name'?(v||''):(CUR.last_name||'')), fn=(key==='first_name'?(v||''):(CUR.first_name||''));
+    upd.full_name=(((ln||'')+((ln&&fn)?', ':'')+(fn||'')).trim())||'(sin nombre)';
+  }
   const {data,error}=await DB().from('patients').update(upd).eq('id',CUR.id).select().single();
-  if(error){toast(error.message);return;}
-  CUR=data; toast('Historia guardada');
-  $('dName').textContent=(CUR.full_name||'(sin nombre)')+'  · HC '+(CUR.hc_number||'—');
+  if(error){toast('No se pudo guardar: '+error.message);return;}
+  CUR=data; if(key==='birth_date') refreshAge(); updatePatientHeader();
+  const n=$('saveNote'); if(n){n.textContent='✓ Guardado';n.style.color='var(--ok)';
+    setTimeout(()=>{const s=$('saveNote'); if(s){s.textContent='Los cambios se guardan automáticamente';s.style.color='';}},1400);}
 }
 
 /* ---------- EVOLUCIONES (notes) ---------- */
+let NOTE_DISC=null, EDIT_NOTE_ID=null, CUR_NOTES={};
+const DISC_TO_ROLE={oncologia:'oncologo',enfermeria:'enfermeria',nutricion:'nutricion',psicooncologia:'psicooncologia',ejercicio:'ejercicio'};
+function noteEditable(n){ return n.author_id===ME.user_id && (Date.now()-new Date(n.created_at).getTime() < 24*3600*1000); }
+function noteCard(n){
+  CUR_NOTES[n.id]=n;
+  const a=DIR[n.author_id]; const who=a?esc(a.full_name)+' · '+(ROLE_LABEL[a.role]||''):'Profesional';
+  const editable=noteEditable(n);
+  const edit=editable?'<button class="btn sm" style="margin-left:auto" onclick="openEditNote(\''+n.id+'\')">Editar</button>':'';
+  const hint=editable?'<span class="muted" style="font-size:11px">editable por 24h</span>':'';
+  const edited=(n.updated_at&&n.updated_at!==n.created_at)?' · editada':'';
+  return '<div class="note '+(n.is_confidential?'conf':'')+'">'+
+    '<div class="hd"><span class="who">'+who+'</span><span class="dt">'+fmtDT(n.created_at)+edited+'</span></div>'+
+    '<div style="margin-bottom:6px;display:flex;align-items:center;gap:6px"><span class="badge disc">'+(DISC_LABEL[n.discipline]||n.discipline)+'</span>'+
+    (n.is_confidential?'<span class="badge conf">Confidencial</span>':'')+hint+edit+'</div>'+
+    '<div class="tx">'+esc(n.content)+'</div></div>';
+}
 async function renderEvol(){
   const c=$('tabContent');c.innerHTML='<div class="loading">Cargando evoluciones…</div>';
   const {data,error}=await DB().from('notes').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
   if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
-  const list=(data||[]).map(n=>{
-    const a=DIR[n.author_id]; const who=a?`${esc(a.full_name)} · ${ROLE_LABEL[a.role]||''}`:'Profesional';
-    return `<div class="note ${n.is_confidential?'conf':''}">
-      <div class="hd"><span class="who">${who}</span><span class="dt">${fmtDT(n.created_at)}</span></div>
-      <div style="margin-bottom:6px">
-        <span class="badge disc">${DISC_LABEL[n.discipline]||n.discipline}</span>
-        ${n.is_confidential?'<span class="badge conf">Confidencial</span>':''}
-      </div>
-      <div class="tx">${esc(n.content)}</div></div>`;
-  }).join('') || '<div class="empty">Sin evoluciones registradas.</div>';
-  c.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-      <button class="btn brand" onclick="openNoteModal()">＋ Nueva evolución</button></div>
-    <div class="banner warn">Las evoluciones quedan firmadas con tu nombre y fecha, y no se pueden borrar (trazabilidad).</div>
-    ${list}<div style="height:20px"></div>`;
+  CUR_NOTES={};
+  const list=(data||[]).map(noteCard).join('')||'<div class="empty">Sin evoluciones registradas.</div>';
+  c.innerHTML='<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn brand" onclick="openNoteModal()">＋ Nueva evolución</button></div>'+
+    '<div class="banner warn">Las evoluciones se firman con tu nombre y fecha. Se pueden editar hasta 24h; después quedan bloqueadas.</div>'+
+    list+'<div style="height:20px"></div>';
 }
-function openNoteModal(){
-  const confRow=can.confidential()?`<div class="field"><label>Confidencialidad</label>
-    <select id="nConf"><option value="false">Normal (todo el equipo)</option><option value="true">Confidencial (solo psicooncología y dirección)</option></select></div>`:'';
-  modalOpen('Nueva evolución',
-    `<div class="field"><label>Disciplina</label><input value="${DISC_LABEL[ROLE_TO_DISC[ME.role]]}" disabled></div>
-     ${confRow}
-     <div class="field"><label>Nota de evolución</label><textarea id="nText" style="min-height:130px" placeholder="Evolución, hallazgos, indicaciones…"></textarea></div>`,
+async function renderDiscTab(disc){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
+  const {data,error}=await DB().from('notes').select('*').eq('patient_id',CUR.id).eq('discipline',disc).order('created_at',{ascending:false});
+  if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  CUR_NOTES={};
+  const list=(data||[]).map(noteCard).join('')||'<div class="empty">Sin registros de '+(DISC_LABEL[disc]||disc)+' todavía.</div>';
+  const canAdd=(ME.role===DISC_TO_ROLE[disc])||can.director();
+  const head=canAdd
+    ? '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn brand" onclick="openNoteModal(\''+disc+'\')">＋ Agregar registro de '+(DISC_LABEL[disc]||disc)+'</button></div>'
+    : '<div class="banner warn">Podés ver esta sección, pero solo '+(DISC_LABEL[disc]||disc)+' o dirección puede cargar.</div>';
+  c.innerHTML=head+list+'<div style="height:20px"></div>';
+}
+function openNoteModal(disc){
+  NOTE_DISC=disc||ROLE_TO_DISC[ME.role]; EDIT_NOTE_ID=null;
+  const isPsico=NOTE_DISC==='psicooncologia';
+  const confRow=(isPsico&&can.confidential())?'<div class="field"><label>Confidencialidad</label><select id="nConf"><option value="false">Normal (todo el equipo)</option><option value="true">Confidencial (solo psicooncología y dirección)</option></select></div>':'';
+  modalOpen('Nueva evolución — '+(DISC_LABEL[NOTE_DISC]||NOTE_DISC),
+    confRow+'<div class="field"><label>Nota</label><textarea id="nText" style="min-height:130px" placeholder="Evolución, hallazgos, indicaciones…"></textarea></div>',
     'Agregar', addNote);
 }
+function openEditNote(id){
+  const n=CUR_NOTES[id]; if(!n){toast('Nota no encontrada');return;}
+  if(!noteEditable(n)){toast('Ya no se puede editar (pasaron 24 horas)');return;}
+  EDIT_NOTE_ID=id; NOTE_DISC=n.discipline;
+  modalOpen('Editar evolución',
+    '<p class="muted" style="font-size:12px;margin:0 0 6px">Se puede editar solo dentro de las 24h de creada.</p>'+
+    '<div class="field"><label>Nota</label><textarea id="nText" style="min-height:130px">'+esc(n.content)+'</textarea></div>',
+    'Guardar', addNote);
+}
 async function addNote(){
-  const txt=$('nText').value.trim(); if(!txt){toast('Escribí la nota');return false;}
-  const rec={patient_id:CUR.id, discipline:ROLE_TO_DISC[ME.role], content:txt,
-    author_id:ME.user_id, created_by:ME.user_id,
-    is_confidential: $('nConf')? $('nConf').value==='true' : false};
-  const {error}=await DB().from('notes').insert(rec);
-  if(error){toast(error.message);return false;}
-  toast('Evolución agregada'); renderEvol(); return true;
+  const txt=($('nText').value||'').trim(); if(!txt){toast('Escribí la nota');return false;}
+  if(EDIT_NOTE_ID){
+    const {error}=await DB().from('notes').update({content:txt}).eq('id',EDIT_NOTE_ID);
+    if(error){toast(error.message.indexOf('policy')>=0?'Ya no se puede editar (pasaron 24h)':error.message);return false;}
+    toast('Evolución actualizada');
+  }else{
+    const rec={patient_id:CUR.id, discipline:NOTE_DISC||ROLE_TO_DISC[ME.role], content:txt,
+      author_id:ME.user_id, created_by:ME.user_id, is_confidential: $('nConf')? $('nConf').value==='true' : false};
+    const {error}=await DB().from('notes').insert(rec);
+    if(error){toast(error.message);return false;}
+    toast('Evolución agregada');
+  }
+  if(curTab==='nutri') renderDiscTab('nutricion'); else if(curTab==='psico') renderDiscTab('psicooncologia'); else renderEvol();
+  return true;
 }
 
 /* ---------- VITAMINA C ---------- */
@@ -621,16 +770,33 @@ async function addIndic(){
 }
 
 /* ---------- AUDITORÍA ---------- */
+const TABLE_LABEL={patients:'Ficha del paciente',notes:'Evolución',vitals:'Signos vitales',medications:'Medicación',vitc_administrations:'Vitamina C',indications:'Indicación',consents:'Consentimiento',attachments:'Estudio/adjunto',appointments:'Turno'};
+const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',g6pd_status:'G6PD',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma'};
+function auditDiff(a){
+  if(a.action!=='UPDATE'||!a.old_data||!a.new_data) return '';
+  const o=a.old_data,n=a.new_data,changed=[];
+  Object.keys(n).forEach(k=>{
+    if(k==='updated_at'||k==='updated_by')return;
+    if(JSON.stringify(o[k])!==JSON.stringify(n[k])){
+      const ov=(o[k]===null||o[k]===undefined||o[k]==='')?'—':String(o[k]);
+      const nv=(n[k]===null||n[k]===undefined||n[k]==='')?'—':String(n[k]);
+      changed.push('<b>'+(FIELD_LABEL[k]||k)+':</b> '+esc(ov)+' → '+esc(nv));
+    }
+  });
+  return changed.length?'<div class="muted" style="font-size:12px;margin-top:5px;line-height:1.6">'+changed.join('<br>')+'</div>':'';
+}
 async function renderAudit(){
   const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
-  const {data,error}=await DB().from('audit_log').select('*').eq('row_id',CUR.id).order('at',{ascending:false}).limit(200);
+  const {data,error}=await DB().from('audit_log').select('*').eq('patient_id',CUR.id).order('at',{ascending:false}).limit(400);
   if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  const ACT={INSERT:'Creó',UPDATE:'Modificó',DELETE:'Eliminó'};
   const rows=(data||[]).map(a=>{
     const who=DIR[a.actor];
-    return `<div class="vitc-row"><b>${a.action}</b> · ${esc(a.table_name)}<br>
-      <span class="muted" style="font-size:12px">${fmtDT(a.at)} · ${who?esc(who.full_name):(a.actor||'sistema')} ${a.actor_role?'('+ (ROLE_LABEL[a.actor_role]||a.actor_role) +')':''}</span></div>`;
-  }).join('')||'<div class="empty">Sin registros de auditoría para esta ficha.</div>';
-  c.innerHTML=`<div class="banner warn">Registro de cambios de la ficha del paciente (visible solo para dirección).</div>${rows}<div style="height:20px"></div>`;
+    return '<div class="vitc-row"><b>'+(ACT[a.action]||a.action)+'</b> · '+(TABLE_LABEL[a.table_name]||esc(a.table_name))+
+      '<br><span class="muted" style="font-size:12px">'+fmtDT(a.at)+' · '+(who?esc(who.full_name):(a.actor||'sistema'))+(a.actor_role?' ('+(ROLE_LABEL[a.actor_role]||a.actor_role)+')':'')+'</span>'+
+      auditDiff(a)+'</div>';
+  }).join('')||'<div class="empty">Sin registros de auditoría para este paciente todavía.</div>';
+  c.innerHTML='<div class="banner warn">Auditoría del paciente: todo lo que se creó o modificó, con el detalle de los campos que cambiaron (solo dirección).</div>'+rows+'<div style="height:20px"></div>';
 }
 
 /* ---------- EQUIPO ---------- */
@@ -673,15 +839,23 @@ async function renderEstudios(){
   const {data,error}=await DB().from('attachments').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
   if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
   const rows=(data||[]).map(a=>{const by=DIR[a.uploaded_by];
-    return `<div class="vitc-row"><b>${esc(a.title||'Archivo')}</b>${a.discipline?' · '+esc(DISC_LABEL[a.discipline]||a.discipline):''}<br>
-      <span class="muted" style="font-size:12px">${fmtDT(a.created_at)} · ${by?esc(by.full_name):'—'}</span>
-      <button class="btn sm" style="margin-left:8px" onclick="verEstudio('${(a.storage_path||'').replace(/'/g,'')}')">Ver / descargar</button></div>`;
-  }).join('')||'<div class="empty">Sin estudios adjuntos.</div>';
-  c.innerHTML=`<div class="card"><h3>Subir estudio</h3><div class="body">
-    <div class="field"><label>Título / descripción</label><input id="atTitle" placeholder="Ej: Biopsia mama 03/2026, TAC, laboratorio…"></div>
-    <div class="field"><label>Archivo (PDF, imagen, etc.)</label><input id="atFile" type="file"></div>
-    <div style="text-align:right"><button class="btn brand" id="atBtn" onclick="uploadEstudio()">⬆ Subir estudio</button></div>
-  </div></div>${rows}<div style="height:20px"></div>`;
+    const ver=a.url
+      ? '<a class="btn sm" style="margin-left:8px" href="'+esc(a.url)+'" target="_blank" rel="noopener">Abrir link ↗</a>'
+      : '<button class="btn sm" style="margin-left:8px" onclick="verEstudio(\''+(a.storage_path||'').replace(/'/g,'')+'\')">Ver / descargar</button>';
+    const tag=a.url?'<span class="badge disc">Link</span> ':'';
+    return '<div class="vitc-row">'+tag+'<b>'+esc(a.title||'Estudio')+'</b>'+(a.discipline?' · '+esc(DISC_LABEL[a.discipline]||a.discipline):'')+ver+
+      '<br><span class="muted" style="font-size:12px">'+fmtDT(a.created_at)+' · '+(by?esc(by.full_name):'—')+'</span></div>';
+  }).join('')||'<div class="empty">Sin estudios cargados.</div>';
+  c.innerHTML='<div class="card"><h3>Subir archivo</h3><div class="body">'+
+      '<div class="field"><label>Título / descripción</label><input id="atTitle" placeholder="Ej: Biopsia mama 03/2026, TAC, laboratorio…"></div>'+
+      '<div class="field"><label>Archivo (PDF, imagen, etc.)</label><input id="atFile" type="file"></div>'+
+      '<div style="text-align:right"><button class="btn brand" id="atBtn" onclick="uploadEstudio()">⬆ Subir archivo</button></div>'+
+    '</div></div>'+
+    '<div class="card"><h3>Agregar link</h3><div class="body">'+
+      '<div class="field"><label>Título</label><input id="lkTitle" placeholder="Ej: TAC en visor online, carpeta de Drive…"></div>'+
+      '<div class="field"><label>Link (URL)</label><input id="lkUrl" placeholder="https://…"></div>'+
+      '<div style="text-align:right"><button class="btn brand" onclick="addEstudioLink()">🔗 Guardar link</button></div>'+
+    '</div></div>'+rows+'<div style="height:20px"></div>';
 }
 async function uploadEstudio(){
   const f=$('atFile').files[0]; if(!f){toast('Elegí un archivo');return;}
@@ -692,9 +866,54 @@ async function uploadEstudio(){
   const {error:e1}=await SB.storage.from('estudios').upload(path,f,{upsert:false});
   if(e1){toast(e1.message);$('atBtn').disabled=false;return;}
   const {error:e2}=await DB().from('attachments').insert({patient_id:CUR.id, title:($('atTitle').value||f.name),
-    discipline:ROLE_TO_DISC[ME.role], storage_path:path, uploaded_by:ME.user_id});
+    discipline:ROLE_TO_DISC[ME.role], storage_path:path, kind:'archivo', uploaded_by:ME.user_id});
   if(e2){toast(e2.message);$('atBtn').disabled=false;return;}
   toast('Estudio subido'); renderEstudios();
+}
+async function addEstudioLink(){
+  const t=($('lkTitle').value||'').trim(), u=($('lkUrl').value||'').trim();
+  if(!u){toast('Pegá el link');return;}
+  if(!t){toast('Ponele un título al link');return;}
+  let url=u; if(!/^https?:\/\//i.test(url)) url='https://'+url;
+  const {error}=await DB().from('attachments').insert({patient_id:CUR.id, title:t, url:url, kind:'link',
+    discipline:ROLE_TO_DISC[ME.role], uploaded_by:ME.user_id});
+  if(error){toast(error.message);return;}
+  toast('Link agregado'); renderEstudios();
+}
+/* ---------- CONSENTIMIENTOS ---------- */
+async function renderConsent(){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
+  const {data,error}=await DB().from('consents').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
+  if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  const KIND={hc_compartida:'Historia clínica compartida', vitamina_c:'Vitamina C'};
+  const rows=(data||[]).map(x=>{const by=DIR[x.created_by];
+    const ver=x.storage_path?'<button class="btn sm" style="margin-left:8px" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver adjunto</button>':
+              (x.document_url?'<a class="btn sm" style="margin-left:8px" href="'+esc(x.document_url)+'" target="_blank" rel="noopener">Ver enlace ↗</a>':'');
+    return '<div class="vitc-row"><b>Consentimiento: '+(KIND[x.kind]||esc(x.kind))+'</b>'+(x.signed_at?' · firmado '+fmtDate(x.signed_at):'')+ver+
+      '<br><span class="muted" style="font-size:12px">'+fmtDT(x.created_at)+' · '+(by?esc(by.full_name):'—')+(x.notes?' · '+esc(x.notes):'')+'</span></div>';
+  }).join('')||'<div class="empty">Sin consentimientos registrados.</div>';
+  c.innerHTML='<div class="card"><h3>Registrar consentimiento</h3><div class="body">'+
+      '<div class="grid g2">'+
+        '<div class="field"><label>Tipo</label><select id="coKind"><option value="hc_compartida">Consentimiento de historia clínica compartida</option><option value="vitamina_c">Consentimiento de vitamina C</option></select></div>'+
+        '<div class="field"><label>Fecha de firma</label><input id="coDate" type="date"></div>'+
+      '</div>'+
+      '<div class="field"><label>Adjuntar consentimiento firmado (PDF/imagen) — opcional</label><input id="coFile" type="file"></div>'+
+      '<div class="field"><label>Observación (opcional)</label><input id="coNotes"></div>'+
+      '<div style="text-align:right"><button class="btn brand" id="coBtn" onclick="addConsent()">Guardar consentimiento</button></div>'+
+    '</div></div>'+rows+'<div style="height:20px"></div>';
+}
+async function addConsent(){
+  $('coBtn').disabled=true;
+  let sp=null; const f=$('coFile').files[0];
+  if(f){ if(f.size>25*1024*1024){toast('Máximo 25 MB');$('coBtn').disabled=false;return;}
+    const clean=f.name.replace(/[^a-zA-Z0-9._-]/g,'_'); sp=CUR.id+'/consent_'+Date.now()+'_'+clean;
+    const {error:e1}=await SB.storage.from('estudios').upload(sp,f,{upsert:false});
+    if(e1){toast(e1.message);$('coBtn').disabled=false;return;} }
+  const rec={patient_id:CUR.id, kind:$('coKind').value, signed_at:$('coDate').value||null,
+    storage_path:sp, notes:($('coNotes').value||null), created_by:ME.user_id};
+  const {error}=await DB().from('consents').insert(rec);
+  if(error){toast(error.message);$('coBtn').disabled=false;return;}
+  toast('Consentimiento guardado'); renderConsent();
 }
 async function verEstudio(path){
   const {data,error}=await SB.storage.from('estudios').createSignedUrl(path,120);
@@ -726,7 +945,7 @@ async function printPatient(){
   <h1>REVIGEN — Historia Clínica</h1>
   <div class="meta">HC N° ${CUR.hc_number||'—'} · Emitido ${fmtDT(new Date().toISOString())} · por ${esc(ME.full_name)} (${ROLE_LABEL[ME.role]})</div>
   ${sec('Datos filiatorios',
-    row('Nombre y apellido',CUR.full_name)+row('Documento',CUR.doc_id)+row('Sexo',CUR.sex)+
+    row('Nombre y apellido',CUR.full_name)+row('Documento',((CUR.doc_type||'')+' '+(CUR.doc_id||'')).trim())+row('Sexo',CUR.sex)+
     row('Nacimiento',CUR.birth_date?fmt(CUR.birth_date)+' ('+edad(CUR.birth_date)+')':'')+
     row('Nacionalidad',CUR.nationality)+row('Estado civil',CUR.marital_status)+row('Ocupación',CUR.occupation)+
     row('Teléfono',CUR.phone)+row('Email',CUR.email)+row('Domicilio',CUR.address)+row('Localidad',CUR.city)+row('Provincia',CUR.province)+
@@ -740,7 +959,7 @@ async function printPatient(){
     row('Oncólogo tratante',CUR.treating_oncologist)+row('Estadificación',CUR.stage)+
     row('Enfermedad actual',CUR.current_illness)+row('Biopsia y protocolo',CUR.biopsy_protocol)+row('Histología',CUR.histology))}
   ${sec('Tratamiento y plan', row('Tratamiento',CUR.treatment)+row('Plan',CUR.care_plan))}
-  ${sec('Seguridad', row('G6PD',G6PD_LABEL[CUR.g6pd_status||'no_evaluado'])+row('Consentimiento HC compartida',CUR.consent_shared_hc?'Sí':'No'))}
+  ${sec('Seguridad', row('G6PD',G6PD_LABEL[CUR.g6pd_status||'no_evaluado']))}
   <h3>Evoluciones</h3>${notesHtml}
   <h3>Administraciones de vitamina C</h3>${vitcHtml}
   <p class="noprint" style="text-align:center;margin-top:22px"><button onclick="window.print()">Imprimir / Guardar como PDF</button></p>
@@ -805,6 +1024,150 @@ async function addMed(){
   var res=await DB().from('medications').insert(rec); if(res.error){toast(res.error.message);return;}
   toast('Medicación registrada'); renderEnf();
 }
+/* ---------- MI CUENTA + 2FA ---------- */
+function openAccount(){
+  modalOpen('Mi cuenta','<div id="accBody" class="loading" style="padding:20px">Cargando…</div>','Cerrar',()=>true);
+  renderAccount();
+}
+async function renderAccount(){
+  let hasTotp=false, totpId=null;
+  try{ const {data}=await SB.auth.mfa.listFactors();
+    const t=(data&&data.totp&&data.totp[0])||null; if(t){hasTotp=true;totpId=t.id;} }catch(e){}
+  const el=$('accBody'); if(!el) return;
+  el.className='';
+  el.innerHTML=
+    '<div style="margin-bottom:6px"><b>Datos</b><div class="muted" style="font-size:13px;margin-top:4px">'+esc(ME.full_name||'')+' · '+(ROLE_LABEL[ME.role]||ME.role)+'<br>'+esc(ME.email||'')+'</div></div>'+
+    '<hr style="border:none;border-top:1px solid var(--line);margin:12px 0">'+
+    '<div style="margin-bottom:6px"><b>Contraseña</b><br>'+
+      '<button class="btn sm" style="margin-top:7px" onclick="openChangePass()">Cambiar contraseña</button></div>'+
+    '<hr style="border:none;border-top:1px solid var(--line);margin:12px 0">'+
+    '<div><b>Verificación en dos pasos (2FA)</b>'+
+      (hasTotp
+        ? '<div class="ok" style="margin:6px 0;font-weight:600">✓ Activada</div><button class="btn sm dg" onclick="disableMfa(\''+totpId+'\')">Desactivar 2FA</button>'
+        : '<p class="muted" style="font-size:12px;margin:6px 0">Suma una capa extra de seguridad: al ingresar te va a pedir un código de una app como Google Authenticator o Authy. Muy recomendado para el director.</p><button class="btn brand sm" onclick="startEnrollMfa()">Activar 2FA</button>')+
+    '</div>';
+}
+async function startEnrollMfa(){
+  try{ const {data:f}=await SB.auth.mfa.listFactors();
+    for(const fac of ((f&&f.all)||[])){ if(fac.status!=='verified'){ await SB.auth.mfa.unenroll({factorId:fac.id}); } }
+  }catch(e){}
+  const {data,error}=await SB.auth.mfa.enroll({factorType:'totp',friendlyName:'REVIGEN'});
+  if(error){toast(error.message);return;}
+  const qr=data.totp.qr_code||'', secret=data.totp.secret||'', fid=data.id;
+  const qrHtml = qr.indexOf('<svg')===0
+    ? '<div style="width:190px;height:190px;margin:0 auto">'+qr+'</div>'
+    : '<img src="'+qr+'" style="width:190px;height:190px;display:block;margin:0 auto">';
+  modalOpen('Activar 2FA',
+    '<p class="muted" style="font-size:13px;margin:0 0 8px">1) Escaneá este código con Google Authenticator, Authy o Microsoft Authenticator:</p>'+
+    '<div style="background:#fff;padding:10px;border-radius:10px;border:1px solid var(--line)">'+qrHtml+'</div>'+
+    '<p class="muted" style="font-size:12px;margin:8px 0 0">¿No podés escanear? Cargá esta clave manualmente:<br><code style="user-select:all;font-size:12px;word-break:break-all">'+esc(secret)+'</code></p>'+
+    '<div class="field" style="margin-top:10px"><label>2) Ingresá el código de 6 dígitos</label><input id="enrCode" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:.4em;font-size:20px"></div>',
+    'Confirmar', async ()=>{
+      const code=($('enrCode').value||'').trim();
+      if(code.length<6){toast('Ingresá los 6 dígitos');return false;}
+      const {data:ch,error:e1}=await SB.auth.mfa.challenge({factorId:fid});
+      if(e1){toast(e1.message);return false;}
+      const {error:e2}=await SB.auth.mfa.verify({factorId:fid,challengeId:ch.id,code});
+      if(e2){toast('Código incorrecto, probá de nuevo');return false;}
+      toast('2FA activada correctamente'); return true;
+    });
+}
+async function disableMfa(fid){
+  if(!confirm('¿Desactivar la verificación en dos pasos?')) return;
+  const {error}=await SB.auth.mfa.unenroll({factorId:fid});
+  if(error){toast(error.message);return;}
+  toast('2FA desactivada'); modalClose();
+}
+async function promptMfaChallenge(){
+  let totp=null;
+  try{ const {data}=await SB.auth.mfa.listFactors(); totp=(data&&data.totp&&data.totp[0])||null; }catch(e){}
+  if(!totp){ location.reload(); return; }
+  modalOpen('Verificación en dos pasos',
+    '<p class="muted" style="font-size:13px;margin:0 0 4px">Ingresá el código de 6 dígitos de tu app de autenticación.</p>'+
+    '<div class="field"><input id="mfaCode" inputmode="numeric" maxlength="6" placeholder="000000" style="text-align:center;letter-spacing:.4em;font-size:20px"></div>',
+    'Verificar', async ()=>{
+      const code=($('mfaCode').value||'').trim();
+      if(code.length<6){toast('Ingresá los 6 dígitos');return false;}
+      const {data:ch,error:e1}=await SB.auth.mfa.challenge({factorId:totp.id});
+      if(e1){toast(e1.message);return false;}
+      const {error:e2}=await SB.auth.mfa.verify({factorId:totp.id,challengeId:ch.id,code});
+      if(e2){toast('Código incorrecto');return false;}
+      await loadMe(); return true;
+    });
+  // si cierran sin verificar, vuelven al login
+  const bg=$('modal'); bg.dataset.mfa='1';
+}
+
+/* ---------- AGENDA ---------- */
+function fmtDTShort(d){ if(!d)return ''; const x=new Date(d);
+  return x.toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+x.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
+function gcalLink(ap, patientName){
+  const s=new Date(ap.starts_at), e=ap.ends_at?new Date(ap.ends_at):new Date(new Date(ap.starts_at).getTime()+30*60000);
+  const fmt=d=>d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  const text=encodeURIComponent('REVIGEN · '+(ap.title||'Turno')+' — '+(patientName||''));
+  const details=encodeURIComponent((ap.discipline?('Disciplina: '+(DISC_LABEL[ap.discipline]||ap.discipline)+'\n'):'')+(ap.notes||''));
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+text+'&dates='+fmt(s)+'/'+fmt(e)+'&details='+details;
+}
+async function loadAgenda(){
+  const el=$('agendaList');el.innerHTML='<div class="loading">Cargando agenda…</div>';
+  const {data,error}=await DB().from('appointments').select('*').order('starts_at',{ascending:true});
+  if(error){el.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  const pids=[...new Set((data||[]).map(a=>a.patient_id))]; let pmap={};
+  if(pids.length){ const {data:ps}=await DB().from('patients').select('id,full_name,hc_number').in('id',pids); (ps||[]).forEach(p=>pmap[p.id]=p); }
+  const STAT={programado:'Programado',asistio:'Asistió',ausente:'Ausente',cancelado:'Cancelado'};
+  const STATC={programado:'#eef2e4',asistio:'#dcfce7',ausente:'#fee2e2',cancelado:'#eeeeee'};
+  const rows=(data||[]).map(a=>{
+    const p=pmap[a.patient_id], pn=p?(p.full_name+' (HC '+(p.hc_number||'—')+')'):'Paciente';
+    const prof=DIR[a.professional_id];
+    return '<div class="vitc-row"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">'+
+      '<div><b>'+fmtDTShort(a.starts_at)+'</b> · '+esc(pn)+(a.discipline?' · '+(DISC_LABEL[a.discipline]||a.discipline):'')+
+        (a.title?'<br>'+esc(a.title):'')+
+        '<br><span class="badge disc" style="background:'+STATC[a.status]+'">'+STAT[a.status]+'</span>'+
+        (a.absence_reason?' <span class="muted" style="font-size:12px">· '+esc(a.absence_reason)+'</span>':'')+
+        (prof?' <span class="muted" style="font-size:12px">· '+esc(prof.full_name)+'</span>':'')+'</div>'+
+      '<div style="text-align:right;white-space:nowrap">'+
+        '<button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'asistio\')">Asistió</button> '+
+        '<button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'ausente\')">Ausente</button><br>'+
+        '<a class="btn sm" style="margin-top:6px;display:inline-block" href="'+gcalLink(a,p?p.full_name:'')+'" target="_blank" rel="noopener">＋ Google Calendar</a>'+
+      '</div></div></div>';
+  }).join('')||'<div class="empty">No hay turnos cargados.</div>';
+  el.innerHTML=rows;
+}
+async function setApptStatus(id,st){
+  let reason=null;
+  if(st==='ausente'){ reason=prompt('Motivo de la ausencia (opcional):'); if(reason==='')reason=null; }
+  const {error}=await DB().from('appointments').update({status:st, absence_reason:reason, updated_by:ME.user_id}).eq('id',id);
+  if(error){toast(error.message);return;}
+  toast(st==='asistio'?'Marcado: asistió':'Marcado: ausente'); loadAgenda();
+}
+async function openApptModal(){
+  const {data:ps}=await DB().from('patients').select('id,full_name,hc_number').is('deleted_at',null).order('full_name');
+  const opts=(ps||[]).map(p=>'<option value="'+p.id+'">'+esc(p.full_name||'(sin nombre)')+' — HC '+(p.hc_number||'—')+'</option>').join('');
+  const profOpts=Object.keys(DIR).map(uid=>{const s=DIR[uid];return '<option value="'+uid+'" '+(uid===ME.user_id?'selected':'')+'>'+esc(s.full_name||'')+'</option>';}).join('');
+  const discOpts=Object.keys(DISC_LABEL).map(d=>'<option value="'+d+'" '+(ROLE_TO_DISC[ME.role]===d?'selected':'')+'>'+DISC_LABEL[d]+'</option>').join('');
+  if(!opts){toast('Primero cargá un paciente');return;}
+  modalOpen('Nuevo turno',
+    '<div class="field"><label>Paciente *</label><select id="apPatient">'+opts+'</select></div>'+
+    '<div class="grid g2">'+
+      '<div class="field"><label>Fecha y hora *</label><input id="apStart" type="datetime-local"></div>'+
+      '<div class="field"><label>Disciplina</label><select id="apDisc">'+discOpts+'</select></div>'+
+    '</div>'+
+    '<div class="field"><label>Profesional</label><select id="apProf">'+profOpts+'</select></div>'+
+    '<div class="field"><label>Título / motivo</label><input id="apTitle" placeholder="Ej: Infusión vitamina C, control, entrevista…"></div>'+
+    '<div class="field"><label>Observaciones</label><input id="apNotes"></div>',
+    'Crear turno', createAppt);
+}
+async function createAppt(){
+  const pid=$('apPatient').value, start=$('apStart').value;
+  if(!pid){toast('Elegí un paciente');return false;}
+  if(!start){toast('Elegí fecha y hora');return false;}
+  const rec={patient_id:pid, starts_at:new Date(start).toISOString(), discipline:$('apDisc').value||null,
+    professional_id:$('apProf').value||null, title:$('apTitle').value||null, notes:$('apNotes').value||null, created_by:ME.user_id};
+  const {error}=await DB().from('appointments').insert(rec);
+  if(error){toast(error.message);return false;}
+  toast('Turno creado'); loadAgenda(); return true;
+}
+
 setAuthMode('login');
 SB.auth.getSession().then(({data})=>{ if(data.session) loadMe(); else show('viewAuth'); });
 </script>
