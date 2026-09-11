@@ -286,10 +286,10 @@ const SUPABASE_KEY = 'sb_publishable_V4qGJGi_WOaX6pTjDuRMbw_R4w9agYT';
 const SB = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {auth:{persistSession:true, autoRefreshToken:true}});
 const DB = () => SB.schema('clinica');
 
-const ROLE_LABEL = {director_medico:'Director médico', oncologo:'Médico oncólogo', enfermeria:'Enfermería',
+const ROLE_LABEL = {admin:'Admin', director_medico:'Director médico', oncologo:'Médico oncólogo', enfermeria:'Enfermería',
   nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
 const DISC_LABEL = {oncologia:'Oncología', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Act. física'};
-const ROLE_TO_DISC = {director_medico:'oncologia', oncologo:'oncologia', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
+const ROLE_TO_DISC = {admin:'oncologia', director_medico:'oncologia', oncologo:'oncologia', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
 const G6PD_LABEL = {no_evaluado:'G6PD no evaluado', normal:'G6PD normal', deficiente:'G6PD deficiente'};
 
 let ME=null, DIR={}, PATIENTS=[], CUR=null, authMode='login', curTab='ficha';
@@ -304,12 +304,12 @@ function edad(d){if(!d)return '';const b=new Date(d);if(isNaN(b))return '';let a
 
 // permisos
 const can = {
-  createPatient:()=>['director_medico','oncologo','enfermeria'].includes(ME.role),
-  editPatient:()=>['director_medico','oncologo','enfermeria'].includes(ME.role),
-  indicate:()=>['director_medico','oncologo'].includes(ME.role),
-  vitc:()=>['enfermeria','director_medico'].includes(ME.role),
-  confidential:()=>['psicooncologia','director_medico'].includes(ME.role),
-  director:()=>ME.role==='director_medico'
+  createPatient:()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),
+  editPatient:()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),
+  indicate:()=>['admin','director_medico','oncologo'].includes(ME.role),
+  vitc:()=>['admin','enfermeria','director_medico'].includes(ME.role),
+  confidential:()=>['admin','psicooncologia','director_medico'].includes(ME.role),
+  director:()=>['admin','director_medico'].includes(ME.role)
 };
 
 /* ---------- AUTH ---------- */
@@ -578,6 +578,10 @@ function renderFicha(){
     ${fld('Plan','care_plan','textarea')}
   </div></div></div>
 
+  <div class="card"><h3>Comentarios</h3><div class="body"><div class="grid g2">
+    ${fld('Comentarios varios (lo que no entra en otro campo)','comentarios','textarea')}
+  </div></div></div>
+
   <div class="card"><h3>Seguridad para vitamina C</h3><div class="body"><div class="grid g2">
     ${sel('Screening G6PD','g6pd_status',[['no_evaluado','No evaluado'],['normal','Normal'],['deficiente','Deficiente']])}
   </div></div></div>
@@ -771,7 +775,7 @@ async function addIndic(){
 
 /* ---------- AUDITORÍA ---------- */
 const TABLE_LABEL={patients:'Ficha del paciente',notes:'Evolución',vitals:'Signos vitales',medications:'Medicación',vitc_administrations:'Vitamina C',indications:'Indicación',consents:'Consentimiento',attachments:'Estudio/adjunto',appointments:'Turno'};
-const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',g6pd_status:'G6PD',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma'};
+const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',comentarios:'Comentarios',g6pd_status:'G6PD',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma'};
 function auditDiff(a){
   if(a.action!=='UPDATE'||!a.old_data||!a.new_data) return '';
   const o=a.old_data,n=a.new_data,changed=[];
@@ -959,6 +963,7 @@ async function printPatient(){
     row('Oncólogo tratante',CUR.treating_oncologist)+row('Estadificación',CUR.stage)+
     row('Enfermedad actual',CUR.current_illness)+row('Biopsia y protocolo',CUR.biopsy_protocol)+row('Histología',CUR.histology))}
   ${sec('Tratamiento y plan', row('Tratamiento',CUR.treatment)+row('Plan',CUR.care_plan))}
+  ${sec('Comentarios', row('Comentarios',CUR.comentarios))}
   ${sec('Seguridad', row('G6PD',G6PD_LABEL[CUR.g6pd_status||'no_evaluado']))}
   <h3>Evoluciones</h3>${notesHtml}
   <h3>Administraciones de vitamina C</h3>${vitcHtml}
