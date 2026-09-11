@@ -176,7 +176,7 @@
       </div>
       <div id="auErr" class="err"></div>
       <p id="signupHint" class="muted hidden" style="font-size:12px;margin:12px 2px 0">
-        El primer registro queda como <b>Director médico</b> y podrá aprobar al resto del equipo. Los demás quedan pendientes hasta que el director los active.
+        El primer registro queda como <b>Admin</b> y podrá autorizar al resto del equipo. Los demás quedan pendientes hasta que un Admin los active.
       </p>
     </div>
   </div>
@@ -187,7 +187,7 @@
   <div class="auth-card">
     <div class="auth-head"><div class="rv-logo" style="width:210px;aspect-ratio:3.457;margin:0 auto 12px"></div><h1>Cuenta pendiente</h1></div>
     <div class="auth-body" style="text-align:center">
-      <p>Tu cuenta fue creada correctamente. <br>Está <b>pendiente de aprobación</b> por el director médico del centro.</p>
+      <p>Tu cuenta fue creada correctamente. <br>Está <b>pendiente de aprobación</b> por un administrador del centro.</p>
       <p class="muted" style="font-size:13px">Cuando te activen vas a poder ingresar a las historias clínicas.</p>
       <button class="btn" style="width:100%;margin-top:8px" onclick="doSignOut()">Salir</button>
     </div>
@@ -233,7 +233,7 @@
       <h2 id="dName">—</h2>
       <div class="sub" id="dSub">—</div>
       <div style="margin-top:10px">
-        <button class="btn sm" onclick="printPatient()">🖨 Imprimir / PDF</button>
+        <button class="btn sm" onclick="printPatient()">🖨 Exportar HC completa (PDF)</button>
         <button class="btn sm hidden" id="btnArchive" onclick="archivePatient()">🗄 Archivar</button>
       </div>
     </div>
@@ -242,6 +242,7 @@
       <button data-tab="evol" onclick="setTab('evol')">Evoluciones</button>
       <button data-tab="vitc" onclick="setTab('vitc')">Vitamina C</button>
       <button data-tab="enf" onclick="setTab('enf')">Enfermería</button>
+      <button data-tab="labs" onclick="setTab('labs')">Laboratorio</button>
       <button data-tab="nutri" onclick="setTab('nutri')">Nutrición</button>
       <button data-tab="psico" onclick="setTab('psico')">Psicooncología</button>
       <button data-tab="indic" onclick="setTab('indic')">Indicaciones</button>
@@ -254,7 +255,7 @@
 
   <!-- TEAM -->
   <div id="viewTeam" class="wrap hidden">
-    <div class="banner warn">Como director médico, aprobás y gestionás al equipo. Los pendientes aparecen resaltados.</div>
+    <div class="banner warn">Como <b>Admin</b> autorizás y gestionás al equipo: aprobás nuevos usuarios, cambiás roles y podés activar o desactivar cuentas. Los pendientes aparecen resaltados.</div>
     <div id="teamList"></div>
   </div>
 
@@ -309,7 +310,8 @@ const can = {
   indicate:()=>['admin','director_medico','oncologo'].includes(ME.role),
   vitc:()=>['admin','enfermeria','director_medico'].includes(ME.role),
   confidential:()=>['admin','psicooncologia','director_medico'].includes(ME.role),
-  director:()=>['admin','director_medico'].includes(ME.role)
+  director:()=>['admin','director_medico'].includes(ME.role),
+  manageUsers:()=>ME.role==='admin'
 };
 
 /* ---------- AUTH ---------- */
@@ -342,7 +344,7 @@ async function doAuth(){
       const {error:e2}=await SB.auth.signInWithPassword({email,password:pass});
       if(e2){
         $('auErr').style.color='var(--ok)';
-        $('auErr').textContent='¡Cuenta creada! Si no sos el primer usuario, queda pendiente de que el director te active.';
+        $('auErr').textContent='¡Cuenta creada! Si no sos el primer usuario, queda pendiente de que un administrador te active.';
         setAuthMode('login'); $('auBtn').disabled=false; return;
       }
     }else{
@@ -399,7 +401,7 @@ async function loadMe(){
   ME=data; ME.email=user.email;
   $('meName').textContent=ME.full_name||user.email;
   $('meRole').textContent=ROLE_LABEL[ME.role]||ME.role;
-  $('navTeam').classList.toggle('hidden',!can.director());
+  $('navTeam').classList.toggle('hidden',!can.manageUsers());
   $('navArchived').classList.toggle('hidden',!can.director());
   $('btnNew').classList.toggle('hidden',!can.createPatient());
   await loadDirectory();
@@ -516,7 +518,7 @@ function updatePatientHeader(){
   $('dSub').textContent=bits.join(' · ')||'Sin datos cargados';
 }
 function setTab(t){curTab=t;document.querySelectorAll('.subnav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-  const map={ficha:renderFicha,evol:renderEvol,vitc:renderVitc,enf:renderEnf,
+  const map={ficha:renderFicha,evol:renderEvol,vitc:renderVitc,enf:renderEnf,labs:renderLabs,
     nutri:function(){renderDiscTab('nutricion');},psico:function(){renderDiscTab('psicooncologia');},
     indic:renderIndic,estudios:renderEstudios,consent:renderConsent,audit:renderAudit};
   (map[t]||renderFicha)();}
@@ -552,9 +554,17 @@ function renderFicha(){
     ${fld('Email','email')}${fld('Domicilio','address')}
     ${fld('Localidad','city')}${fld('Provincia','province')}
     ${fld('Obra social / Prepaga','coverage')}${fld('Plan','coverage_plan')}
-    ${fld('N° de afiliado','affiliate_number')}
+    ${fld('N° de afiliado','affiliate_number')}${fld('Derivado por','referred_by')}
     ${fld('Contacto de emergencia','emergency_contact_name')}
     ${fld('Vínculo','emergency_contact_relation')}${fld('Tel. emergencia','emergency_contact_phone')}
+  </div></div></div>
+
+  <div class="card"><h3>Estado funcional y antropometría</h3><div class="body"><div class="grid g2">
+    ${sel('Estado funcional ECOG','ecog',[['','—'],['0','0 — Asintomático, actividad normal'],['1','1 — Sintomático, ambulatorio'],['2','2 — En cama <50% del día'],['3','3 — En cama >50% del día'],['4','4 — Postrado']])}
+    ${fld('Karnofsky (%)','karnofsky')}
+    <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" inputmode="decimal" data-k="weight_kg" id="anWeight" value="${esc(CUR.weight_kg??'')}" ${can.editPatient()?'':'readonly'}></div>
+    <div class="field"><label>Talla (cm)</label><input type="number" step="0.1" inputmode="decimal" data-k="height_cm" id="anHeight" value="${esc(CUR.height_cm??'')}" ${can.editPatient()?'':'readonly'}></div>
+    <div class="field full"><div class="muted" id="anthroOut" style="font-size:13px;padding-top:4px"></div></div>
   </div></div></div>
 
   <div class="card"><h3>Antecedentes y hábitos</h3><div class="body"><div class="grid g2">
@@ -566,16 +576,25 @@ function renderFicha(){
   </div></div></div>
 
   <div class="card"><h3>Diagnóstico y enfermedad actual</h3><div class="body"><div class="grid g2">
-    ${fld('Diagnóstico','base_diagnosis')}${fld('Fecha de diagnóstico','diagnosis_date','date')}
-    ${fld('Oncólogo/a tratante','treating_oncologist')}${fld('Estadificación','stage')}
+    ${fld('Diagnóstico','base_diagnosis')}${fld('CIE-10','cie10_code')}
+    ${fld('Fecha de diagnóstico','diagnosis_date','date')}${fld('Oncólogo/a tratante','treating_oncologist')}
+    ${fld('Estadificación','stage')}${fld('TNM — T','tnm_t')}
+    ${fld('TNM — N','tnm_n')}${fld('TNM — M','tnm_m')}
     ${fld('Enfermedad actual','current_illness','textarea')}
     ${fld('Biopsia y protocolo','biopsy_protocol','textarea')}
     ${fld('Histología','histology','textarea')}
   </div></div></div>
 
+  <div class="card"><h3>Examen físico y problemas</h3><div class="body"><div class="grid g2">
+    ${fld('Examen físico','physical_exam','textarea')}
+    ${fld('Lista de problemas activos','problem_list','textarea')}
+  </div></div></div>
+
   <div class="card"><h3>Tratamiento y plan</h3><div class="body"><div class="grid g2">
     ${fld('Tratamiento','treatment','textarea')}
     ${fld('Plan','care_plan','textarea')}
+    ${fld('Evaluación de respuesta al tratamiento','treatment_response','textarea')}
+    ${fld('Fecha de evaluación de respuesta','response_date','date')}
   </div></div></div>
 
   <div class="card"><h3>Comentarios</h3><div class="body"><div class="grid g2">
@@ -592,8 +611,17 @@ function renderFicha(){
   <div style="height:20px"></div>`;
   refreshAge();
   if(can.editPatient()) wireAutosave();
+  ['anWeight','anHeight'].forEach(id=>{const e=$(id); if(e) e.addEventListener('input',computeAnthro);});
+  computeAnthro();
 }
 function refreshAge(){const o=$('ageOut'); if(o) o.textContent=(CUR.birth_date&&edad(CUR.birth_date))?('Edad: '+edad(CUR.birth_date)):'';}
+function computeAnthro(){
+  const o=$('anthroOut'); if(!o)return;
+  const w=parseFloat(($('anWeight')||{}).value), h=parseFloat(($('anHeight')||{}).value);
+  if(w>0&&h>0){const m=h/100; const imc=w/(m*m); const bsa=Math.sqrt(h*w/3600);
+    o.innerHTML='IMC: <b>'+imc.toFixed(1)+'</b> kg/m² · Superficie corporal (BSA): <b>'+bsa.toFixed(2)+'</b> m² <span style="opacity:.7">(referencia para dosis de vitamina C)</span>';
+  }else{o.textContent='Cargá peso y talla para calcular automáticamente el IMC y la superficie corporal.';}
+}
 function wireAutosave(){
   $('tabContent').querySelectorAll('[data-k]').forEach(el=>{ el.addEventListener('change',()=>saveField(el)); });
 }
@@ -774,8 +802,8 @@ async function addIndic(){
 }
 
 /* ---------- AUDITORÍA ---------- */
-const TABLE_LABEL={patients:'Ficha del paciente',notes:'Evolución',vitals:'Signos vitales',medications:'Medicación',vitc_administrations:'Vitamina C',indications:'Indicación',consents:'Consentimiento',attachments:'Estudio/adjunto',appointments:'Turno'};
-const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',comentarios:'Comentarios',g6pd_status:'G6PD',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma'};
+const TABLE_LABEL={patients:'Ficha del paciente',notes:'Evolución',vitals:'Signos vitales',medications:'Medicación',vitc_administrations:'Vitamina C',indications:'Indicación',consents:'Consentimiento',attachments:'Estudio/adjunto',appointments:'Turno',labs:'Laboratorio'};
+const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',treatment_response:'Evaluación de respuesta',response_date:'Fecha de evaluación',comentarios:'Comentarios',g6pd_status:'G6PD',referred_by:'Derivado por',ecog:'ECOG',karnofsky:'Karnofsky',weight_kg:'Peso (kg)',height_cm:'Talla (cm)',physical_exam:'Examen físico',problem_list:'Lista de problemas',cie10_code:'CIE-10',tnm_t:'TNM T',tnm_n:'TNM N',tnm_m:'TNM M',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma'};
 function auditDiff(a){
   if(a.action!=='UPDATE'||!a.old_data||!a.new_data) return '';
   const o=a.old_data,n=a.new_data,changed=[];
@@ -806,24 +834,40 @@ async function renderAudit(){
 /* ---------- EQUIPO ---------- */
 async function loadTeam(){
   const el=$('teamList');el.innerHTML='<div class="loading">Cargando equipo…</div>';
+  if(!can.manageUsers()){el.innerHTML='<div class="banner warn">Solo el rol <b>Admin</b> puede administrar el equipo.</div>';return;}
   const {data,error}=await DB().from('staff').select('*').order('created_at',{ascending:true});
   if(error){el.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
-  el.innerHTML=(data||[]).map(s=>`
-    <div class="team-row ${s.is_active?'':'pending'}">
+  el.innerHTML=(data||[]).map(s=>{
+    const pend=!s.is_active && !s.approved_at;
+    const estado = s.is_active
+      ? '<span class="chip">Activo</span>'
+      : (pend ? '<span class="badge" style="background:#fde68a;color:var(--warn)">Pendiente</span>'
+              : '<span class="badge" style="background:#fee2e2;color:#b91c1c">Desactivado</span>');
+    let btn='';
+    if(s.user_id!==ME.user_id){
+      if(s.is_active) btn='<button class="btn sm" onclick="setActive(\''+s.user_id+'\',false,true)">Desactivar</button>';
+      else if(pend) btn='<button class="btn brand sm" onclick="setActive(\''+s.user_id+'\',true,false)">Aprobar</button>';
+      else btn='<button class="btn sm" onclick="setActive(\''+s.user_id+'\',true,true)">Reactivar</button>';
+    }
+    return `<div class="team-row ${s.is_active?'':(pend?'pending':'')}">
       <div style="min-width:180px"><div class="nm">${esc(s.full_name||'—')}</div>
         <div class="muted" style="font-size:12px">${s.license_number?'Mat. '+esc(s.license_number):''}</div></div>
       <select onchange="setRole('${s.user_id}',this.value)" ${s.user_id===ME.user_id?'disabled':''}>
         ${Object.entries(ROLE_LABEL).map(([v,t])=>`<option value="${v}" ${s.role===v?'selected':''}>${t}</option>`).join('')}
       </select>
       <div class="spacer"></div>
-      ${s.is_active?'<span class="chip">Activo</span>':'<span class="badge" style="background:#fde68a;color:var(--warn)">Pendiente</span>'}
-      ${s.user_id===ME.user_id?'':`<button class="btn sm" onclick="toggleActive('${s.user_id}',${!s.is_active})">${s.is_active?'Desactivar':'Activar'}</button>`}
-    </div>`).join('');
+      ${estado} ${btn}
+    </div>`;
+  }).join('');
 }
 async function setRole(uid,role){const {error}=await DB().from('staff').update({role}).eq('user_id',uid);
   if(error){toast(error.message);loadTeam();return;}toast('Rol actualizado');loadDirectory();}
-async function toggleActive(uid,val){const {error}=await DB().from('staff').update({is_active:val}).eq('user_id',uid);
-  if(error){toast(error.message);return;}toast(val?'Usuario activado':'Usuario desactivado');loadTeam();loadDirectory();}
+async function setActive(uid,val,keepApproved){
+  const upd={is_active:val};
+  if(val && !keepApproved) upd.approved_at=new Date().toISOString();
+  const {error}=await DB().from('staff').update(upd).eq('user_id',uid);
+  if(error){toast(error.message);return;}
+  toast(val?'Usuario activado':'Usuario desactivado');loadTeam();loadDirectory();}
 
 /* ---------- MODAL ---------- */
 let modalCb=null;
@@ -925,14 +969,66 @@ async function verEstudio(path){
   window.open(data.signedUrl,'_blank');
 }
 
+/* ---------- LABORATORIO ---------- */
+async function renderLabs(){
+  const c=$('tabContent');c.innerHTML='<div class="loading">Cargando…</div>';
+  const {data,error}=await DB().from('labs').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:false});
+  if(error){c.innerHTML='<div class="banner warn">'+esc(error.message)+'</div>';return;}
+  const rows=(data||[]).map(function(x){var by=DIR[x.recorded_by];var p=[];
+    if(x.hemoglobina!=null)p.push('Hb '+x.hemoglobina);if(x.hematocrito!=null)p.push('Hto '+x.hematocrito);
+    if(x.leucocitos!=null)p.push('GB '+x.leucocitos);if(x.plaquetas!=null)p.push('Plaq '+x.plaquetas);
+    if(x.glucemia!=null)p.push('Gluc '+x.glucemia);if(x.creatinina!=null)p.push('Creat '+x.creatinina);
+    if(x.urea!=null)p.push('Urea '+x.urea);
+    return '<div class="vitc-row"><b>'+fmtDT(x.measured_at)+'</b> — '+(p.join(' · ')||'—')+
+      (x.otros?'<br>Otros: '+esc(x.otros):'')+(x.notes?'<br>'+esc(x.notes):'')+
+      '<br><span class="muted" style="font-size:12px">'+(by?esc(by.full_name):'—')+'</span></div>';
+  }).join('')||'<div class="empty">Sin laboratorios cargados.</div>';
+  c.innerHTML='<div class="card"><h3>Cargar laboratorio</h3><div class="body">'+
+    '<div class="grid g3">'+
+      '<div class="field"><label>Fecha</label><input id="lbDate" type="date"></div>'+
+      '<div class="field"><label>Hemoglobina (g/dL)</label><input id="lbHb" type="number" step="0.1"></div>'+
+      '<div class="field"><label>Hematocrito (%)</label><input id="lbHto" type="number" step="0.1"></div>'+
+      '<div class="field"><label>Leucocitos (/mm³)</label><input id="lbGb" type="number"></div>'+
+      '<div class="field"><label>Plaquetas (/mm³)</label><input id="lbPlaq" type="number"></div>'+
+      '<div class="field"><label>Glucemia (mg/dL)</label><input id="lbGluc" type="number"></div>'+
+      '<div class="field"><label>Creatinina (mg/dL)</label><input id="lbCreat" type="number" step="0.01"></div>'+
+      '<div class="field"><label>Urea (mg/dL)</label><input id="lbUrea" type="number"></div>'+
+    '</div>'+
+    '<div class="field"><label>Otros valores</label><input id="lbOtros" placeholder="Ej: TSH 2.1 · LDH 210 · Vit D 28…"></div>'+
+    '<div class="field"><label>Observación (opcional)</label><input id="lbNotes"></div>'+
+    '<div style="text-align:right"><button class="btn brand" onclick="addLab()">＋ Guardar laboratorio</button></div>'+
+    '</div></div>'+rows+'<div style="height:20px"></div>';
+}
+async function addLab(){
+  const g=id=>{var e=$(id);return e&&e.value!==''?e.value:null;};
+  const rec={patient_id:CUR.id, recorded_by:ME.user_id,
+    measured_at: $('lbDate').value? new Date($('lbDate').value+'T12:00:00').toISOString() : new Date().toISOString(),
+    hemoglobina:g('lbHb'),hematocrito:g('lbHto'),leucocitos:g('lbGb'),plaquetas:g('lbPlaq'),
+    glucemia:g('lbGluc'),creatinina:g('lbCreat'),urea:g('lbUrea'),otros:g('lbOtros'),notes:g('lbNotes')};
+  const {error}=await DB().from('labs').insert(rec);
+  if(error){toast(error.message);return;}
+  toast('Laboratorio guardado'); renderLabs();
+}
+
 /* ---------- IMPRIMIR / PDF ---------- */
 async function printPatient(){
-  const [{data:notes},{data:vitc}]=await Promise.all([
+  const [{data:notes},{data:vitc},{data:labs}]=await Promise.all([
     DB().from('notes').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:true}),
-    DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:true})
+    DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:true}),
+    DB().from('labs').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:true})
   ]);
   const row=(l,v)=> (v||v===0)?`<tr><td class="k">${esc(l)}</td><td>${esc(v)}</td></tr>`:'';
   const sec=(t,rows)=> rows?`<h3>${t}</h3><table>${rows}</table>`:'';
+  const ECOG_L={'0':'0 — Asintomático','1':'1 — Sintomático ambulatorio','2':'2 — En cama <50%','3':'3 — En cama >50%','4':'4 — Postrado'};
+  let anthro=''; {const w=parseFloat(CUR.weight_kg),h=parseFloat(CUR.height_cm);
+    if(w>0&&h>0){const m=h/100;anthro='IMC '+(w/(m*m)).toFixed(1)+' kg/m² · BSA '+Math.sqrt(h*w/3600).toFixed(2)+' m²';}}
+  const labsHtml=(labs||[]).map(x=>{const p=[];
+    if(x.hemoglobina!=null)p.push('Hb '+x.hemoglobina);if(x.hematocrito!=null)p.push('Hto '+x.hematocrito);
+    if(x.leucocitos!=null)p.push('GB '+x.leucocitos);if(x.plaquetas!=null)p.push('Plaq '+x.plaquetas);
+    if(x.glucemia!=null)p.push('Gluc '+x.glucemia);if(x.creatinina!=null)p.push('Creat '+x.creatinina);
+    if(x.urea!=null)p.push('Urea '+x.urea);
+    return `<div class="pn"><b>${fmtDT(x.measured_at)}</b> — ${esc(p.join(' · ')||'—')}${x.otros?' · '+esc(x.otros):''}${x.notes?'<br>'+esc(x.notes):''}</div>`;
+  }).join('')||'<p>Sin laboratorios.</p>';
   const notesHtml=(notes||[]).map(n=>{const a=DIR[n.author_id];
     return `<div class="pn"><b>${fmtDT(n.created_at)}</b> — ${esc(a?a.full_name:'Profesional')} (${DISC_LABEL[n.discipline]||n.discipline})${n.is_confidential?' · CONFIDENCIAL':''}<br>${esc(n.content)}</div>`;}).join('')||'<p>Sin evoluciones.</p>';
   const vitcHtml=(vitc||[]).map(v=>`<div class="pn"><b>${fmtDT(v.administered_at)}</b> — ${v.dose_g} g${v.dilution_ml?' / '+v.dilution_ml+' ml':''}. Pre: FC ${v.hr_pre??'—'} TA ${v.bp_pre??'—'} Gluc ${v.glucose_pre??'—'}; Post: FC ${v.hr_post??'—'} TA ${v.bp_post??'—'} Gluc ${v.glucose_post??'—'}${v.adverse_events?'. Eventos: '+esc(v.adverse_events):''}</div>`).join('')||'<p>Sin administraciones.</p>';
@@ -953,18 +1049,25 @@ async function printPatient(){
     row('Nacimiento',CUR.birth_date?fmt(CUR.birth_date)+' ('+edad(CUR.birth_date)+')':'')+
     row('Nacionalidad',CUR.nationality)+row('Estado civil',CUR.marital_status)+row('Ocupación',CUR.occupation)+
     row('Teléfono',CUR.phone)+row('Email',CUR.email)+row('Domicilio',CUR.address)+row('Localidad',CUR.city)+row('Provincia',CUR.province)+
-    row('Obra social',CUR.coverage)+row('Plan',CUR.coverage_plan)+row('N° afiliado',CUR.affiliate_number)+
+    row('Obra social',CUR.coverage)+row('Plan',CUR.coverage_plan)+row('N° afiliado',CUR.affiliate_number)+row('Derivado por',CUR.referred_by)+
     row('Contacto emergencia',[CUR.emergency_contact_name,CUR.emergency_contact_relation,CUR.emergency_contact_phone].filter(Boolean).join(' · ')))}
   ${sec('Antecedentes y hábitos',
     row('Antecedentes personales',CUR.personal_history)+row('Antecedentes familiares',CUR.family_history)+
     row('Hábitos tóxicos',CUR.toxic_habits)+row('Medicación habitual',CUR.usual_medication)+row('Alergias',CUR.allergies))}
+  ${sec('Estado funcional y antropometría',
+    row('ECOG',CUR.ecog?(ECOG_L[CUR.ecog]||CUR.ecog):'')+row('Karnofsky',CUR.karnofsky!=null?CUR.karnofsky+'%':'')+
+    row('Peso',CUR.weight_kg?CUR.weight_kg+' kg':'')+row('Talla',CUR.height_cm?CUR.height_cm+' cm':'')+row('IMC / BSA',anthro))}
   ${sec('Diagnóstico y enfermedad actual',
-    row('Diagnóstico',CUR.base_diagnosis)+row('Fecha de diagnóstico',CUR.diagnosis_date?fmt(CUR.diagnosis_date):'')+
+    row('Diagnóstico',CUR.base_diagnosis)+row('CIE-10',CUR.cie10_code)+row('Fecha de diagnóstico',CUR.diagnosis_date?fmt(CUR.diagnosis_date):'')+
     row('Oncólogo tratante',CUR.treating_oncologist)+row('Estadificación',CUR.stage)+
+    row('TNM',[CUR.tnm_t&&('T'+CUR.tnm_t),CUR.tnm_n&&('N'+CUR.tnm_n),CUR.tnm_m&&('M'+CUR.tnm_m)].filter(Boolean).join(' '))+
     row('Enfermedad actual',CUR.current_illness)+row('Biopsia y protocolo',CUR.biopsy_protocol)+row('Histología',CUR.histology))}
-  ${sec('Tratamiento y plan', row('Tratamiento',CUR.treatment)+row('Plan',CUR.care_plan))}
+  ${sec('Examen físico y problemas', row('Examen físico',CUR.physical_exam)+row('Lista de problemas',CUR.problem_list))}
+  ${sec('Tratamiento y plan', row('Tratamiento',CUR.treatment)+row('Plan',CUR.care_plan)+
+    row('Evaluación de respuesta',CUR.treatment_response)+row('Fecha de evaluación',CUR.response_date?fmt(CUR.response_date):''))}
   ${sec('Comentarios', row('Comentarios',CUR.comentarios))}
   ${sec('Seguridad', row('G6PD',G6PD_LABEL[CUR.g6pd_status||'no_evaluado']))}
+  <h3>Laboratorio</h3>${labsHtml}
   <h3>Evoluciones</h3>${notesHtml}
   <h3>Administraciones de vitamina C</h3>${vitcHtml}
   <p class="noprint" style="text-align:center;margin-top:22px"><button onclick="window.print()">Imprimir / Guardar como PDF</button></p>
