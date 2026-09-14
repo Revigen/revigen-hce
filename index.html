@@ -430,6 +430,13 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;co
 .subnav-wrap{overflow-x:auto}
 .savebar .ok{color:var(--vital)}
 .tag.disc{text-transform:none}
+/* barra superior en pantallas chicas: se apila para no desbordar */
+@media (max-width:680px){
+  .top{flex-wrap:wrap;height:auto;min-height:0;padding:10px 14px;gap:10px 12px}
+  .top .find{order:2;flex:1 1 100%;max-width:none}
+  .top .right{order:1;margin-left:auto;gap:12px}
+  #topDate{display:none}
+}
 </style>
 <body>
 
@@ -495,12 +502,15 @@ const DB = () => SB.schema('clinica');
 const DIAS_LAB_VIGENTE = 30;
 const DIAS_AREA_ACTIVA = 45;
 
-const ROLE_LABEL = {admin:'Admin', director_medico:'Director médico', oncologo:'Médico oncólogo', enfermeria:'Enfermería',
+const ROLE_LABEL = {admin:'Admin', director_medico:'Director médico', oncologo:'Médico oncólogo', medico_funcional:'Médico funcional', enfermeria:'Enfermería',
   nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
-const DISC_LABEL = {oncologia:'Oncología', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
-const ROLE_TO_DISC = {admin:'oncologia', director_medico:'oncologia', oncologo:'oncologia', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
+const DISC_LABEL = {oncologia:'Oncología', megadosis:'Megadosis de Vitamina C', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
+const ROLE_TO_DISC = {admin:'oncologia', director_medico:'oncologia', oncologo:'oncologia', medico_funcional:'oncologia', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
 const DISC_TO_ROLE = {oncologia:'oncologo', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
 const G6PD_LABEL = {no_evaluado:'G6PD no evaluado', normal:'G6PD normal', deficiente:'G6PD deficiente'};
+const FREQ_LABEL = {mensual:'1 vez por mes', semanal:'1 vez por semana', '2x_semana':'2 veces por semana', '3x_semana':'3 veces por semana'};
+// Un turno cuenta como Megadosis de Vitamina C si su disciplina es 'megadosis' o si el título lo menciona.
+function isMegadosisAppt(a){ return a && (a.discipline==='megadosis' || /megadosis|vitamina\s*c|vit\.?\s*c/i.test(a.title||'')); }
 
 let ME=null, DIR={}, CUR=null, curTab='resumen', curView='inicio', authMode='login';
 let CACHE=null;          // datos agregados para listado / inicio
@@ -524,10 +534,10 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');cle
 
 /* ---------- permisos (idénticos al sistema actual) ---------- */
 const can = {
-  createPatient:()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),
-  editPatient:  ()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),
-  indicate:     ()=>['admin','director_medico','oncologo'].includes(ME.role),
-  vitc:         ()=>['admin','enfermeria','director_medico'].includes(ME.role),
+  createPatient:()=>['admin','director_medico','oncologo','medico_funcional','enfermeria'].includes(ME.role),
+  editPatient:  ()=>['admin','director_medico','oncologo','medico_funcional','enfermeria'].includes(ME.role),
+  indicate:     ()=>['admin','director_medico','oncologo','medico_funcional'].includes(ME.role),
+  vitc:         ()=>['admin','enfermeria','director_medico','medico_funcional'].includes(ME.role),
   confidential: ()=>['admin','psicooncologia','director_medico'].includes(ME.role),
   director:     ()=>['admin','director_medico'].includes(ME.role),
   manageUsers:  ()=>ME.role==='admin'
@@ -626,7 +636,7 @@ function renderAuth(mode){
     (signup?
       '<div class="field"><label>Nombre y apellido</label><input id="suName" placeholder="Ej: Dra. Ana Gómez"></div>'+
       '<div class="field"><label>Rol en el centro</label><select id="suRole">'+
-        '<option value="oncologo">Médico oncólogo</option><option value="director_medico">Director médico</option>'+
+        '<option value="oncologo">Médico oncólogo</option><option value="medico_funcional">Médico funcional</option><option value="director_medico">Director médico</option>'+
         '<option value="enfermeria">Enfermería</option><option value="nutricion">Nutrición</option>'+
         '<option value="psicooncologia">Psicooncología</option><option value="ejercicio">Actividad física</option></select></div>'+
       '<div class="field"><label>Matrícula (opcional)</label><input id="suLicense" placeholder="Ej: MP 12345"></div>'
@@ -830,8 +840,9 @@ async function loadCache(){
     const vitcCount=vitc.length, vitcLast=vitc[0]?vitc[0].administered_at:null;
     const nutriRecs=notes.filter(n=>n.discipline==='nutricion'), psicoRecs=notes.filter(n=>n.discipline==='psicooncologia'), ejerRecs=notes.filter(n=>n.discipline==='ejercicio');
     const hasVitcInd=indSet.has(pid);
+    const futMegadosis=futureAppts.some(isMegadosisAppt);
     const areas={
-      vitc:      areaFor(vitcCount, vitcLast, hasVitcInd), // indicación activa cuenta como plan vigente
+      vitc:      areaFor(vitcCount, vitcLast, hasVitcInd || futMegadosis), // indicación activa o turno de megadosis = plan vigente
       nutricion: areaFor(nutriRecs.length, lastNoteDisc('nutricion'), futDisc('nutricion')),
       psicooncologia: areaFor(psicoRecs.length, lastNoteDisc('psicooncologia'), futDisc('psicooncologia')),
       ejercicio: areaFor(ejerRecs.length, lastNoteDisc('ejercicio'), futDisc('ejercicio'))
@@ -939,13 +950,13 @@ async function renderInicio(){
 
   const pendRows=pendItems.length? pendItems.map(({pt,pd,prox})=>{
     let s='';
-    if(pd.kind==='g6pd') s='Tiene indicación activa de vitamina C. El sistema no habilita la administración hasta que el G6PD figure como normal en la ficha.';
-    else if(pd.kind==='consent') s='Recibe vitamina C y no hay consentimiento de vitamina C cargado en la historia.';
+    if(pd.kind==='g6pd') s='Tiene indicación activa de megadosis de vitamina C. El sistema no habilita la administración hasta que el G6PD figure como normal en la ficha.';
+    else if(pd.kind==='consent') s='Recibe megadosis de vitamina C y no hay consentimiento cargado en la historia.';
     else if(pd.kind==='lab') s='El último laboratorio está vencido y tiene un turno dentro de los próximos 7 días'+(prox?' ('+fmtDMShort(prox.starts_at)+' '+fmtHM(prox.starts_at)+').':'.');
     return '<div class="it '+pd.level+'"><span class="d"></span><div class="b">'+
       '<div class="t">'+esc(pt.full_name)+' · '+esc(pd.label.toLowerCase())+'</div>'+
       '<div class="s">'+s+'</div></div><button class="btn sm a" onclick="openPatient(\''+pt.id+'\')">Abrir</button></div>';
-  }).join('') : '<div class="it"><span class="d" style="background:var(--vital)"></span><div class="b"><div class="t">Sin pendientes que frenen una infusión</div><div class="s">G6PD, consentimientos y laboratorios al día en los pacientes con vitamina C activa.</div></div></div>';
+  }).join('') : '<div class="it"><span class="d" style="background:var(--vital)"></span><div class="b"><div class="t">Sin pendientes que frenen una infusión</div><div class="s">G6PD, consentimientos y laboratorios al día en los pacientes con megadosis activa.</div></div></div>';
 
   p.innerHTML=
    '<div class="phead-page"><div><div class="eyebrow">Centro Revigen</div><h1>Hoy en Revigen</h1></div>'+
@@ -963,12 +974,12 @@ async function renderInicio(){
      '<div class="stack">'+
        '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Pendientes del equipo</span><span class="meta">Calculado</span></div><div class="todo">'+pendRows+'</div></div></section>'+
        '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Lo que se registró hoy</span></div><div class="rows">'+
-         '<div class="row"><span class="k">Administraciones de vitamina C</span><span class="v">'+vitcHoy+'</span></div>'+
+         '<div class="row"><span class="k">Administraciones de megadosis</span><span class="v">'+vitcHoy+'</span></div>'+
          '<div class="row"><span class="k">Evoluciones firmadas</span><span class="v">'+notesHoy+'</span></div>'+
          '<div class="row"><span class="k">Laboratorios cargados</span><span class="v">'+labsHoy+'</span></div>'+
          '<div class="row"><span class="k">Estudios adjuntados</span><span class="v">'+attHoy+'</span></div></div></div></section>'+
        '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Seguimiento del centro</span><span class="meta">Últimos 30 días</span></div><div class="rows">'+
-         '<div class="row"><span class="k">Pacientes con vitamina C activa</span><span class="v">'+vitcActivos+'</span></div>'+
+         '<div class="row"><span class="k">Pacientes con megadosis activa</span><span class="v">'+vitcActivos+'</span></div>'+
          '<div class="row"><span class="k">Administraciones registradas</span><span class="v">'+admin30+'</span></div>'+
          '<div class="row"><span class="k">Eventos adversos anotados</span><span class="v">'+ev30+'</span></div>'+
          '<div class="row"><span class="k">Pacientes con las 4 áreas activas</span><span class="v">'+cuatro+'</span></div></div></div></section>'+
@@ -996,12 +1007,12 @@ async function renderPacientes(){
      '<div class="sec" style="padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">'+
        '<div class="filters" id="patFilters">'+
          '<button data-f="todos" class="'+(PFILTER==='todos'?'on':'')+'" onclick="setPFilter(\'todos\')">Todos · '+CACHE.patients.length+'</button>'+
-         '<button data-f="vitc" class="'+(PFILTER==='vitc'?'on':'')+'" onclick="setPFilter(\'vitc\')">Con vitamina C activa · '+nVitc+'</button>'+
+         '<button data-f="vitc" class="'+(PFILTER==='vitc'?'on':'')+'" onclick="setPFilter(\'vitc\')">Con megadosis activa · '+nVitc+'</button>'+
          '<button data-f="pend" class="'+(PFILTER==='pend'?'on':'')+'" onclick="setPFilter(\'pend\')">Con pendientes · '+nPend+'</button>'+
          '<button data-f="sinturno" class="'+(PFILTER==='sinturno'?'on':'')+'" onclick="setPFilter(\'sinturno\')">Sin turno próximo · '+nSinTurno+'</button>'+
        '</div><span class="meta">Ordenado por próximo turno</span></div>'+
      '<div class="sec" style="padding:16px 20px;border-bottom:1px solid var(--div)"><div class="legend"><b>Áreas con registros:</b>'+
-       '<span><span class="dots"><i class="a"></i></span> Vitamina C</span><span><span class="dots"><i class="a"></i></span> Nutrición</span>'+
+       '<span><span class="dots"><i class="a"></i></span> Megadosis</span><span><span class="dots"><i class="a"></i></span> Nutrición</span>'+
        '<span><span class="dots"><i class="a"></i></span> Psicooncología</span><span><span class="dots"><i class="a"></i></span> Actividad física</span>'+
        '<span style="margin-left:auto"><span class="dots"><i class="p"></i></span> sin movimiento hace '+DIAS_AREA_ACTIVA+' días &nbsp;·&nbsp; <span class="dots"><i></i></span> sin registros</span></div></div>'+
      '<div class="scroll"><table class="tbl wide"><thead><tr>'+
@@ -1113,14 +1124,15 @@ async function loadFichaCalc(){
   const futDisc=d=>futureAppts.some(a=>a.discipline===d);
   const lastDisc=d=>{const r=notes.find(n=>n.discipline===d);return r?r.created_at:null;};
   const areaFor=(recs,last,fut)=>{ if((last&&daysSince(last)<=DIAS_AREA_ACTIVA)||fut)return 'active'; return recs>0?'stale':'none'; };
+  const futMegadosis=futureAppts.some(isMegadosisAppt);
   const areas={
-    vitc:areaFor(vitc.length, vitc[0]?vitc[0].administered_at:null, !!ind),
+    vitc:areaFor(vitc.length, vitc[0]?vitc[0].administered_at:null, !!ind || futMegadosis),
     nutricion:areaFor(notes.filter(n=>n.discipline==='nutricion').length,lastDisc('nutricion'),futDisc('nutricion')),
     psicooncologia:areaFor(notes.filter(n=>n.discipline==='psicooncologia').length,lastDisc('psicooncologia'),futDisc('psicooncologia')),
     ejercicio:areaFor(notes.filter(n=>n.discipline==='ejercicio').length,lastDisc('ejercicio'),futDisc('ejercicio'))
   };
   const areaMeta={
-    vitc:{n:vitc.length, last:vitc[0]?vitc[0].administered_at:null, who:vitc[0]?vitc[0].administered_by:null, prox:futureAppts.find(a=>a.discipline==='enfermeria')||null},
+    vitc:{n:vitc.length, last:vitc[0]?vitc[0].administered_at:null, who:vitc[0]?vitc[0].administered_by:null, prox:futureAppts.find(isMegadosisAppt)||null},
     nutricion:{n:notes.filter(n=>n.discipline==='nutricion').length,last:lastDisc('nutricion'),who:(notes.find(n=>n.discipline==='nutricion')||{}).author_id,prox:futureAppts.find(a=>a.discipline==='nutricion')||null},
     psicooncologia:{n:notes.filter(n=>n.discipline==='psicooncologia').length,last:lastDisc('psicooncologia'),who:(notes.find(n=>n.discipline==='psicooncologia')||{}).author_id,prox:futureAppts.find(a=>a.discipline==='psicooncologia')||null},
     ejercicio:{n:notes.filter(n=>n.discipline==='ejercicio').length,last:lastDisc('ejercicio'),who:(notes.find(n=>n.discipline==='ejercicio')||{}).author_id,prox:futureAppts.find(a=>a.discipline==='ejercicio')||null}
@@ -1130,6 +1142,7 @@ async function loadFichaCalc(){
   const add=uid=>{ if(uid){cnt[uid]=(cnt[uid]||0)+1;} };
   notes.forEach(n=>add(n.author_id)); vitc.forEach(v=>add(v.administered_by)); meds.forEach(m=>add(m.administered_by));
   vitals.forEach(v=>add(v.recorded_by)); labs.forEach(l=>add(l.recorded_by)); appts.forEach(a=>add(a.professional_id));
+  add(CUR.created_by); add(CUR.updated_by); // quien crea/edita la ficha también cuenta como que la atiende
   const people=Object.keys(cnt).map(uid=>({uid,n:cnt[uid],s:DIR[uid]})).filter(x=>x.s).sort((a,b)=>b.n-a.n);
   // asistencia 90d
   const d90=now-90*86400000;
@@ -1158,7 +1171,7 @@ async function renderFicha(){
   if(CUR.allergies) tags.push('<span class="tag crit"><span class="d"></span>Alergia: '+esc(CUR.allergies.split(/[\.\n]/)[0].slice(0,40))+'</span>');
   tags.push('<span class="tag '+(g==='normal'?'ok':'warn')+'"><span class="d"></span>'+esc(G6PD_LABEL[g])+'</span>');
   if(CUR.ecog||CUR.karnofsky!=null) tags.push('<span class="tag">'+(CUR.ecog?'ECOG '+CUR.ecog:'')+(CUR.ecog&&CUR.karnofsky!=null?' · ':'')+(CUR.karnofsky!=null?'Karnofsky '+CUR.karnofsky:'')+'</span>');
-  const tabs=[['resumen','Resumen'],['hc','Historia clínica'],['evol','Evolución'],['vitc','Vitamina C'],['enf','Enfermería'],['labs','Laboratorio'],['areas','Áreas del plan'],['indic','Indicaciones'],['docs','Documentos']];
+  const tabs=[['resumen','Resumen'],['hc','Historia clínica'],['evol','Evolución'],['vitc','Megadosis'],['enf','Enfermería'],['labs','Laboratorio'],['areas','Áreas del plan'],['indic','Indicaciones'],['docs','Documentos']];
   if(can.director()) tabs.push(['audit','Auditoría']);
   p.innerHTML=
    '<div class="crumb"><button onclick="navigate(\'pacientes\')">Pacientes</button><span>›</span><span style="color:var(--ink-2)">'+esc(CUR.full_name||'—')+'</span></div>'+
@@ -1230,7 +1243,7 @@ function renderSideB(){
     '<div class="sec"><div class="sec-h"><span class="sec-t">Próximos turnos</span><button class="btn sm" onclick="openApptModal(\''+CUR.id+'\')">Agendar</button></div>'+
       '<div class="tl">'+tl+'</div><div class="meta" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--div)">'+asistTxt+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Quiénes la atienden</span><span class="meta">Por sus registros</span></div><div class="people">'+ppl+'</div></div>'+
-    '<div class="sec"><div class="sec-h"><span class="sec-t">Consentimientos</span></div><div class="rows">'+consRow('vitamina_c','Vitamina C')+consRow('hc_compartida','Historia clínica compartida')+'</div></div>'+
+    '<div class="sec"><div class="sec-h"><span class="sec-t">Consentimientos</span></div><div class="rows">'+consRow('vitamina_c','Megadosis de Vit. C')+consRow('hc_compartida','Historia clínica compartida')+'</div></div>'+
     logHtml+'</div>';
 }
 function setTab(t){
@@ -1249,7 +1262,7 @@ const AREA_ICON={
   psicooncologia:'<svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8A8.5 8.5 0 0 1 12.5 20a8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7A8.4 8.4 0 0 1 4 11.5 8.5 8.5 0 0 1 8.7 3.9 8.4 8.4 0 0 1 12.5 3H13a8.5 8.5 0 0 1 8 8z"/></svg>',
   ejercicio:'<svg viewBox="0 0 24 24"><path d="M6.5 6.5 17 17M4 9v6M20 9v6M7 7v10M17 7v10"/></svg>'
 };
-const AREA_NAME={vitc:'Vitamina C intravenosa',nutricion:'Nutrición oncológica',psicooncologia:'Psicooncología',ejercicio:'Actividad física adaptada'};
+const AREA_NAME={vitc:'Megadosis de Vitamina C',nutricion:'Nutrición oncológica',psicooncologia:'Psicooncología',ejercicio:'Actividad física adaptada'};
 const ANALITOS=[['hemoglobina','Hemoglobina','g/dL'],['hematocrito','Hematocrito','%'],['leucocitos','Leucocitos','/mm³'],['plaquetas','Plaquetas','/mm³'],['glucemia','Glucemia','mg/dL'],['creatinina','Creatinina','mg/dL'],['urea','Urea','mg/dL']];
 let CUR_ANALITO='hemoglobina';
 
@@ -1315,13 +1328,13 @@ function renderResumen(){
   const advCount=vc.filter(v=>v.adverse_events&&v.adverse_events.trim()).length;
   const vitcHead = g==='normal'?'<span class="st ok" style="font-size:13px"><span class="d"></span>Habilitada · G6PD normal</span>'
     : '<span class="st '+(g==='deficiente'?'crit':'warn')+'" style="font-size:13px"><span class="d"></span>Bloqueada · '+esc(G6PD_LABEL[g])+'</span>';
-  const vitcBlock = (vc.length||f.ind) ? '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Vitamina C</span>'+vitcHead+'</div>'+
+  const vitcBlock = (vc.length||f.ind) ? '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Megadosis de Vitamina C</span>'+vitcHead+'</div>'+
       '<div class="ring-row"><svg class="ring" viewBox="0 0 120 120" role="img" aria-label="'+vc.length+' administraciones"><circle cx="60" cy="60" r="48" fill="none" stroke="#39403A" stroke-width="7" stroke-dasharray="1.6 6.4"/>'+
         (vc.length?'<circle cx="60" cy="60" r="48" fill="none" stroke="#DEF2C4" stroke-width="7" stroke-dasharray="1.6 6.4"/>':'')+
         '<text class="lbl" x="60" y="60" text-anchor="middle">'+vc.length+'</text><text class="sub" x="60" y="76" text-anchor="middle">ADMINISTRACIONES</text></svg>'+
       '<div class="stats">'+
         '<div><div class="k">Última administración</div><div class="v">'+(lastV?fmtDMShort(lastV.administered_at)+' · '+lastV.dose_g+' g':'—')+'</div><div class="s">'+(lastV?((lastV.rate_g_min?lastV.rate_g_min+' g/min':'')+(lastV.dilution_ml?' en '+lastV.dilution_ml+' ml':''))||'—':'—')+'</div></div>'+
-        '<div><div class="k">Dosis indicada</div><div class="v">'+(f.ind&&f.ind.vitc_target_dose_g?f.ind.vitc_target_dose_g+' g':'—')+'</div><div class="s">'+(f.ind?'Indicación activa del '+fmtDMShort(f.ind.created_at):'Sin indicación activa')+'</div></div>'+
+        '<div><div class="k">Dosis indicada</div><div class="v">'+(f.ind&&f.ind.vitc_target_dose_g?f.ind.vitc_target_dose_g+' g':'—')+'</div><div class="s">'+(f.ind?('Activa del '+fmtDMShort(f.ind.created_at)+(f.ind.vitc_frequency?' · '+(FREQ_LABEL[f.ind.vitc_frequency]||f.ind.vitc_frequency):'')):'Sin indicación activa')+'</div></div>'+
         '<div><div class="k">Eventos adversos</div><div class="v">'+(advCount?advCount:'Ninguno')+'</div><div class="s">En '+vc.length+' '+(vc.length===1?'administración':'administraciones')+'</div></div>'+
       '</div></div></div></section>' : '';
   // lab chart
@@ -1339,7 +1352,7 @@ function renderResumen(){
 
   host.innerHTML=
     '<div class="callout" style="border-color:rgba(222,242,196,.22);background:rgba(222,242,196,.045)"><span class="dot-live" style="margin-top:6px;flex:none"></span>'+
-      '<p style="color:var(--ink-2)">Esta pestaña no se carga: se arma sola con lo que ya está en la historia, los turnos, los laboratorios y las administraciones de vitamina C.</p></div>'+
+      '<p style="color:var(--ink-2)">Esta pestaña no se carga: se arma sola con lo que ya está en la historia, los turnos, los laboratorios y las administraciones de megadosis.</p></div>'+
     '<section class="card"><div class="sec" style="padding-bottom:0"><div class="sec-h" style="margin-bottom:4px"><span class="sec-t">Áreas del plan integrativo</span><span class="meta">Según la actividad registrada</span></div></div>'+
       '<div class="plan">'+areaCard('vitc')+areaCard('nutricion')+areaCard('psicooncologia')+areaCard('ejercicio')+'</div></section>'+
     vitcBlock + labBlock + evolBlock;
@@ -1402,7 +1415,7 @@ function renderHC(){
       fld('Tratamiento','treatment','textarea')+fld('Plan','care_plan','textarea')+fld('Evaluación de respuesta','treatment_response','textarea')+fld('Fecha de evaluación','response_date','date')+
     '</div></div>'+
     '<div class="sec" id="g7"><div class="sec-h"><span class="sec-t">Comentarios</span></div><div class="ff">'+fld('Lo que no entra en ningún otro campo','comentarios','textarea')+'</div></div>'+
-    '<div class="sec" id="g8"><div class="sec-h"><span class="sec-t">Seguridad para vitamina C</span></div><div class="ff">'+
+    '<div class="sec" id="g8"><div class="sec-h"><span class="sec-t">Seguridad para la megadosis de vitamina C</span></div><div class="ff">'+
       sel('Screening G6PD','g6pd_status',[['no_evaluado','No evaluado'],['normal','Normal'],['deficiente','Deficiente']])+
       '<div class="f"><div class="gate '+(g==='normal'?'ok':'')+'" style="margin-top:22px"><span class="ic"></span><p>Con G6PD normal el sistema habilita el registro de administraciones. Si figura «no evaluado» o «deficiente», el botón queda bloqueado.</p></div></div>'+
     '</div></div>'+
@@ -1495,10 +1508,11 @@ async function renderVitc(){
   const g=CUR.g6pd_status||'no_evaluado';
   const gate = g==='normal'
     ? '<div class="gate ok"><span class="ic"></span><p><b style="color:var(--ink)">G6PD normal.</b> El registro de administraciones está habilitado. Si el screening figurara como «no evaluado» o «deficiente», el sistema bloquearía el botón y mostraría el motivo.</p></div>'
-    : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">'+(g==='deficiente'?'G6PD deficiente.':'Falta el screening de G6PD.')+'</b> '+(g==='deficiente'?'La administración de vitamina C está contraindicada: el sistema bloquea el registro.':'Hasta que el G6PD figure como «normal» en la ficha, el sistema no permite registrar administraciones.')+'</p></div>';
+    : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">'+(g==='deficiente'?'G6PD deficiente.':'Falta el screening de G6PD.')+'</b> '+(g==='deficiente'?'La administración de megadosis de vitamina C está contraindicada: el sistema bloquea el registro.':'Hasta que el G6PD figure como «normal» en la ficha, el sistema no permite registrar administraciones.')+'</p></div>';
   const ind=FCALC.ind;
   const indCard = ind? '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Indicación vigente</span><span class="st ok" style="font-size:13px"><span class="d"></span>Activa desde el '+fmtDMShort(ind.created_at)+'</span></div>'+
       '<div class="two"><div class="rows"><div class="row"><span class="k">Dosis objetivo</span><span class="v">'+(ind.vitc_target_dose_g?ind.vitc_target_dose_g+' g':'—')+'</span></div>'+
+      '<div class="row"><span class="k">Frecuencia</span><span class="v">'+(ind.vitc_frequency?esc(FREQ_LABEL[ind.vitc_frequency]||ind.vitc_frequency):'—')+'</span></div>'+
       '<div class="row"><span class="k">Indicada por</span><span class="v">'+esc(lastNameOf(whoName(ind.prescribed_by)))+'</span></div></div>'+
       '<div class="rows"><div class="row"><span class="k">Administraciones</span><span class="v">'+(data?data.length:0)+'</span></div>'+
       '<div class="row"><span class="k">Última</span><span class="v">'+((data&&data[0])?fmtDMShort(data[0].administered_at)+' · '+data[0].dose_g+' g':'—')+'</span></div></div></div>'+
@@ -1517,10 +1531,10 @@ async function renderVitc(){
       '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th>Dosis</th><th>Dilución</th><th>Velocidad</th><th style="min-width:140px">Pre</th><th style="min-width:140px">Post</th><th style="min-width:130px">Eventos</th><th>Administró</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '<div class="savebar">Pre y post muestran frecuencia cardíaca · tensión arterial · glucemia.</div></section>'
     : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Administraciones registradas</span>'+btn+'</div><p class="meta" style="margin:0">Sin administraciones registradas.</p></div></section>';
-  host.innerHTML=gate+indCard+table+(canReg?'':'<div class="callout"><p>Solo enfermería y dirección registran administraciones de vitamina C.</p></div>');
+  host.innerHTML=gate+indCard+table+(canReg?'':'<div class="callout"><p>Solo enfermería, médico funcional y dirección registran administraciones de megadosis.</p></div>');
 }
 function openVitcModal(){
-  modalOpen('Administración de vitamina C',
+  modalOpen('Administración de megadosis de vitamina C',
     '<div class="grid g3">'+
       '<div class="field"><label>Dosis (g)</label><input id="vDose" type="number" step="0.1"></div>'+
       '<div class="field"><label>Dilución (ml)</label><input id="vDil" type="number"></div>'+
@@ -1652,7 +1666,7 @@ async function renderIndic(){
   const {data}=await DB().from('indications').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
   const rows=(data||[]).map(i=>{
     const tag=i.active?'<span class="tag ok"><span class="d"></span>Activa</span>':'<span class="tag"><span class="d"></span>Inactiva</span>';
-    const title=(i.kind==='vitamina_c'?'Vitamina C':'General')+(i.vitc_target_dose_g?' · objetivo '+i.vitc_target_dose_g+' g':'');
+    const title=(i.kind==='vitamina_c'?'Megadosis de Vitamina C':'General')+(i.vitc_target_dose_g?' · objetivo '+i.vitc_target_dose_g+' g':'')+(i.vitc_frequency?' · '+(FREQ_LABEL[i.vitc_frequency]||i.vitc_frequency):'');
     return '<div class="entry"><div class="eh">'+tag+'<span class="au">'+title+'</span><span class="meta" style="margin-left:auto">'+fmtDMShort(i.created_at)+' · '+esc(lastNameOf(whoName(i.prescribed_by)))+'</span></div>'+
       (i.detail?'<p class="bd">'+esc(i.detail)+'</p>':'')+'</div>';
   }).join('');
@@ -1662,13 +1676,22 @@ async function renderIndic(){
 }
 function openIndicModal(){
   modalOpen('Nueva indicación',
-    '<div class="field"><label>Tipo</label><select id="iKind"><option value="general">General</option><option value="vitamina_c">Vitamina C</option></select></div>'+
-    '<div class="field"><label>Dosis objetivo vitamina C (g) — opcional</label><input id="iDose" type="number" step="0.1"></div>'+
-    '<div class="field"><label>Detalle</label><textarea id="iDetail" placeholder="Indicación…"></textarea></div>','Guardar', addIndic);
+    '<div class="field"><label>Tipo de indicación</label><select id="iKind" onchange="toggleIndicFields()"><option value="general">General</option><option value="vitamina_c">Megadosis de Vitamina C</option></select></div>'+
+    '<div id="iVitcFields" class="hidden"><div class="grid g2">'+
+      '<div class="field"><label>Dosis objetivo (g)</label><input id="iDose" type="number" step="0.1" placeholder="Ej: 56"></div>'+
+      '<div class="field"><label>Frecuencia</label><select id="iFreq"><option value="">Elegí la frecuencia</option><option value="mensual">1 vez por mes</option><option value="semanal">1 vez por semana</option><option value="2x_semana">2 veces por semana</option><option value="3x_semana">3 veces por semana</option></select></div>'+
+    '</div></div>'+
+    '<div class="field"><label>Detalle</label><textarea id="iDetail" placeholder="Indicación, aclaraciones…"></textarea></div>','Guardar', addIndic);
+  toggleIndicFields();
 }
+function toggleIndicFields(){ const b=$('iVitcFields'); if(b) b.classList.toggle('hidden', $('iKind').value!=='vitamina_c'); }
 async function addIndic(){
-  const rec={patient_id:CUR.id, kind:$('iKind').value, detail:$('iDetail').value||null,
-    vitc_target_dose_g:num($('iDose').value), prescribed_by:ME.user_id, created_by:ME.user_id, active:true};
+  const kind=$('iKind').value;
+  if(kind==='vitamina_c' && !$('iFreq').value){ toast('Elegí la frecuencia de la megadosis'); return false; }
+  const rec={patient_id:CUR.id, kind, detail:$('iDetail').value||null,
+    vitc_target_dose_g: kind==='vitamina_c'? num($('iDose').value) : null,
+    vitc_frequency: kind==='vitamina_c'? ($('iFreq').value||null) : null,
+    prescribed_by:ME.user_id, created_by:ME.user_id, active:true};
   const {error}=await DB().from('indications').insert(rec); if(error){toast(error.message);return false;}
   toast('Indicación guardada'); afterChange(); return true;
 }
@@ -1695,7 +1718,7 @@ async function renderDocs(){
     body='<div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap"><button class="btn sm" onclick="openLinkModal()">Agregar link</button><button class="btn primary sm" onclick="openUploadModal()">Subir archivo</button></div>'+
       (rows?'<section class="sheet"><div class="sec"><div class="files">'+rows+'</div></div></section>':'<div class="empty"><p>Sin estudios cargados.</p></div>');
   }else{
-    const KIND={hc_compartida:'Historia clínica compartida', vitamina_c:'Vitamina C'};
+    const KIND={hc_compartida:'Historia clínica compartida', vitamina_c:'Megadosis de Vitamina C'};
     const rows=cons.map(x=>{
       const ver=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver adjunto</button>':(x.document_url?'<a class="btn sm" href="'+esc(x.document_url)+'" target="_blank" rel="noopener">Ver enlace</a>':'');
       return '<div class="entry"><div class="eh"><span class="tag ok"><span class="d"></span>'+esc(KIND[x.kind]||x.kind)+'</span>'+(x.signed_at?'<span class="au">firmado '+fmtDMShort(x.signed_at)+'</span>':'<span class="au">sin fecha de firma</span>')+'<span class="meta" style="margin-left:auto">'+fmtDMShort(x.created_at)+' · '+esc(lastNameOf(whoName(x.created_by)))+'</span></div>'+
@@ -1732,7 +1755,7 @@ async function addEstudioLink(){
 }
 function openConsentModal(){
   modalOpen('Registrar consentimiento',
-    '<div class="grid g2"><div class="field"><label>Tipo</label><select id="coKind"><option value="hc_compartida">Historia clínica compartida</option><option value="vitamina_c">Vitamina C</option></select></div>'+
+    '<div class="grid g2"><div class="field"><label>Tipo</label><select id="coKind"><option value="hc_compartida">Historia clínica compartida</option><option value="vitamina_c">Megadosis de Vitamina C</option></select></div>'+
     '<div class="field"><label>Fecha de firma</label><input id="coDate" type="date"></div></div>'+
     '<div class="field"><label>Adjuntar consentimiento firmado (PDF/imagen) — opcional</label><input id="coFile" type="file"></div>'+
     '<div class="field"><label>Observación (opcional)</label><input id="coNotes"></div>','Guardar consentimiento', addConsent);
@@ -1781,7 +1804,7 @@ async function renderAudit(){
 
 
 /* ===================== ETIQUETAS AUDITORÍA ===================== */
-const TABLE_LABEL={patients:'Ficha del paciente',notes:'Evolución',vitals:'Signos vitales',medications:'Medicación',vitc_administrations:'Vitamina C',indications:'Indicación',consents:'Consentimiento',attachments:'Estudio/adjunto',appointments:'Turno',labs:'Laboratorio',staff:'Usuario'};
+const TABLE_LABEL={patients:'Ficha del paciente',notes:'Evolución',vitals:'Signos vitales',medications:'Medicación',vitc_administrations:'Megadosis de Vitamina C',indications:'Indicación',consents:'Consentimiento',attachments:'Estudio/adjunto',appointments:'Turno',labs:'Laboratorio',staff:'Usuario'};
 const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',treatment_response:'Evaluación de respuesta',response_date:'Fecha de evaluación',comentarios:'Comentarios',g6pd_status:'G6PD',referred_by:'Derivado por',ecog:'ECOG',karnofsky:'Karnofsky',weight_kg:'Peso (kg)',height_cm:'Talla (cm)',physical_exam:'Examen físico',problem_list:'Lista de problemas',cie10_code:'CIE-10',tnm_t:'TNM T',tnm_n:'TNM N',tnm_m:'TNM M',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma'};
 
 /* ===================== AGENDA ===================== */
@@ -1838,7 +1861,7 @@ async function openApptModal(presetPid){
     '<div class="grid g2"><div class="field"><label>Fecha y hora *</label><input id="apStart" type="datetime-local"></div>'+
     '<div class="field"><label>Disciplina</label><select id="apDisc">'+discOpts+'</select></div></div>'+
     '<div class="field"><label>Profesional</label><select id="apProf">'+profOpts+'</select></div>'+
-    '<div class="field"><label>Título / motivo</label><input id="apTitle" placeholder="Ej: Infusión vitamina C, control, entrevista…"></div>'+
+    '<div class="field"><label>Título / motivo</label><input id="apTitle" placeholder="Ej: Megadosis de vitamina C, control, entrevista…"></div>'+
     '<div class="field"><label>Observaciones</label><input id="apNotes"></div>','Crear turno', createAppt);
 }
 async function createAppt(){
@@ -1909,11 +1932,14 @@ async function restorePatient(id){
 
 /* ===================== IMPRIMIR / PDF (HC completa) ===================== */
 async function printPatient(){
-  const [{data:notes},{data:vitc},{data:labs}]=await Promise.all([
+  const [{data:notes},{data:vitc},{data:labs},{data:inds}]=await Promise.all([
     DB().from('notes').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:true}),
     DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:true}),
-    DB().from('labs').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:true})
+    DB().from('labs').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:true}),
+    DB().from('indications').select('*').eq('patient_id',CUR.id).eq('kind','vitamina_c').eq('active',true).order('created_at',{ascending:false})
   ]);
+  const indA=(inds||[])[0]||null;
+  const indLine=indA?('<p style="margin:0 0 8px"><b>Indicación vigente:</b> '+[indA.vitc_target_dose_g?('objetivo '+indA.vitc_target_dose_g+' g'):null, indA.vitc_frequency?(FREQ_LABEL[indA.vitc_frequency]||indA.vitc_frequency):null].filter(Boolean).join(' · ')+'</p>'):'';
   const row=(l,v)=> (v||v===0)?'<tr><td class="k">'+esc(l)+'</td><td>'+esc(v)+'</td></tr>':'';
   const sec=(t,rows)=> rows?'<h3>'+t+'</h3><table>'+rows+'</table>':'';
   const a=anthro(CUR.weight_kg,CUR.height_cm); const anth=a?('IMC '+a.imc.toFixed(1)+' kg/m² · BSA '+a.bsa.toFixed(2)+' m²'):'';
@@ -1948,7 +1974,7 @@ async function printPatient(){
   sec('Tratamiento y plan', row('Tratamiento',CUR.treatment)+row('Plan',CUR.care_plan)+row('Evaluación de respuesta',CUR.treatment_response)+row('Fecha de evaluación',CUR.response_date?fmt(CUR.response_date):''))+
   sec('Comentarios', row('Comentarios',CUR.comentarios))+
   sec('Seguridad', row('G6PD',G6PD_LABEL[CUR.g6pd_status||'no_evaluado']))+
-  '<h3>Laboratorio</h3>'+labsHtml+'<h3>Evoluciones</h3>'+notesHtml+'<h3>Administraciones de vitamina C</h3>'+vitcHtml+
+  '<h3>Laboratorio</h3>'+labsHtml+'<h3>Evoluciones</h3>'+notesHtml+'<h3>Megadosis de vitamina C</h3>'+indLine+vitcHtml+
   '<p class="noprint" style="text-align:center;margin-top:22px"><button onclick="window.print()">Imprimir / Guardar como PDF</button></p>'+
   '<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},400);};</scr'+'ipt></body></html>';
   const w=window.open('','_blank'); if(!w){toast('Permití las ventanas emergentes para imprimir');return;}
