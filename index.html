@@ -437,6 +437,25 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;co
   .top .right{order:1;margin-left:auto;gap:12px}
   #topDate{display:none}
 }
+/* barra de navegación inferior estilo app de iPhone (solo móvil/tablet) */
+#bottomNav{display:none}
+@media (max-width:1040px){
+  html,body{max-width:100%;overflow-x:hidden}
+  /* la barra lateral queda como franja superior solo con el logo */
+  .rail{gap:10px;padding:12px 14px}
+  .rail nav,.rail .grp,.rail .me{display:none!important}
+  .rail .lockup{width:130px;margin:0}
+  /* barra inferior fija */
+  #bottomNav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;
+    background:var(--panel);border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;gap:2px}
+  #bottomNav button{flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;
+    padding:6px 2px;color:var(--muted);font-family:var(--f-ui);font-size:11px;border-radius:10px}
+  #bottomNav button svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.6}
+  #bottomNav button.on{color:var(--vital)}
+  #bottomNav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .page{padding-bottom:92px}
+}
 </style>
 <body>
 
@@ -483,6 +502,7 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;co
     </div>
     <div class="page" id="page"></div>
   </div>
+  <nav id="bottomNav" aria-label="Navegación"></nav>
 </div>
 
 <div id="toast" class="toast"></div>
@@ -508,7 +528,10 @@ const DISC_LABEL = {oncologia:'Oncología', megadosis:'Megadosis de Vitamina C',
 const ROLE_TO_DISC = {admin:'oncologia', director_medico:'oncologia', oncologo:'oncologia', medico_funcional:'oncologia', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
 const DISC_TO_ROLE = {oncologia:'oncologo', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
 const G6PD_LABEL = {no_evaluado:'G6PD no evaluado', normal:'G6PD normal', deficiente:'G6PD deficiente'};
+const EVOL_AREA = {oncologia:'Médica', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
+const AREA_DOT = {oncologia:'#DEF2C4', enfermeria:'#9BA989', nutricion:'#8FD6A6', psicooncologia:'#C9A3E0', ejercicio:'#E0A458'};
 const FREQ_LABEL = {mensual:'1 vez por mes', semanal:'1 vez por semana', '2x_semana':'2 veces por semana', '3x_semana':'3 veces por semana'};
+const FREQ_DAYS = {mensual:30, semanal:7, '2x_semana':3, '3x_semana':2};
 // Un turno cuenta como Megadosis de Vitamina C si su disciplina es 'megadosis' o si el título lo menciona.
 function isMegadosisAppt(a){ return a && (a.discipline==='megadosis' || /megadosis|vitamina\s*c|vit\.?\s*c/i.test(a.title||'')); }
 
@@ -591,6 +614,16 @@ function buildRail(){
       '<div class="mr">'+esc(ROLE_LABEL[ME.role]||ME.role)+'</div>'+
       '<div class="macts"><button class="linkbtn" onclick="openAccount()">Mi cuenta</button><button class="linkbtn" onclick="doSignOut()">Salir</button></div>'+
       '</div></div>';
+  buildBottomNav();
+}
+function bnavBtn(view,label){ return '<button class="'+(curView===view?'on':'')+'" onclick="navigate(\''+view+'\')">'+IC[view]+'<span>'+label+'</span></button>'; }
+function buildBottomNav(){
+  const el=$('bottomNav'); if(!el) return;
+  let items=bnavBtn('inicio','Inicio')+bnavBtn('pacientes','Pacientes')+bnavBtn('agenda','Agenda');
+  if(CUR) items+='<button class="'+(curView==='ficha'?'on':'')+'" onclick="navigate(\'ficha\')">'+IC.ficha+'<span>Ficha</span></button>';
+  if(can.manageUsers()) items+=bnavBtn('equipo','Equipo');
+  else if(can.director()) items+=bnavBtn('archivados','Archivados');
+  el.innerHTML=items;
 }
 function updateTop(){
   const now=new Date();
@@ -1171,7 +1204,7 @@ async function renderFicha(){
   if(CUR.allergies) tags.push('<span class="tag crit"><span class="d"></span>Alergia: '+esc(CUR.allergies.split(/[\.\n]/)[0].slice(0,40))+'</span>');
   tags.push('<span class="tag '+(g==='normal'?'ok':'warn')+'"><span class="d"></span>'+esc(G6PD_LABEL[g])+'</span>');
   if(CUR.ecog||CUR.karnofsky!=null) tags.push('<span class="tag">'+(CUR.ecog?'ECOG '+CUR.ecog:'')+(CUR.ecog&&CUR.karnofsky!=null?' · ':'')+(CUR.karnofsky!=null?'Karnofsky '+CUR.karnofsky:'')+'</span>');
-  const tabs=[['resumen','Resumen'],['hc','Historia clínica'],['evol','Evolución'],['vitc','Megadosis'],['enf','Enfermería'],['labs','Laboratorio'],['areas','Áreas del plan'],['indic','Indicaciones'],['docs','Documentos']];
+  const tabs=[['resumen','Resumen'],['hc','Historia clínica'],['evol','Evolución'],['vitc','Megadosis'],['enf','Enfermería'],['indic','Indicaciones'],['docs','Documentos']];
   if(can.director()) tabs.push(['audit','Auditoría']);
   p.innerHTML=
    '<div class="crumb"><button onclick="navigate(\'pacientes\')">Pacientes</button><span>›</span><span style="color:var(--ink-2)">'+esc(CUR.full_name||'—')+'</span></div>'+
@@ -1250,7 +1283,7 @@ function setTab(t){
   if(t==='audit'&&!can.director()) t='resumen';
   curTab=t;
   document.querySelectorAll('#tabBar button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  const map={resumen:renderResumen,hc:renderHC,evol:renderEvol,vitc:renderVitc,enf:renderEnf,labs:renderLabs,areas:renderAreas,indic:renderIndic,docs:renderDocs,audit:renderAudit};
+  const map={resumen:renderResumen,hc:renderHC,evol:renderEvol,vitc:renderVitc,enf:renderEnf,indic:renderIndic,docs:renderDocs,audit:renderAudit};
   (map[t]||renderResumen)();
 }
 
@@ -1456,28 +1489,67 @@ function entryNote(n){
   const foot = editable
     ? '<div class="ft"><span class="meta">editable por 24 h</span><button class="btn sm" onclick="openEditNote(\''+n.id+'\')">Editar</button></div>'
     : '<div class="ft"><span class="meta">Firmada · bloqueada para edición'+((n.updated_at&&n.updated_at!==n.created_at)?' · editada':'')+'</span></div>';
+  let wLine='';
+  if(n.weight_kg!=null){ const h=parseFloat(CUR.height_cm); const imc=(h>0)?(' · IMC '+(n.weight_kg/Math.pow(h/100,2)).toFixed(1)):''; wLine='<div class="meta" style="margin-top:8px">Peso: '+esc(n.weight_kg)+' kg'+imc+'</div>'; }
+  const areaTag='<span class="tag disc"><span class="d" style="background:'+(AREA_DOT[n.discipline]||'var(--sage)')+'"></span>'+esc(EVOL_AREA[n.discipline]||DISC_LABEL[n.discipline]||n.discipline)+'</span>';
   return '<div class="entry"><div class="eh"><span class="av sm">'+esc(initials(a?a.full_name:''))+'</span><span class="au">'+esc(a?a.full_name:'Profesional')+'</span>'+
-    '<span class="tag disc">'+esc(DISC_LABEL[n.discipline]||n.discipline)+'</span>'+(n.is_confidential?'<span class="tag warn"><span class="d"></span>Confidencial</span>':'')+
+    areaTag+(n.is_confidential?'<span class="tag warn"><span class="d"></span>Confidencial</span>':'')+
     '<span class="meta" style="margin-left:auto">'+fmtDMShort(n.created_at)+' · '+fmtHM(n.created_at)+'</span></div>'+
-    '<p class="bd">'+esc(n.content)+'</p>'+foot+'</div>';
+    '<p class="bd">'+esc(n.content)+'</p>'+wLine+foot+'</div>';
 }
+let EVOL_FILTER='all', EVOL_PROF='all';
+function setEvolArea(a){ EVOL_FILTER=a; renderEvol(); }
+function setEvolProf(u){ EVOL_PROF=u; renderEvol(); }
 async function renderEvol(){
   const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando evoluciones…</div>';
   const {data,error}=await DB().from('notes').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
   if(error){host.innerHTML='<div class="callout"><p>'+esc(error.message)+'</p></div>';return;}
   CUR_NOTES={};
-  const list=(data||[]).map(entryNote).join('');
-  host.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">'+
-      '<span class="meta">'+(data?data.length:0)+' evolucion'+((data&&data.length===1)?'':'es')+' · se pueden editar hasta 24 h después de firmadas</span>'+
+  const all=data||[];
+  const counts={}; all.forEach(n=>counts[n.discipline]=(counts[n.discipline]||0)+1);
+  const areasPresent=Object.keys(EVOL_AREA).filter(a=>counts[a]);
+  const profs={}; all.forEach(n=>{ if(n.author_id&&DIR[n.author_id]) profs[n.author_id]=DIR[n.author_id].full_name; });
+  if(EVOL_FILTER!=='all' && !counts[EVOL_FILTER]) EVOL_FILTER='all';
+  let list=all;
+  if(EVOL_FILTER!=='all') list=list.filter(n=>n.discipline===EVOL_FILTER);
+  if(EVOL_PROF!=='all') list=list.filter(n=>n.author_id===EVOL_PROF);
+  const chips='<div class="subpills"><button class="'+(EVOL_FILTER==='all'?'on':'')+'" onclick="setEvolArea(\'all\')">Todas · '+all.length+'</button>'+
+    areasPresent.map(a=>'<button class="'+(EVOL_FILTER===a?'on':'')+'" onclick="setEvolArea(\''+a+'\')">'+EVOL_AREA[a]+' · '+counts[a]+'</button>').join('')+'</div>';
+  const profSel = Object.keys(profs).length>1
+    ? '<select onchange="setEvolProf(this.value)" style="background:var(--void);border:1px solid var(--line);border-radius:9px;padding:8px 11px;color:var(--ink);font-family:var(--f-ui);font-size:13px">'+
+      '<option value="all">Todos los profesionales</option>'+Object.entries(profs).map(([uid,nm])=>'<option value="'+uid+'" '+(EVOL_PROF===uid?'selected':'')+'>'+esc(nm)+'</option>').join('')+'</select>'
+    : '';
+  const entries=list.map(entryNote).join('');
+  host.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">'+
+      '<span class="meta">'+all.length+' evolución'+(all.length===1?'':'es')+' · se editan hasta 24 h · cada una queda firmada con autor y área</span>'+
       '<button class="btn primary" onclick="openNoteModal()">'+PLUS+'Nueva evolución</button></div>'+
-    (list?'<section class="sheet">'+list+'</section>':'<div class="empty"><p>Todavía no hay evoluciones registradas.</p></div>');
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0">'+chips+profSel+'</div>'+
+    (entries?'<section class="sheet">'+entries+'</section>':'<div class="empty"><p>'+(all.length?'No hay evoluciones para este filtro.':'Todavía no hay evoluciones registradas.')+'</p></div>');
 }
-function openNoteModal(disc){
-  NOTE_DISC=disc||ROLE_TO_DISC[ME.role]; EDIT_NOTE_ID=null;
-  const isPsico=NOTE_DISC==='psicooncologia';
-  const confRow=(isPsico&&can.confidential())?'<div class="field"><label>Confidencialidad</label><select id="nConf"><option value="false">Normal (todo el equipo)</option><option value="true">Confidencial (solo psicooncología y dirección)</option></select></div>':'';
-  modalOpen('Nueva evolución — '+(DISC_LABEL[NOTE_DISC]||NOTE_DISC),
-    confRow+'<div class="field"><label>Nota</label><textarea id="nText" style="min-height:140px" placeholder="Evolución, hallazgos, indicaciones…"></textarea></div>','Agregar', addNote);
+function openNoteModal(presetDisc){
+  NOTE_DISC=presetDisc||ROLE_TO_DISC[ME.role]; EDIT_NOTE_ID=null;
+  const areaOpts=Object.keys(EVOL_AREA).map(a=>'<option value="'+a+'" '+(a===NOTE_DISC?'selected':'')+'>'+EVOL_AREA[a]+'</option>').join('');
+  modalOpen('Nueva evolución',
+    '<div class="field"><label>Área</label><select id="nArea" onchange="noteAreaChange()">'+areaOpts+'</select></div>'+
+    '<div id="nConfRow"></div>'+
+    '<div class="field"><label>Nota</label><textarea id="nText" style="min-height:130px" placeholder="Evolución, hallazgos, indicaciones…"></textarea></div>'+
+    '<div class="field"><label>Peso (kg) — opcional</label><input id="nWeight" type="number" step="0.1" inputmode="decimal" oninput="noteImcHint()"></div>'+
+    '<div class="meta" id="nImc"></div>','Agregar', addNote);
+  noteAreaChange();
+}
+function noteAreaChange(){
+  const a=$('nArea')?$('nArea').value:NOTE_DISC; NOTE_DISC=a;
+  const row=$('nConfRow'); if(!row)return;
+  row.innerHTML=(a==='psicooncologia'&&can.confidential())
+    ? '<div class="field"><label>Confidencialidad</label><select id="nConf"><option value="false">Normal (todo el equipo)</option><option value="true">Confidencial (solo psicooncología y dirección)</option></select></div>'
+    : '';
+}
+function noteImcHint(){
+  const o=$('nImc'); if(!o)return;
+  const w=parseFloat(($('nWeight')||{}).value), h=parseFloat(CUR.height_cm);
+  if(w>0&&h>0){const m=h/100; o.innerHTML='IMC con este peso: <b style="color:var(--vital)">'+(w/(m*m)).toFixed(1)+'</b>'+(CUR.weight_kg?' · peso en ficha '+CUR.weight_kg+' kg':'');}
+  else if(w>0){ o.textContent='Cargá la talla en la Historia clínica para calcular el IMC.'; }
+  else o.textContent='';
 }
 function openEditNote(id){
   const n=CUR_NOTES[id]; if(!n){toast('Nota no encontrada');return;}
@@ -1493,7 +1565,8 @@ async function addNote(){
     if(error){toast(error.message.indexOf('policy')>=0?'Ya no se puede editar (pasaron 24 h)':error.message);return false;}
     toast('Evolución actualizada');
   }else{
-    const rec={patient_id:CUR.id, discipline:NOTE_DISC||ROLE_TO_DISC[ME.role], content:txt, author_id:ME.user_id, created_by:ME.user_id, is_confidential: $('nConf')? $('nConf').value==='true' : false};
+    const disc = $('nArea')? $('nArea').value : (NOTE_DISC||ROLE_TO_DISC[ME.role]);
+    const rec={patient_id:CUR.id, discipline:disc, content:txt, author_id:ME.user_id, created_by:ME.user_id, is_confidential: (disc==='psicooncologia' && $('nConf'))? $('nConf').value==='true' : false, weight_kg: $('nWeight')? num($('nWeight').value) : null};
     const {error}=await DB().from('notes').insert(rec);
     if(error){toast(error.message);return false;}
     toast('Evolución agregada');
@@ -1506,19 +1579,30 @@ async function renderVitc(){
   const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
   const {data}=await DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:false});
   const g=CUR.g6pd_status||'no_evaluado';
-  const gate = g==='normal'
-    ? '<div class="gate ok"><span class="ic"></span><p><b style="color:var(--ink)">G6PD normal.</b> El registro de administraciones está habilitado. Si el screening figurara como «no evaluado» o «deficiente», el sistema bloquearía el botón y mostraría el motivo.</p></div>'
-    : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">'+(g==='deficiente'?'G6PD deficiente.':'Falta el screening de G6PD.')+'</b> '+(g==='deficiente'?'La administración de megadosis de vitamina C está contraindicada: el sistema bloquea el registro.':'Hasta que el G6PD figure como «normal» en la ficha, el sistema no permite registrar administraciones.')+'</p></div>';
+  const consentOk = !!(FCALC.consBy && FCALC.consBy['vitamina_c'] && FCALC.consBy['vitamina_c'].signed_at);
+  const blocked = g!=='normal';   // solo el G6PD bloquea (seguridad clínica)
+  const gate = !blocked
+    ? '<div class="gate ok"><span class="ic"></span><p><b style="color:var(--ink)">Habilitado.</b> G6PD normal: se puede registrar la administración.</p></div>'
+    : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">Registro bloqueado.</b> '+(g==='deficiente'?'G6PD deficiente: la megadosis está contraindicada.':'Falta el screening de G6PD (debe figurar «normal» en la ficha).')+'</p></div>';
+  const consentNote = (!blocked && !consentOk)
+    ? '<div class="callout" style="border-color:rgba(224,164,88,.4);background:rgba(224,164,88,.07)"><span class="demo" style="flex:none">Recordatorio</span><p>No figura un consentimiento de megadosis firmado. No bloquea el registro, pero verificá que el consentimiento esté firmado. <button class="btn sm" style="margin-left:6px" onclick="goConsent()">Registrar consentimiento</button></p></div>'
+    : '';
+  const lastLab=(FCALC.labs&&FCALC.labs[0])?FCALC.labs[0].measured_at:null;
+  const labWarn=(!blocked && (lastLab==null||daysSince(lastLab)>DIAS_LAB_VIGENTE))
+    ? '<div class="callout" style="border-color:rgba(224,164,88,.4);background:rgba(224,164,88,.07)"><span class="demo" style="flex:none">Atención</span><p>'+(lastLab==null?'No hay laboratorios cargados.':'El último laboratorio es del '+fmtDMShort(lastLab)+' (más de '+DIAS_LAB_VIGENTE+' días).')+' Verificá si corresponde pedir un control antes de la infusión.</p></div>'
+    : '';
   const ind=FCALC.ind;
+  let proxDosis=''; if(ind && ind.vitc_frequency && data && data[0]){ const iv=FREQ_DAYS[ind.vitc_frequency]||7; proxDosis=fmtDMShort(new Date(new Date(data[0].administered_at).getTime()+iv*86400000).toISOString()); }
   const indCard = ind? '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Indicación vigente</span><span class="st ok" style="font-size:13px"><span class="d"></span>Activa desde el '+fmtDMShort(ind.created_at)+'</span></div>'+
       '<div class="two"><div class="rows"><div class="row"><span class="k">Dosis objetivo</span><span class="v">'+(ind.vitc_target_dose_g?ind.vitc_target_dose_g+' g':'—')+'</span></div>'+
       '<div class="row"><span class="k">Frecuencia</span><span class="v">'+(ind.vitc_frequency?esc(FREQ_LABEL[ind.vitc_frequency]||ind.vitc_frequency):'—')+'</span></div>'+
       '<div class="row"><span class="k">Indicada por</span><span class="v">'+esc(lastNameOf(whoName(ind.prescribed_by)))+'</span></div></div>'+
       '<div class="rows"><div class="row"><span class="k">Administraciones</span><span class="v">'+(data?data.length:0)+'</span></div>'+
-      '<div class="row"><span class="k">Última</span><span class="v">'+((data&&data[0])?fmtDMShort(data[0].administered_at)+' · '+data[0].dose_g+' g':'—')+'</span></div></div></div>'+
+      '<div class="row"><span class="k">Última</span><span class="v">'+((data&&data[0])?fmtDMShort(data[0].administered_at)+' · '+data[0].dose_g+' g':'—')+'</span></div>'+
+      (proxDosis?'<div class="row"><span class="k">Próxima sugerida</span><span class="v" style="color:var(--vital)">'+proxDosis+'</span></div>':'')+'</div></div>'+
       (ind.detail?'<p class="bd" style="margin-top:14px">'+esc(ind.detail)+'</p>':'')+'</div></section>' : '';
   const canReg=can.vitc();
-  const btn = canReg? '<button class="btn primary sm" onclick="openVitcModal()" '+(g!=='normal'?'disabled title="Requiere G6PD normal"':'')+'>'+PLUS+'Registrar administración</button>' : '';
+  const btn = canReg? '<button class="btn primary sm" onclick="openVitcModal()" '+(blocked?'disabled title="Requiere G6PD normal"':'')+'>'+PLUS+'Registrar administración</button>' : '';
   const rows=(data||[]).map(v=>{
     const ev = (v.adverse_events&&v.adverse_events.trim())?'<span class="st warn"><span class="d"></span>'+esc(v.adverse_events.slice(0,24))+'</span>':'<span class="st ok"><span class="d"></span>Ninguno</span>';
     return '<tr><td style="white-space:nowrap">'+fmtDMShort(v.administered_at)+' · '+fmtHM(v.administered_at)+'</td><td>'+v.dose_g+' g</td>'+
@@ -1531,8 +1615,9 @@ async function renderVitc(){
       '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th>Dosis</th><th>Dilución</th><th>Velocidad</th><th style="min-width:140px">Pre</th><th style="min-width:140px">Post</th><th style="min-width:130px">Eventos</th><th>Administró</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '<div class="savebar">Pre y post muestran frecuencia cardíaca · tensión arterial · glucemia.</div></section>'
     : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Administraciones registradas</span>'+btn+'</div><p class="meta" style="margin:0">Sin administraciones registradas.</p></div></section>';
-  host.innerHTML=gate+indCard+table+(canReg?'':'<div class="callout"><p>Solo enfermería, médico funcional y dirección registran administraciones de megadosis.</p></div>');
+  host.innerHTML=gate+consentNote+labWarn+indCard+table+(canReg?'':'<div class="callout"><p>Solo enfermería, médico funcional y dirección registran administraciones de megadosis.</p></div>');
 }
+function goConsent(){ DOC_TAB='consent'; setTab('docs'); }
 function openVitcModal(){
   modalOpen('Administración de megadosis de vitamina C',
     '<div class="grid g3">'+
@@ -1609,16 +1694,18 @@ async function addMed(){
   toast('Medicación registrada'); afterChange(); return true;
 }
 
-/* ---------- Laboratorio ---------- */
-async function renderLabs(){
-  const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
-  const {data}=await DB().from('labs').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:false});
-  const rows=(data||[]).map(x=>'<tr><td style="white-space:nowrap">'+fmtDMShort(x.measured_at)+'</td><td>'+(x.hemoglobina??'—')+'</td><td>'+(x.hematocrito??'—')+'</td><td>'+(x.leucocitos!=null?esES(x.leucocitos):'—')+'</td><td>'+(x.plaquetas!=null?esES(x.plaquetas):'—')+'</td><td>'+(x.glucemia??'—')+'</td><td>'+(x.creatinina??'—')+'</td><td>'+(x.urea??'—')+'</td><td class="quiet">'+(x.otros?esc(x.otros):'—')+'</td></tr>').join('');
-  host.innerHTML='<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Laboratorios cargados</span><button class="btn primary sm" onclick="openLabModal()">'+PLUS+'Cargar laboratorio</button></div></div>'+
-    (rows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:110px">Fecha</th><th>Hb</th><th>Hto</th><th>Leucocitos</th><th>Plaquetas</th><th>Glucemia</th><th>Creatinina</th><th>Urea</th><th style="min-width:150px">Otros</th></tr></thead><tbody>'+rows+'</tbody></table></div><div class="savebar">La columna «Otros» es texto libre.</div>':'<div class="sec" style="padding-top:0"><p class="meta" style="margin:0">Sin laboratorios cargados.</p></div>')+'</section>';
+/* ---------- Laboratorio (dentro de Documentos) ---------- */
+function labTable(data){
+  const rows=(data||[]).map(x=>{
+    const ver=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver archivo</button>':'—';
+    return '<tr><td style="white-space:nowrap">'+fmtDMShort(x.measured_at)+'</td><td>'+(x.hemoglobina??'—')+'</td><td>'+(x.hematocrito??'—')+'</td><td>'+(x.leucocitos!=null?esES(x.leucocitos):'—')+'</td><td>'+(x.plaquetas!=null?esES(x.plaquetas):'—')+'</td><td>'+(x.glucemia??'—')+'</td><td>'+(x.creatinina??'—')+'</td><td>'+(x.urea??'—')+'</td><td class="quiet">'+(x.otros?esc(x.otros):'—')+'</td><td>'+ver+'</td></tr>';
+  }).join('');
+  return rows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:110px">Fecha</th><th>Hb</th><th>Hto</th><th>Leucocitos</th><th>Plaquetas</th><th>Glucemia</th><th>Creatinina</th><th>Urea</th><th style="min-width:140px">Otros</th><th>Archivo</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="meta" style="margin:0">Sin laboratorios cargados.</p>';
 }
 function openLabModal(){
   modalOpen('Cargar laboratorio',
+    '<div class="field"><label>Archivo del laboratorio (PDF o foto) — opcional</label><input id="lbFile" type="file" accept="application/pdf,image/*"></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:-4px"><span class="meta" id="lbReadMsg">Subí el archivo y tocá «Leer» para completar los valores solo; después revisalos.</span><button class="btn sm" id="lbRead" onclick="readLabFile()">Leer automáticamente</button></div>'+
     '<div class="grid g3">'+
       '<div class="field"><label>Fecha</label><input id="lbDate" type="date"></div>'+
       '<div class="field"><label>Hemoglobina (g/dL)</label><input id="lbHb" type="number" step="0.1"></div>'+
@@ -1631,34 +1718,39 @@ function openLabModal(){
     '</div><div class="field"><label>Otros valores</label><input id="lbOtros" placeholder="Ej: TSH 2.1 · LDH 210 · Vit D 28…"></div>'+
     '<div class="field"><label>Observación (opcional)</label><input id="lbNotes"></div>','Guardar laboratorio', addLab);
 }
+function fileToBase64(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>{ const s=String(r.result); res(s.slice(s.indexOf(',')+1)); }; r.onerror=rej; r.readAsDataURL(f); }); }
+async function readLabFile(){
+  const f=$('lbFile')&&$('lbFile').files[0]; const msg=$('lbReadMsg'), btn=$('lbRead');
+  if(!f){ if(msg){msg.style.color='var(--alert)';msg.textContent='Elegí primero el archivo del laboratorio.';} return; }
+  if(f.size>8*1024*1024){ if(msg){msg.style.color='var(--alert)';msg.textContent='Para la lectura automática el archivo debe pesar menos de 8 MB.';} return; }
+  btn.disabled=true; if(msg){msg.style.color='';msg.textContent='Leyendo el laboratorio…';}
+  try{
+    const b64=await fileToBase64(f);
+    const resp=await SB.functions.invoke('read-lab',{body:{fileBase64:b64, mediaType:f.type||'application/pdf'}});
+    if(resp.error){ if(msg){msg.style.color='var(--crit)';msg.textContent='No se pudo leer automáticamente. Cargá los valores a mano.';} btn.disabled=false; return; }
+    const d=resp.data||{};
+    if(d.error){ if(msg){msg.style.color='var(--crit)';msg.textContent=d.error;} btn.disabled=false; return; }
+    const v=d.values||{};
+    const setv=(id,val)=>{const e=$(id); if(e&&val!=null&&val!=='') e.value=val;};
+    if(v.measured_at) setv('lbDate', String(v.measured_at).slice(0,10));
+    setv('lbHb',v.hemoglobina);setv('lbHto',v.hematocrito);setv('lbGb',v.leucocitos);setv('lbPlaq',v.plaquetas);
+    setv('lbGluc',v.glucemia);setv('lbCreat',v.creatinina);setv('lbUrea',v.urea);setv('lbOtros',v.otros);
+    if(msg){msg.style.color='var(--vital)';msg.textContent='Listo. Revisá los valores y corregí lo que haga falta antes de guardar.';}
+  }catch(e){ if(msg){msg.style.color='var(--crit)';msg.textContent='No se pudo leer el archivo. Cargá los valores a mano.';} }
+  btn.disabled=false;
+}
 async function addLab(){
   const g=id=>{const e=$(id);return e&&e.value!==''?e.value:null;};
-  const rec={patient_id:CUR.id, recorded_by:ME.user_id,
+  let sp=null; const f=$('lbFile')&&$('lbFile').files[0];
+  if(f){ if(f.size>25*1024*1024){toast('El archivo supera los 25 MB');return false;}
+    const clean=f.name.replace(/[^a-zA-Z0-9._-]/g,'_'); sp=CUR.id+'/lab_'+Date.now()+'_'+clean;
+    const {error:e1}=await SB.storage.from('estudios').upload(sp,f,{upsert:false}); if(e1){toast(e1.message);return false;} }
+  const rec={patient_id:CUR.id, recorded_by:ME.user_id, storage_path:sp,
     measured_at: $('lbDate').value? new Date($('lbDate').value+'T12:00:00').toISOString() : new Date().toISOString(),
     hemoglobina:g('lbHb'),hematocrito:g('lbHto'),leucocitos:g('lbGb'),plaquetas:g('lbPlaq'),glucemia:g('lbGluc'),creatinina:g('lbCreat'),urea:g('lbUrea'),otros:g('lbOtros'),notes:g('lbNotes')};
   const {error}=await DB().from('labs').insert(rec); if(error){toast(error.message);return false;}
-  toast('Laboratorio guardado'); afterChange(); return true;
+  toast('Laboratorio guardado'); DOC_TAB='labs'; afterChange(); return true;
 }
-
-/* ---------- Áreas del plan (nutrición / psico / actividad física) ---------- */
-let AREA_TAB='nutricion';
-async function renderAreas(){
-  const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
-  const discs=[['nutricion','Nutrición'],['psicooncologia','Psicooncología'],['ejercicio','Actividad física']];
-  const counts={};
-  const {data}=await DB().from('notes').select('*').eq('patient_id',CUR.id).in('discipline',['nutricion','psicooncologia','ejercicio']).order('created_at',{ascending:false});
-  (data||[]).forEach(n=>counts[n.discipline]=(counts[n.discipline]||0)+1);
-  CUR_NOTES={};
-  const list=(data||[]).filter(n=>n.discipline===AREA_TAB).map(entryNote).join('');
-  const canAdd=(ME.role===DISC_TO_ROLE[AREA_TAB])||can.director();
-  const pills='<div class="subpills">'+discs.map(([d,l])=>'<button class="'+(AREA_TAB===d?'on':'')+'" onclick="setArea(\''+d+'\')">'+l+' · '+(counts[d]||0)+'</button>').join('')+'</div>';
-  const head='<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">'+
-    '<span class="meta">'+(canAdd?'Carga el profesional del área o la dirección médica':'Podés ver esta sección; solo '+(DISC_LABEL[AREA_TAB])+' o dirección puede cargar')+'</span>'+
-    (canAdd?'<button class="btn primary sm" onclick="openNoteModal(\''+AREA_TAB+'\')">'+PLUS+'Agregar registro de '+esc(DISC_LABEL[AREA_TAB].toLowerCase())+'</button>':'')+'</div>';
-  const conf = AREA_TAB==='psicooncologia'?'<div class="callout"><span class="demo" style="flex:none">Confidencialidad</span><p>Los registros de psicooncología pueden marcarse como confidenciales. En ese caso solo los ven psicooncología y la dirección médica.</p></div>':'';
-  host.innerHTML=pills+head+(list?'<section class="sheet">'+list+'</section>':'<div class="empty"><p>Sin registros de '+esc(DISC_LABEL[AREA_TAB].toLowerCase())+' todavía.</p></div>')+conf;
-}
-function setArea(d){ AREA_TAB=d; renderAreas(); }
 
 /* ---------- Indicaciones ---------- */
 async function renderIndic(){
@@ -1696,38 +1788,54 @@ async function addIndic(){
   toast('Indicación guardada'); afterChange(); return true;
 }
 
-/* ---------- Documentos (estudios + consentimientos) ---------- */
-let DOC_TAB='estudios';
+/* ---------- Documentos (estudios + laboratorios + consentimientos) ---------- */
+let DOC_TAB='todos';
+const FILE_ICO='<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+const LINK_ICO='<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+function estudiosFiles(atts){
+  return atts.map(a=>{
+    const open = a.url? 'window.open(\''+esc(a.url)+'\',\'_blank\')' : 'verEstudio(\''+(a.storage_path||'').replace(/'/g,'')+'\')';
+    return '<a href="#" onclick="'+open+';return false">'+(a.url?LINK_ICO:FILE_ICO)+'<span class="fn">'+esc(a.title||'Estudio')+'</span>'+(a.discipline?'<span class="tag disc">'+esc(EVOL_AREA[a.discipline]||DISC_LABEL[a.discipline]||a.discipline)+'</span>':'')+'<span class="fd">'+fmtDMShort(a.created_at)+'</span></a>';
+  }).join('');
+}
+function consentCards(cons){
+  const KIND={hc_compartida:'Historia clínica compartida', vitamina_c:'Megadosis de Vitamina C'};
+  return cons.map(x=>{
+    const ver=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver adjunto</button>':(x.document_url?'<a class="btn sm" href="'+esc(x.document_url)+'" target="_blank" rel="noopener">Ver enlace</a>':'');
+    return '<div class="entry"><div class="eh"><span class="tag ok"><span class="d"></span>'+esc(KIND[x.kind]||x.kind)+'</span>'+(x.signed_at?'<span class="au">firmado '+fmtDMShort(x.signed_at)+'</span>':'<span class="au">sin fecha de firma</span>')+'<span class="meta" style="margin-left:auto">'+fmtDMShort(x.created_at)+' · '+esc(lastNameOf(whoName(x.created_by)))+'</span></div>'+
+      (x.notes?'<p class="bd">'+esc(x.notes)+'</p>':'')+(ver?'<div class="ft">'+ver+'</div>':'')+'</div>';
+  }).join('');
+}
+function docSection(title,inner){ return '<div style="margin-top:4px"><div class="sec-h" style="margin:14px 2px 8px"><span class="sec-t">'+title+'</span></div>'+inner+'</div>'; }
 async function renderDocs(){
   const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
-  const [AT,CO]=await Promise.all([
+  const [AT,CO,LB]=await Promise.all([
     DB().from('attachments').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false}),
-    DB().from('consents').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false})
+    DB().from('consents').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false}),
+    DB().from('labs').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:false})
   ]);
-  const atts=AT.data||[], cons=CO.data||[];
-  const pills='<div class="subpills"><button class="'+(DOC_TAB==='estudios'?'on':'')+'" onclick="setDoc(\'estudios\')">Estudios y adjuntos · '+atts.length+'</button>'+
-    '<button class="'+(DOC_TAB==='consent'?'on':'')+'" onclick="setDoc(\'consent\')">Consentimientos · '+cons.length+'</button></div>';
-  let body;
-  if(DOC_TAB==='estudios'){
-    const fileIco='<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
-    const linkIco='<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
-    const rows=atts.map(a=>{
-      const open = a.url? 'window.open(\''+esc(a.url)+'\',\'_blank\')' : 'verEstudio(\''+(a.storage_path||'').replace(/'/g,'')+'\')';
-      return '<a href="#" onclick="'+open+';return false">'+(a.url?linkIco:fileIco)+'<span class="fn">'+esc(a.title||'Estudio')+'</span>'+(a.discipline?'<span class="tag disc">'+esc(DISC_LABEL[a.discipline]||a.discipline)+'</span>':'')+'<span class="fd">'+fmtDMShort(a.created_at)+'</span></a>';
-    }).join('');
-    body='<div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap"><button class="btn sm" onclick="openLinkModal()">Agregar link</button><button class="btn primary sm" onclick="openUploadModal()">Subir archivo</button></div>'+
-      (rows?'<section class="sheet"><div class="sec"><div class="files">'+rows+'</div></div></section>':'<div class="empty"><p>Sin estudios cargados.</p></div>');
-  }else{
-    const KIND={hc_compartida:'Historia clínica compartida', vitamina_c:'Megadosis de Vitamina C'};
-    const rows=cons.map(x=>{
-      const ver=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver adjunto</button>':(x.document_url?'<a class="btn sm" href="'+esc(x.document_url)+'" target="_blank" rel="noopener">Ver enlace</a>':'');
-      return '<div class="entry"><div class="eh"><span class="tag ok"><span class="d"></span>'+esc(KIND[x.kind]||x.kind)+'</span>'+(x.signed_at?'<span class="au">firmado '+fmtDMShort(x.signed_at)+'</span>':'<span class="au">sin fecha de firma</span>')+'<span class="meta" style="margin-left:auto">'+fmtDMShort(x.created_at)+' · '+esc(lastNameOf(whoName(x.created_by)))+'</span></div>'+
-        (x.notes?'<p class="bd">'+esc(x.notes)+'</p>':'')+(ver?'<div class="ft">'+ver+'</div>':'')+'</div>';
-    }).join('');
-    body='<div style="display:flex;justify-content:flex-end;flex-wrap:wrap"><button class="btn primary sm" onclick="openConsentModal()">Registrar consentimiento</button></div>'+
-      (rows?'<section class="sheet">'+rows+'</section>':'<div class="empty"><p>Sin consentimientos registrados.</p></div>');
-  }
-  host.innerHTML=pills+body;
+  const atts=AT.data||[], cons=CO.data||[], labs=LB.data||[];
+  const t=DOC_TAB;
+  const pills='<div class="subpills">'+
+    '<button class="'+(t==='todos'?'on':'')+'" onclick="setDoc(\'todos\')">Todos</button>'+
+    '<button class="'+(t==='estudios'?'on':'')+'" onclick="setDoc(\'estudios\')">Estudios · '+atts.length+'</button>'+
+    '<button class="'+(t==='labs'?'on':'')+'" onclick="setDoc(\'labs\')">Laboratorios · '+labs.length+'</button>'+
+    '<button class="'+(t==='consent'?'on':'')+'" onclick="setDoc(\'consent\')">Consentimientos · '+cons.length+'</button></div>';
+  // acciones según el filtro
+  let acts='';
+  if(t==='estudios'||t==='todos') acts+='<button class="btn sm" onclick="openUploadModal()">Subir archivo</button><button class="btn sm" onclick="openLinkModal()">Agregar link</button>';
+  if(t==='labs'||t==='todos') acts+='<button class="btn primary sm" onclick="openLabModal()">Cargar laboratorio</button>';
+  if(t==='consent'||t==='todos') acts+='<button class="btn sm" onclick="openConsentModal()">Registrar consentimiento</button>';
+  const actRow='<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">'+acts+'</div>';
+  const estudiosBlock = atts.length?'<section class="sheet"><div class="sec"><div class="files">'+estudiosFiles(atts)+'</div></div></section>':'<div class="empty" style="padding:28px 12px"><p>Sin estudios cargados.</p></div>';
+  const labsBlock = '<section class="card"><div class="sec">'+labTable(labs)+'</div></section>';
+  const consentBlock = cons.length?'<section class="sheet">'+consentCards(cons)+'</section>':'<div class="empty" style="padding:28px 12px"><p>Sin consentimientos registrados.</p></div>';
+  let body='';
+  if(t==='estudios') body=estudiosBlock;
+  else if(t==='labs') body=labsBlock;
+  else if(t==='consent') body=consentBlock;
+  else body=docSection('Estudios y adjuntos',estudiosBlock)+docSection('Laboratorios',labsBlock)+docSection('Consentimientos',consentBlock);
+  host.innerHTML=pills+actRow+body;
 }
 function setDoc(t){ DOC_TAB=t; renderDocs(); }
 function openUploadModal(){
@@ -1950,7 +2058,7 @@ async function printPatient(){
     return '<div class="pn"><b>'+fmtDT(x.measured_at)+'</b> — '+esc(p.join(' · ')||'—')+(x.otros?' · '+esc(x.otros):'')+(x.notes?'<br>'+esc(x.notes):'')+'</div>';
   }).join('')||'<p>Sin laboratorios.</p>';
   const notesHtml=(notes||[]).map(n=>{const au=DIR[n.author_id];
-    return '<div class="pn"><b>'+fmtDT(n.created_at)+'</b> — '+esc(au?au.full_name:'Profesional')+' ('+(DISC_LABEL[n.discipline]||n.discipline)+')'+(n.is_confidential?' · CONFIDENCIAL':'')+'<br>'+esc(n.content)+'</div>';}).join('')||'<p>Sin evoluciones.</p>';
+    return '<div class="pn"><b>'+fmtDT(n.created_at)+'</b> — '+esc(au?au.full_name:'Profesional')+' ('+(DISC_LABEL[n.discipline]||n.discipline)+')'+(n.is_confidential?' · CONFIDENCIAL':'')+'<br>'+esc(n.content)+(n.weight_kg!=null?'<br>Peso: '+esc(n.weight_kg)+' kg':'')+'</div>';}).join('')||'<p>Sin evoluciones.</p>';
   const vitcHtml=(vitc||[]).map(v=>'<div class="pn"><b>'+fmtDT(v.administered_at)+'</b> — '+v.dose_g+' g'+(v.dilution_ml?' / '+v.dilution_ml+' ml':'')+'. Pre: FC '+(v.hr_pre??'—')+' TA '+(v.bp_pre??'—')+' Gluc '+(v.glucose_pre??'—')+'; Post: FC '+(v.hr_post??'—')+' TA '+(v.bp_post??'—')+' Gluc '+(v.glucose_post??'—')+(v.adverse_events?'. Eventos: '+esc(v.adverse_events):'')+'</div>').join('')||'<p>Sin administraciones.</p>';
   const tnm=[CUR.tnm_t&&('T'+CUR.tnm_t),CUR.tnm_n&&('N'+CUR.tnm_n),CUR.tnm_m&&('M'+CUR.tnm_m)].filter(Boolean).join(' ');
   const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>HC '+(CUR.hc_number||'')+' - '+esc(CUR.full_name||'')+'</title>'+
