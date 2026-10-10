@@ -456,6 +456,36 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;co
   #bottomNav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .page{padding-bottom:92px}
 }
+
+/* ====== TEMA CLARO CLÍNICO (Opción A) ====== */
+:root{
+  color-scheme:light;
+  --void:#F4F6F1; --panel:#FFFFFF; --panel-2:#EEF1EA; --raise:#E7EDE2;
+  --line:#E2E7DD; --div:#ECEFE8;
+  --ink:#1B241F; --ink-2:#36423A; --muted:#566055; --faint:#667066;
+  --vital:#3C6B3A; --sage:#5E7256; --alert:#B45309; --crit:#DC2626;
+}
+body{background:var(--void);color:var(--ink)}
+.btn.primary{background:var(--vital);color:#fff;border-color:var(--vital)}
+.btn.primary:hover{background:#335C31;color:#fff;border-color:#335C31}
+.rail .lockup,.login .lockup{background:#232824;padding:9px 12px;border-radius:10px}
+.login .l{background:var(--panel-2)} .login .r{background:var(--panel)}
+.tag.ok{border-color:#BFE3C7;background:#E9F7ED;color:#15803D}.tag.ok .d{background:#15803D}
+.tag.crit{border-color:#F3C9C2;background:#FDECEA;color:#B4231A}.tag.crit .d{background:#DC2626}
+.tag.warn{border-color:#EBD6B6;background:#FBF1E1;color:#8A5212}.tag.warn .d{background:#D97706}
+.st.ok .d{background:#15803D}.st.warn{color:#8A5212}.st.warn .d{background:#D97706}.st.crit{color:#B4231A}.st.crit .d{background:#DC2626}.st.off .d{background:#AEB6AA}
+.gate{border-color:#EBD6B6;background:#FBF3E8}.gate .ic{background:#D97706}
+.gate.ok{border-color:#BFE3C7;background:#EDF7EF}.gate.ok .ic{background:#15803D}
+.callout{background:var(--panel-2);border-color:var(--line)}
+.demo{color:#8A5212;border-color:#EBD6B6;background:#FBF1E1}
+.dot-live{background:#3C6B3A;box-shadow:0 0 0 0 rgba(60,107,58,.4)}
+@keyframes pl{70%{box-shadow:0 0 0 8px rgba(60,107,58,0)}100%{box-shadow:0 0 0 0 rgba(60,107,58,0)}}
+.av{color:#4C5A48}.av.lg{color:var(--vital)}
+.tbl tbody tr:hover{background:var(--panel-2)}
+.tbl tbody tr:hover td:first-child{box-shadow:inset 3px 0 0 var(--vital)}
+.filters button.on,.subpills button.on,.form .authtabs button.on{background:var(--raise);color:var(--ink);border-color:var(--line)}
+.toast{background:#232824;color:#F6F6EC;border-color:#232824}
+.crit-list .it.crit{background:#FDECEA}
 </style>
 <body>
 
@@ -529,7 +559,17 @@ const ROLE_TO_DISC = {admin:'oncologia', director_medico:'oncologia', oncologo:'
 const DISC_TO_ROLE = {oncologia:'oncologo', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
 const G6PD_LABEL = {no_evaluado:'G6PD no evaluado', normal:'G6PD normal', deficiente:'G6PD deficiente'};
 const EVOL_AREA = {oncologia:'Médica', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
-const AREA_DOT = {oncologia:'#DEF2C4', enfermeria:'#9BA989', nutricion:'#8FD6A6', psicooncologia:'#C9A3E0', ejercicio:'#E0A458'};
+/* Color por área (tema claro). t=texto, bg=fondo, bd=borde, d=punto/acento. Nunca solo color: siempre acompañado de texto/ícono. */
+const AREA_COL = {
+  oncologia:     {t:'#1D4ED8', bg:'#EAF1FD', bd:'#C7DBF5', d:'#2563EB'},
+  enfermeria:    {t:'#0E7490', bg:'#E4F5F8', bd:'#BBE4EA', d:'#0E9BB5'},
+  nutricion:     {t:'#15803D', bg:'#E9F7ED', bd:'#BFE3C7', d:'#15803D'},
+  psicooncologia:{t:'#6D28D9', bg:'#F2EBFC', bd:'#DDCBF5', d:'#7C3AED'},
+  ejercicio:     {t:'#9A5212', bg:'#FBEFE0', bd:'#F0D8BC', d:'#D97706'}
+};
+/* Acento por área para el tablero/resumen (vitc comparte el celeste de enfermería-megadosis) */
+const DASH_COL = {vitc:'#0E9BB5', nutricion:'#15803D', psicooncologia:'#7C3AED', ejercicio:'#D97706'};
+const AREA_DOT = {oncologia:AREA_COL.oncologia.d, enfermeria:AREA_COL.enfermeria.d, nutricion:AREA_COL.nutricion.d, psicooncologia:AREA_COL.psicooncologia.d, ejercicio:AREA_COL.ejercicio.d};
 const FREQ_LABEL = {mensual:'1 vez por mes', semanal:'1 vez por semana', '2x_semana':'2 veces por semana', '3x_semana':'3 veces por semana'};
 const FREQ_DAYS = {mensual:30, semanal:7, '2x_semana':3, '3x_semana':2};
 // Un turno cuenta como Megadosis de Vitamina C si su disciplina es 'megadosis' o si el título lo menciona.
@@ -930,7 +970,12 @@ async function loadCache(){
 /* dots de áreas para el listado */
 function areaDots(areas){
   const order=['vitc','nutricion','psicooncologia','ejercicio'];
-  return '<span class="dots">'+order.map(k=>{const s=areas[k];return '<i class="'+(s==='active'?'a':(s==='stale'?'p':''))+'"></i>';}).join('')+'</span>';
+  return '<span class="dots">'+order.map(k=>{
+    const s=areas[k];
+    const col = s==='active' ? (DASH_COL[k]||'#15803D') : (s==='stale' ? '#C98A2E' : '#D8DCD3');
+    const cls = s==='active'?'a':(s==='stale'?'p':'');
+    return '<i class="'+cls+'" title="'+(AREA_NAME&&AREA_NAME[k]?AREA_NAME[k]:k)+'" style="background:'+col+'"></i>';
+  }).join('')+'</span>';
 }
 
 
@@ -1045,9 +1090,9 @@ async function renderPacientes(){
          '<button data-f="sinturno" class="'+(PFILTER==='sinturno'?'on':'')+'" onclick="setPFilter(\'sinturno\')">Sin turno próximo · '+nSinTurno+'</button>'+
        '</div><span class="meta">Ordenado por próximo turno</span></div>'+
      '<div class="sec" style="padding:16px 20px;border-bottom:1px solid var(--div)"><div class="legend"><b>Áreas con registros:</b>'+
-       '<span><span class="dots"><i class="a"></i></span> Megadosis</span><span><span class="dots"><i class="a"></i></span> Nutrición</span>'+
-       '<span><span class="dots"><i class="a"></i></span> Psicooncología</span><span><span class="dots"><i class="a"></i></span> Actividad física</span>'+
-       '<span style="margin-left:auto"><span class="dots"><i class="p"></i></span> sin movimiento hace '+DIAS_AREA_ACTIVA+' días &nbsp;·&nbsp; <span class="dots"><i></i></span> sin registros</span></div></div>'+
+       '<span><span class="dots"><i class="a" style="background:'+DASH_COL.vitc+'"></i></span> Megadosis</span><span><span class="dots"><i class="a" style="background:'+DASH_COL.nutricion+'"></i></span> Nutrición</span>'+
+       '<span><span class="dots"><i class="a" style="background:'+DASH_COL.psicooncologia+'"></i></span> Psicooncología</span><span><span class="dots"><i class="a" style="background:'+DASH_COL.ejercicio+'"></i></span> Actividad física</span>'+
+       '<span style="margin-left:auto"><span class="dots"><i class="p" style="background:#C98A2E"></i></span> sin movimiento hace '+DIAS_AREA_ACTIVA+' días &nbsp;·&nbsp; <span class="dots"><i style="background:#D8DCD3"></i></span> sin registros</span></div></div>'+
      '<div class="scroll"><table class="tbl wide"><thead><tr>'+
        '<th style="min-width:250px">Paciente</th><th style="min-width:230px">Diagnóstico</th><th style="min-width:130px">Áreas</th>'+
        '<th style="min-width:190px">Situación</th><th style="min-width:150px">Próximo turno</th><th>Último registro</th></tr></thead>'+
@@ -1314,7 +1359,8 @@ function areaCard(key){
     if(m.prox) parts.push('próximo turno '+fmtDMShort(m.prox.starts_at));
     sub=parts.join(' · ')||'—';
   }
-  return '<div class="c'+(st==='none'?' off':'')+'"><div class="hd">'+AREA_ICON[key]+'<span class="nm">'+AREA_NAME[key]+'</span>'+stTag+'</div>'+
+  const icon = st==='none' ? AREA_ICON[key] : AREA_ICON[key].replace('<svg ','<svg style="stroke:'+(DASH_COL[key]||'var(--vital)')+'" ');
+  return '<div class="c'+(st==='none'?' off':'')+'"><div class="hd">'+icon+'<span class="nm">'+AREA_NAME[key]+'</span>'+stTag+'</div>'+
     '<div class="v">'+val+'</div><div class="s">'+esc(sub)+'</div></div>';
 }
 function labChartSVG(analyte){
@@ -1336,15 +1382,15 @@ function labChartSVG(analyte){
   const last=pts[n-1];
   const xlabs=rows.map((r,i)=>'<text x="'+X(i).toFixed(1)+'" y="196">'+fmtDMShort(r.measured_at)+'</text>').join('');
   return '<svg viewBox="0 0 480 208" width="100%" role="img"><defs><linearGradient id="gh" x1="0" y1="0" x2="0" y2="1">'+
-    '<stop offset="0" stop-color="#DEF2C4" stop-opacity=".2"/><stop offset="1" stop-color="#DEF2C4" stop-opacity="0"/></linearGradient></defs>'+
-    '<g stroke="#232A24" stroke-width="1">'+grid+'</g>'+
-    '<g fill="#828B80" font-size="11.5" font-family="Inter,sans-serif" text-anchor="end">'+ylabs+'</g>'+
+    '<stop offset="0" stop-color="#3C6B3A" stop-opacity=".16"/><stop offset="1" stop-color="#3C6B3A" stop-opacity="0"/></linearGradient></defs>'+
+    '<g stroke="#E6E9E1" stroke-width="1">'+grid+'</g>'+
+    '<g fill="#79837A" font-size="11.5" font-family="Inter,sans-serif" text-anchor="end">'+ylabs+'</g>'+
     (area?'<path d="'+area+'" fill="url(#gh)"/>':'')+
-    '<path d="'+line+'" fill="none" stroke="#DEF2C4" stroke-width="2.2"/>'+
-    '<g fill="#DEF2C4">'+dots+'</g>'+
-    '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="5.4" fill="#DEF2C4" stroke="#171B17" stroke-width="2.4"/>'+
-    '<text x="'+last[0].toFixed(1)+'" y="'+(last[1]-14).toFixed(1)+'" text-anchor="middle" fill="#F6F6EC" font-size="13.5" font-family="Instrument Sans,sans-serif">'+esc(rows[n-1][analyte])+'</text>'+
-    '<g fill="#828B80" font-size="11.5" font-family="Inter,sans-serif" text-anchor="middle">'+xlabs+'</g></svg>';
+    '<path d="'+line+'" fill="none" stroke="#3C6B3A" stroke-width="2.2"/>'+
+    '<g fill="#3C6B3A">'+dots+'</g>'+
+    '<circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="5.4" fill="#3C6B3A" stroke="#FFFFFF" stroke-width="2.4"/>'+
+    '<text x="'+last[0].toFixed(1)+'" y="'+(last[1]-14).toFixed(1)+'" text-anchor="middle" fill="#1B241F" font-size="13.5" font-family="Instrument Sans,sans-serif">'+esc(rows[n-1][analyte])+'</text>'+
+    '<g fill="#79837A" font-size="11.5" font-family="Inter,sans-serif" text-anchor="middle">'+xlabs+'</g></svg>';
 }
 function updateLabChart(analyte){
   CUR_ANALITO=analyte;
@@ -1362,8 +1408,8 @@ function renderResumen(){
   const vitcHead = g==='normal'?'<span class="st ok" style="font-size:13px"><span class="d"></span>Habilitada · G6PD normal</span>'
     : '<span class="st '+(g==='deficiente'?'crit':'warn')+'" style="font-size:13px"><span class="d"></span>Bloqueada · '+esc(G6PD_LABEL[g])+'</span>';
   const vitcBlock = (vc.length||f.ind) ? '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Megadosis de Vitamina C</span>'+vitcHead+'</div>'+
-      '<div class="ring-row"><svg class="ring" viewBox="0 0 120 120" role="img" aria-label="'+vc.length+' administraciones"><circle cx="60" cy="60" r="48" fill="none" stroke="#39403A" stroke-width="7" stroke-dasharray="1.6 6.4"/>'+
-        (vc.length?'<circle cx="60" cy="60" r="48" fill="none" stroke="#DEF2C4" stroke-width="7" stroke-dasharray="1.6 6.4"/>':'')+
+      '<div class="ring-row"><svg class="ring" viewBox="0 0 120 120" role="img" aria-label="'+vc.length+' administraciones"><circle cx="60" cy="60" r="48" fill="none" stroke="#E2E7DD" stroke-width="7" stroke-dasharray="1.6 6.4"/>'+
+        (vc.length?'<circle cx="60" cy="60" r="48" fill="none" stroke="#0E9BB5" stroke-width="7" stroke-dasharray="1.6 6.4"/>':'')+
         '<text class="lbl" x="60" y="60" text-anchor="middle">'+vc.length+'</text><text class="sub" x="60" y="76" text-anchor="middle">ADMINISTRACIONES</text></svg>'+
       '<div class="stats">'+
         '<div><div class="k">Última administración</div><div class="v">'+(lastV?fmtDMShort(lastV.administered_at)+' · '+lastV.dose_g+' g':'—')+'</div><div class="s">'+(lastV?((lastV.rate_g_min?lastV.rate_g_min+' g/min':'')+(lastV.dilution_ml?' en '+lastV.dilution_ml+' ml':''))||'—':'—')+'</div></div>'+
@@ -1491,7 +1537,8 @@ function entryNote(n){
     : '<div class="ft"><span class="meta">Firmada · bloqueada para edición'+((n.updated_at&&n.updated_at!==n.created_at)?' · editada':'')+'</span></div>';
   let wLine='';
   if(n.weight_kg!=null){ const h=parseFloat(CUR.height_cm); const imc=(h>0)?(' · IMC '+(n.weight_kg/Math.pow(h/100,2)).toFixed(1)):''; wLine='<div class="meta" style="margin-top:8px">Peso: '+esc(n.weight_kg)+' kg'+imc+'</div>'; }
-  const areaTag='<span class="tag disc"><span class="d" style="background:'+(AREA_DOT[n.discipline]||'var(--sage)')+'"></span>'+esc(EVOL_AREA[n.discipline]||DISC_LABEL[n.discipline]||n.discipline)+'</span>';
+  const ac=AREA_COL[n.discipline];
+  const areaTag='<span class="tag disc"'+(ac?' style="background:'+ac.bg+';border-color:'+ac.bd+';color:'+ac.t+'"':'')+'><span class="d" style="background:'+(ac?ac.d:'var(--sage)')+'"></span>'+esc(EVOL_AREA[n.discipline]||DISC_LABEL[n.discipline]||n.discipline)+'</span>';
   return '<div class="entry"><div class="eh"><span class="av sm">'+esc(initials(a?a.full_name:''))+'</span><span class="au">'+esc(a?a.full_name:'Profesional')+'</span>'+
     areaTag+(n.is_confidential?'<span class="tag warn"><span class="d"></span>Confidencial</span>':'')+
     '<span class="meta" style="margin-left:auto">'+fmtDMShort(n.created_at)+' · '+fmtHM(n.created_at)+'</span></div>'+
