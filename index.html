@@ -875,6 +875,8 @@ async function promptMfaChallenge(){
 /* ===================== DATOS CALCULADOS (sección 6) ===================== */
 function groupBy(list,key){const m={};(list||[]).forEach(r=>{const k=r[key];(m[k]=m[k]||[]).push(r);});return m;}
 function todayISO(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate()).toISOString();}
+function nowLocalInput(){const n=new Date();const p=x=>(''+x).padStart(2,'0');return n.getFullYear()+'-'+p(n.getMonth()+1)+'-'+p(n.getDate())+'T'+p(n.getHours())+':'+p(n.getMinutes());}
+function whenISO(id){const e=$(id);return (e&&e.value)?new Date(e.value).toISOString():new Date().toISOString();}
 function sameDay(d){if(!d)return false;const x=new Date(d),n=new Date();return x.getFullYear()===n.getFullYear()&&x.getMonth()===n.getMonth()&&x.getDate()===n.getDate();}
 function isFuture(d){return d && new Date(d).getTime()>=Date.now();}
 function whoName(uid){const s=DIR[uid];return s?s.full_name:'—';}
@@ -1798,6 +1800,7 @@ async function renderVitc(){
 function goConsent(){ DOC_TAB='consent'; setTab('docs'); }
 function openVitcModal(){
   modalOpen('Administración de megadosis de vitamina C',
+    '<div class="field"><label>Fecha y hora de la administración</label><input id="vWhen" type="datetime-local" value="'+nowLocalInput()+'"></div>'+
     '<div class="grid g3">'+
       '<div class="field"><label>Dosis (g)</label><input id="vDose" type="number" step="0.1"></div>'+
       '<div class="field"><label>Dilución (ml)</label><input id="vDil" type="number"></div>'+
@@ -1812,7 +1815,7 @@ function openVitcModal(){
 }
 async function addVitc(){
   const dose=num($('vDose').value); if(!dose){toast('Ingresá la dosis');return false;}
-  const rec={patient_id:CUR.id, dose_g:dose, dilution_ml:num($('vDil').value), rate_g_min:num($('vRate').value),
+  const rec={patient_id:CUR.id, administered_at:whenISO('vWhen'), dose_g:dose, dilution_ml:num($('vDil').value), rate_g_min:num($('vRate').value),
     hr_pre:num($('vHrPre').value), bp_pre:$('vBpPre').value||null, glucose_pre:num($('vGluPre').value),
     hr_post:num($('vHrPost').value), bp_post:$('vBpPost').value||null, glucose_post:num($('vGluPost').value),
     adverse_events:$('vAdv').value||null, administered_by:ME.user_id, created_by:ME.user_id};
@@ -1840,6 +1843,7 @@ async function renderEnf(){
 }
 function openVitalModal(){
   modalOpen('Control de signos vitales',
+    '<div class="field"><label>Fecha y hora del control</label><input id="viWhen" type="datetime-local" value="'+nowLocalInput()+'"></div>'+
     '<div class="grid g3">'+
       '<div class="field"><label>T.A. (mmHg)</label><input id="viTa" placeholder="120/80"></div>'+
       '<div class="field"><label>F.C. (x min)</label><input id="viFc" type="number"></div>'+
@@ -1850,7 +1854,7 @@ function openVitalModal(){
     '</div><div class="field"><label>Observación (opcional)</label><input id="viNotes"></div>','Registrar', addVital);
 }
 async function addVital(){
-  const rec={patient_id:CUR.id, ta:$('viTa').value||null, fc:num($('viFc').value), fr:num($('viFr').value),
+  const rec={patient_id:CUR.id, measured_at:whenISO('viWhen'), ta:$('viTa').value||null, fc:num($('viFc').value), fr:num($('viFr').value),
     temp:num($('viTemp').value), sat_o2:num($('viSat').value), hgt:num($('viHgt').value), notes:$('viNotes').value||null, recorded_by:ME.user_id};
   if(!rec.ta&&rec.fc==null&&rec.fr==null&&rec.temp==null&&rec.sat_o2==null&&rec.hgt==null){toast('Cargá al menos un valor');return false;}
   const {error}=await DB().from('vitals').insert(rec); if(error){toast(error.message);return false;}
