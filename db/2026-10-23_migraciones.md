@@ -51,7 +51,22 @@ y `replaced_by`; suspender completa `suspended_at/suspended_by/suspend_reason`. 
 Conteo de filas DESPUÉS de todos los cambios: idéntico al de antes (patients 13 · notes 43 · vitc 4 · vitals 8 ·
 audit_log 260 · staff 7 · resto 0).
 
-## Pendiente de decisión
-El rol `medico_funcional` no puede escribir `patients`, `indications` ni `vitc_administrations` según las
-políticas RLS. La app ahora muestra los permisos tal como están en la base. Si debe poder indicar o registrar
-megadosis, hay que ampliar esas políticas (`is_medic()` y `vitc_write`).
+## 4) Médico funcional: indica megadosis y registra infusiones (decisión de Revigen, 23/10)
+```sql
+alter policy ind_write on clinica.indications
+  using (clinica.is_medic() or clinica.my_role() = 'medico_funcional')
+  with check (clinica.is_medic() or clinica.my_role() = 'medico_funcional');
+alter policy vitc_write on clinica.vitc_administrations
+  using (clinica.my_role() = any (array['enfermeria','director_medico','admin','medico_funcional']))
+  with check (clinica.my_role() = any (array['enfermeria','director_medico','admin','medico_funcional']));
+```
+La app (`can.indicate`, `can.vitc`) quedó igual a estas políticas.
+
+### Rollback (definiciones originales)
+```sql
+alter policy ind_write on clinica.indications using (clinica.is_medic()) with check (clinica.is_medic());
+alter policy vitc_write on clinica.vitc_administrations
+  using (clinica.my_role() = any (array['enfermeria','director_medico','admin']))
+  with check (clinica.my_role() = any (array['enfermeria','director_medico','admin']));
+```
+El médico funcional sigue sin crear ni editar la ficha del paciente (`patients_insert` / `patients_update`), como antes.
