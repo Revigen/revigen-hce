@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>REVIGEN · Historia Clínica</title>
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#F4F6F1">
@@ -589,6 +589,23 @@ textarea.gff{min-height:66px;resize:vertical;line-height:1.5;padding-right:46px;
 .tplmenu .ds{color:var(--muted);font-size:12.5px;margin-top:2px;font-family:var(--f-ui)}
 .tplmenu .sug{font-size:11px;font-weight:600;color:#15803D;background:#E9F7ED;border:1px solid #BFE3C7;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
 .tplmore summary{cursor:pointer;font-family:var(--f-ui);font-size:13px;color:var(--muted);padding:4px 2px}
+/* ====== Celular / tablet: la pantalla siempre se adapta ======
+   iOS Safari hace zoom automático (y no lo deshace) al tocar un campo con letra < 16 px:
+   en pantallas táctiles o angostas todos los campos van a 16 px. */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{max-width:100%;overflow-x:clip}
+img,svg,video,canvas{max-width:100%}
+.entry .bd,.rows .v,.crit-list .v,.note,.gn-pt,.tl .t,.tl .s{overflow-wrap:anywhere}
+@media (max-width:1040px),(hover:none) and (pointer:coarse){
+  input,select,textarea,.csel,.gff{font-size:16px!important}
+  .compose .cf input{flex:1 1 140px;width:auto}
+  .compose .cf .btn{margin-left:0}
+  .modal{max-height:calc(100dvh - 32px)}
+}
+@media (max-width:1040px){
+  .page{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+  .gn-in{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
+}
 </style>
 <body>
 
