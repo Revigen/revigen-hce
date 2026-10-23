@@ -747,8 +747,8 @@ function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');cle
 const can = {
   createPatient:()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),   // patients_insert
   editPatient:  ()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),   // patients_update
-  indicate:     ()=>['admin','director_medico','oncologo'].includes(ME.role),                // ind_write = clinica.is_medic()
-  vitc:         ()=>['admin','enfermeria','director_medico'].includes(ME.role),              // vitc_write
+  indicate:     ()=>['admin','director_medico','oncologo','medico_funcional'].includes(ME.role),  // ind_write: is_medic() o médico funcional
+  vitc:         ()=>['admin','enfermeria','director_medico','medico_funcional'].includes(ME.role),  // vitc_write
   confidential: ()=>['admin','psicooncologia','director_medico'].includes(ME.role),
   director:     ()=>['admin','director_medico'].includes(ME.role),
   manageUsers:  ()=>ME.role==='admin'
@@ -2372,11 +2372,11 @@ async function renderVitc(hostEl){
       '<div class="savebar">Pre y post muestran frecuencia cardíaca · tensión arterial · glucemia.</div></section>'
     : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Infusiones de megadosis</span>'+btn+'</div><p class="meta" style="margin:0">Sin administraciones registradas.</p></div></section>';
   const relevant=!!FCALC.ind||!!(data&&data.length);   // los avisos de seguridad solo si la paciente tiene megadosis
-  host.innerHTML=(relevant?gate+consentNote+labWarn:'')+table+(canReg?'':'<div class="callout"><p>Las infusiones de megadosis las registran enfermería y la dirección médica.</p></div>');
+  host.innerHTML=(relevant?gate+consentNote+labWarn:'')+table+(canReg?'':'<div class="callout"><p>Las infusiones de megadosis las registran enfermería, el médico funcional y la dirección médica.</p></div>');
 }
 function goConsent(){ DOC_TAB='consent'; setTab('docs'); }
 function openVitcModal(){
-  if(!can.vitc()){ toast('Las infusiones las registran enfermería y la dirección médica'); return; }
+  if(!can.vitc()){ toast('Las infusiones las registran enfermería, el médico funcional y la dirección médica'); return; }
   const ind=FCALC&&FCALC.ind, pv=x=>(x!=null&&x!=='')?' value="'+esc(x)+'"':'';
   modalOpen('Infusión de megadosis de vitamina C',
     (ind?'<p class="meta" style="margin:0">Precargado de la indicación vigente ('+esc(indSummary(ind))+'). Si hoy cambió algo, corregilo acá.</p>'
@@ -2556,7 +2556,7 @@ function renderIndCard(host){
   const ind=FCALC.ind, ci=can.indicate();
   if(!ind){
     host.innerHTML='<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Indicación de megadosis</span><span class="st off"><span class="d"></span>Sin indicación vigente</span></div>'+
-      '<p class="meta" style="margin:0'+(ci?' 0 14px':'')+'">'+(ci?'Cargá dosis, frecuencia, dilución y goteo: enfermería los ve precargados en cada infusión.':'Las indicaciones las cargan la dirección médica y oncología.')+'</p>'+
+      '<p class="meta" style="margin:0'+(ci?' 0 14px':'')+'">'+(ci?'Cargá dosis, frecuencia, dilución y goteo: enfermería los ve precargados en cada infusión.':'Las indicaciones las cargan la dirección médica, oncología y el médico funcional.')+'</p>'+
       (ci?'<button class="btn primary sm" onclick="openIndicModal(\'vitamina_c\',false)">'+PLUS+'Indicar megadosis</button>':'')+'</div></section>';
     return;
   }
@@ -2590,7 +2590,7 @@ async function renderIndic(hostEl){
     (rows?'<section class="sheet">'+rows+'</section>':'<div class="empty" style="padding:28px 12px"><p>Sin indicaciones cargadas.</p></div>');
 }
 function openIndicModal(kind, modify, fromNote){
-  if(!can.indicate()){ toast('Las indicaciones las cargan la dirección médica y oncología'); return; }
+  if(!can.indicate()){ toast('Las indicaciones las cargan la dirección médica, oncología y el médico funcional'); return; }
   IND_FROM_NOTE=!!fromNote;
   const prev=(modify&&FCALC&&FCALC.ind)?FCALC.ind:null;
   kind=prev?'vitamina_c':(kind||'general');
