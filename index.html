@@ -1,6 +1,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>REVIGEN · Historia Clínica</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#F4F6F1">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Revigen">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -497,6 +505,90 @@ body{background:var(--void);color:var(--ink)}
 .compose .cf .hint{color:var(--faint);font-size:12px;flex:1;min-width:160px}
 .compose .cf .btn{margin-left:auto}
 .csel{border:1px solid var(--line);background:var(--void);border-radius:9px;padding:7px 11px;font-size:13px;color:var(--ink);font-family:var(--f-ui)}
+/* ====== Historia clínica: datos de base plegables ====== */
+details.base{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+details.base>summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;align-items:center;gap:11px;background:var(--panel-2)}
+details.base>summary::-webkit-details-marker{display:none}
+details.base .caret{width:16px;height:16px;stroke:var(--faint);fill:none;stroke-width:2;transition:transform .2s;flex:none}
+details.base[open] .caret{transform:rotate(90deg)}
+details.base summary b{font-size:14px;font-weight:600;color:var(--ink)}
+details.base summary .sub{color:var(--faint);font-size:12.5px;font-family:var(--f-ui)}
+details.base .body{padding:4px 0 0}
+details.base .body .sheet{border:0;border-radius:0}
+details.base .corrbar{display:flex;align-items:center;gap:10px;padding:12px 20px 4px;flex-wrap:wrap}
+.entry .bd.pl{white-space:pre-line}
+.entry .bd.pl b{font-weight:600;color:var(--ink)}
+.compose .gquick{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 10px}
+.compose .gquick .meta{margin-right:2px}
+/* ====== Notas guiadas ====== */
+body.gn-open{overflow:hidden}
+.gn{position:fixed;inset:0;z-index:95;background:var(--void);overflow:auto;-webkit-overflow-scrolling:touch}
+.gn-in{max-width:1080px;margin:0 auto;padding:22px 24px 60px}
+.gn-top{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-bottom:4px}
+.gn-pill{display:inline-flex;align-items:center;border:1px solid var(--line);background:var(--panel-2);border-radius:999px;padding:7px 13px;font-size:13.5px;color:var(--ink-2);font-weight:600;font-family:var(--f-ui)}
+.gn-who{font-weight:600;font-size:14px;color:var(--ink)}
+.gn-save{display:inline-flex;align-items:center;gap:7px;color:#15803D;background:#E9F7ED;border:1px solid #BFE3C7;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:600;margin-left:auto;font-family:var(--f-ui)}
+.gn-save.warn{color:#8A5212;background:#FBF1E1;border-color:#EBD6B6}
+.gn-save svg,.gn-foot svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;flex:none}
+.gn-pt{color:var(--muted);font-size:13px;margin:6px 0 0;font-family:var(--f-ui)}
+.gn-pt b{color:var(--ink);font-weight:600}
+.gn-call{display:flex;gap:11px;align-items:flex-start;border:1px solid var(--line);background:var(--panel-2);border-radius:12px;padding:11px 14px;color:var(--ink-2);margin:12px 0 18px;font-size:13px;line-height:1.55;font-family:var(--f-ui)}
+.gn-call .ic{width:9px;height:9px;border-radius:50%;background:var(--vital);flex:none;margin-top:5px}
+.gn-call.conf{border-color:#DDCBF5;background:#F7F2FE}.gn-call.conf .ic{background:#7C3AED}
+.gn-cols{display:flex;gap:22px;align-items:flex-start}
+.gn-idx{width:232px;flex:none;position:sticky;top:14px}
+.gn-idx h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin:0 0 8px 10px;font-weight:600;font-family:var(--f-ui)}
+.gn-idx ul{list-style:none;margin:0;padding:0}
+.gn-idx li{padding:8px 12px;border-radius:9px;font-size:13.5px;color:var(--muted);cursor:pointer;border-left:2px solid transparent;font-family:var(--f-ui)}
+.gn-idx li:hover{background:var(--panel-2)}
+.gn-idx li.cur{background:#F0F6EE;color:var(--ink);font-weight:600;border-left-color:var(--vital)}
+.gn-form{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.gsec{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 17px;scroll-margin-top:14px}
+.gsec:focus-within{border-color:var(--vital);box-shadow:0 2px 12px rgba(60,107,58,.08)}
+.gsec .sh{display:flex;align-items:center;gap:9px;margin-bottom:8px;flex-wrap:wrap}
+.gsec .lb{font-size:15px;font-weight:600;color:var(--ink)}
+.gsec .opt{font-size:11px;color:var(--faint);font-family:var(--f-ui)}
+.gsec .fromficha{font-size:11px;color:#15803D;background:#E9F7ED;border:1px solid #BFE3C7;border-radius:999px;padding:2px 8px;font-family:var(--f-ui)}
+.gsec .tools{margin-left:auto;display:flex;gap:6px;align-items:center}
+.gprev{font-size:11.5px;color:#1D4ED8;background:#EAF1FD;border:1px solid #C7DBF5;border-radius:999px;padding:4px 10px;display:inline-flex;gap:5px;align-items:center;font-family:var(--f-ui)}
+.gprev svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2}
+.gsec .hint{color:var(--faint);font-size:12.5px;margin:-2px 0 9px;font-family:var(--f-ui)}
+.gf{margin-top:9px}.gf:first-of-type{margin-top:0}
+.gf .fl{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-family:var(--f-ui)}
+.gff{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-family:var(--f-ui);font-size:14px;color:var(--ink);background:var(--void)}
+textarea.gff{min-height:66px;resize:vertical;line-height:1.5;padding-right:46px;display:block}
+.gff:focus{outline:none;border-color:var(--vital)}
+.gta{position:relative}
+.gmic{position:absolute;top:7px;right:7px;width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel);display:grid;place-items:center}
+.gmic svg{width:15px;height:15px;stroke:var(--muted);fill:none;stroke-width:1.8}
+.gmic.on{background:#FDECEA;border-color:#F3C9C2}.gmic.on svg{stroke:#DC2626}
+.grow{display:grid;gap:10px;margin-top:9px}.grow:first-child{margin-top:0}
+.grow .gf{margin-top:0}
+.gchips{display:flex;gap:7px;flex-wrap:wrap}
+.gch{border:1px solid var(--line);background:var(--void);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--muted);font-family:var(--f-ui)}
+.gch.on{background:var(--vital);border-color:var(--vital);color:#fff;font-weight:600}
+.gcalc{font-size:12.5px;color:var(--vital);font-weight:600;margin-top:9px;font-family:var(--f-ui)}
+.gn-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px;padding:10px 2px;color:var(--faint);font-size:12.5px;font-family:var(--f-ui)}
+.gn-foot svg{color:#15803D}
+.gn-foot .btn{margin-left:auto}
+@media(max-width:760px){
+  .gn-in{padding:16px 16px 40px}
+  .gn-cols{flex-direction:column;gap:12px}
+  .gn-idx{display:none}
+  .grow{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .gn-save{margin-left:0}
+}
+/* selector de plantillas */
+.tplmenu{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tplmenu button{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;text-align:left;width:100%;background:var(--panel)}
+.tplmenu button + button{border-top:1px solid var(--div)}
+.tplmenu button:hover{background:#F0F6EE}
+.tplmenu .ic{width:34px;height:34px;border-radius:9px;background:var(--panel-2);display:grid;place-items:center;flex:none}
+.tplmenu .ic svg{width:18px;height:18px;stroke:var(--vital);fill:none;stroke-width:1.6}
+.tplmenu .nm{font-weight:600;font-size:14.5px;color:var(--ink)}
+.tplmenu .ds{color:var(--muted);font-size:12.5px;margin-top:2px;font-family:var(--f-ui)}
+.tplmenu .sug{font-size:11px;font-weight:600;color:#15803D;background:#E9F7ED;border:1px solid #BFE3C7;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+.tplmore summary{cursor:pointer;font-family:var(--f-ui);font-size:13px;color:var(--muted);padding:4px 2px}
 </style>
 <body>
 
@@ -547,6 +639,7 @@ body{background:var(--void);color:var(--ink)}
 </div>
 
 <div id="toast" class="toast"></div>
+<div id="gn" class="gn" hidden></div>
 <div id="modal" class="modal-bg"><div class="modal"><h3 id="mTitle"></h3><div class="mb" id="mBody"></div><div class="mf" id="mFoot"></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -959,7 +1052,7 @@ async function loadCache(){
     const anyHistory = cand.length>0 || vitcCount>0 || notes.length>0;
     // ---- situación (6.3) ----
     let sit;
-    if(pend.some(x=>x.kind==='g6pd')) sit={label:'Falta G6PD · bloquea',cls:'crit'};
+    if(pend.some(x=>x.kind==='g6pd')) sit={label:'Revisar G6PD',cls:'crit'};
     else if(pend.some(x=>x.kind==='consent')) sit={label:'Falta consentimiento',cls:'warn'};
     else if(pend.some(x=>x.kind==='lab')) sit={label:'Laboratorio vencido',cls:'warn'};
     else if(hoyAppt) sit={label:'Turno hoy '+fmtHM(hoyAppt.starts_at),cls:'ok'};
@@ -1041,7 +1134,7 @@ async function renderInicio(){
 
   const pendRows=pendItems.length? pendItems.map(({pt,pd,prox})=>{
     let s='';
-    if(pd.kind==='g6pd') s='Tiene indicación activa de megadosis de vitamina C. El sistema no habilita la administración hasta que el G6PD figure como normal en la ficha.';
+    if(pd.kind==='g6pd') s='Tiene indicación activa de megadosis de vitamina C. El G6PD no figura como normal en la ficha: verificá antes de administrar (riesgo de hemólisis).';
     else if(pd.kind==='consent') s='Recibe megadosis de vitamina C y no hay consentimiento cargado en la historia.';
     else if(pd.kind==='lab') s='El último laboratorio está vencido y tiene un turno dentro de los próximos 7 días'+(prox?' ('+fmtDMShort(prox.starts_at)+' '+fmtHM(prox.starts_at)+').':'.');
     return '<div class="it '+pd.level+'"><span class="d"></span><div class="b">'+
@@ -1186,7 +1279,7 @@ async function doCreatePatient(last,first,dtype,doc,birth,phone,cov){
 async function openPatient(id){
   const {data,error}=await DB().from('patients').select('*').eq('id',id).single();
   if(error){toast(error.message);return;}
-  CUR=data; curView='ficha'; curTab='resumen'; buildRail();
+  CUR=data; curView='ficha'; curTab='hc'; HC_BASE_OPEN=false; buildRail();
   await renderFicha();
   window.scrollTo(0,0);
 }
@@ -1271,7 +1364,7 @@ async function renderFicha(){
        '<div class="line">'+line.join('')+'</div>'+
        '<div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap">'+tags.join('')+'</div></div>'+
      '<div class="acts">'+
-       '<button class="btn primary" onclick="goRegistro()">'+PLUS+'Agregar al registro</button>'+
+       '<button class="btn primary" onclick="newNote()">'+PLUS+'Nueva nota</button>'+
        '<button class="btn" onclick="printPatient()">'+ICPRINT+'Exportar HC</button></div></div>'+
    '<div class="subnav-wrap"><div class="tabs" role="tablist" id="tabBar">'+
      tabs.map(([t,l])=>'<button class="'+(curTab===t?'on':'')+'" data-t="'+t+'" onclick="setTab(\''+t+'\')">'+l+'</button>').join('')+'</div></div>'+
@@ -1419,13 +1512,13 @@ function renderResumen(){
   const vc=f.vitc, lastV=vc[0]||null;
   const advCount=vc.filter(v=>v.adverse_events&&v.adverse_events.trim()).length;
   const vitcHead = g==='normal'?'<span class="st ok" style="font-size:13px"><span class="d"></span>Habilitada · G6PD normal</span>'
-    : '<span class="st '+(g==='deficiente'?'crit':'warn')+'" style="font-size:13px"><span class="d"></span>Bloqueada · '+esc(G6PD_LABEL[g])+'</span>';
+    : '<span class="st '+(g==='deficiente'?'crit':'warn')+'" style="font-size:13px"><span class="d"></span>Atención · '+esc(G6PD_LABEL[g])+'</span>';
   const vitcBlock = (vc.length||f.ind) ? '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Megadosis de Vitamina C</span>'+vitcHead+'</div>'+
       '<div class="ring-row"><svg class="ring" viewBox="0 0 120 120" role="img" aria-label="'+vc.length+' administraciones"><circle cx="60" cy="60" r="48" fill="none" stroke="#E2E7DD" stroke-width="7" stroke-dasharray="1.6 6.4"/>'+
         (vc.length?'<circle cx="60" cy="60" r="48" fill="none" stroke="#0E9BB5" stroke-width="7" stroke-dasharray="1.6 6.4"/>':'')+
         '<text class="lbl" x="60" y="60" text-anchor="middle">'+vc.length+'</text><text class="sub" x="60" y="76" text-anchor="middle">ADMINISTRACIONES</text></svg>'+
       '<div class="stats">'+
-        '<div><div class="k">Última administración</div><div class="v">'+(lastV?fmtDMShort(lastV.administered_at)+' · '+lastV.dose_g+' g':'—')+'</div><div class="s">'+(lastV?((lastV.rate_g_min?lastV.rate_g_min+' g/min':'')+(lastV.dilution_ml?' en '+lastV.dilution_ml+' ml':''))||'—':'—')+'</div></div>'+
+        '<div><div class="k">Última administración</div><div class="v">'+(lastV?fmtDMShort(lastV.administered_at)+' · '+lastV.dose_g+' g':'—')+'</div><div class="s">'+(lastV?((lastV.rate_g_min?lastV.rate_g_min+' gtt/min':'')+(lastV.dilution_ml?' en '+lastV.dilution_ml+' ml':''))||'—':'—')+'</div></div>'+
         '<div><div class="k">Dosis indicada</div><div class="v">'+(f.ind&&f.ind.vitc_target_dose_g?f.ind.vitc_target_dose_g+' g':'—')+'</div><div class="s">'+(f.ind?('Activa del '+fmtDMShort(f.ind.created_at)+(f.ind.vitc_frequency?' · '+(FREQ_LABEL[f.ind.vitc_frequency]||f.ind.vitc_frequency):'')):'Sin indicación activa')+'</div></div>'+
         '<div><div class="k">Eventos adversos</div><div class="v">'+(advCount?advCount:'Ninguno')+'</div><div class="s">En '+vc.length+' '+(vc.length===1?'administración':'administraciones')+'</div></div>'+
       '</div></div></div></section>' : '';
@@ -1489,10 +1582,8 @@ function datosBaseReadHTML(){
   const segRow = '<div class="row"><span class="k">Screening G6PD</span><span class="v">'+esc(G6PD_LABEL[g].replace('G6PD ',''))+(g==='normal'?' · habilita megadosis':'')+'</span></div>';
   const com = CUR.comentarios ? '<div class="sec"><div class="sec-h"><span class="sec-t">Comentarios del equipo</span></div><p class="note" style="margin:0">«'+esc(CUR.comentarios)+'»</p></div>' : '';
   const btn = can.editPatient() ? '<button class="btn sm" onclick="corregirDatos()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Corregir datos de base</button>' : '';
-  const note = can.editPatient() ? 'Cada corrección queda como entrada firmada en el registro.' : 'Solo lectura · para sumar información usá el registro, abajo.';
-  return '<div class="sheet">'+
-    '<div class="sec-h" style="margin:0 2px 4px"><span class="sec-t">Datos de base</span><span class="meta" style="margin-left:auto">'+note+'</span></div>'+
-    (btn?'<div style="padding:0 2px 12px">'+btn+'</div>':'')+
+  const note = can.editPatient() ? 'Cada corrección queda como entrada firmada en el registro.' : 'Solo lectura · para sumar información usá «Nueva nota», arriba.';
+  return '<div class="corrbar">'+btn+'<span class="meta">'+note+'</span></div><div class="sheet">'+
     hcSec('Filiatorios y cobertura',fili)+
     hcSec('Estado funcional y antropometría',func)+
     hcSec('Antecedentes y hábitos',ant)+
@@ -1503,10 +1594,14 @@ function datosBaseReadHTML(){
     com+
     '</div>';
 }
+let HC_BASE_OPEN=false;
 function renderHC(){
   HC_EDIT=false;
   const host=$('paneHost');
-  host.innerHTML=datosBaseReadHTML()+'<div id="regHost"><div class="loading">Cargando el registro…</div></div>';
+  host.innerHTML='<div id="regHost"><div class="loading">Cargando el registro…</div></div>'+
+    '<details class="base" id="hcBase"'+(HC_BASE_OPEN?' open':'')+' ontoggle="HC_BASE_OPEN=this.open"><summary><svg class="caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>'+
+      '<div><b>Datos de base (ficha)</b><div class="sub">Diagnóstico, antecedentes, G6PD, estadificación, cobertura… · tocá para ver o corregir</div></div></summary>'+
+      '<div class="body">'+datosBaseReadHTML()+'</div></details>';
   renderRegistro();
 }
 function corregirDatos(){ if(!can.editPatient()){toast('Tu rol no corrige los datos de base');return;} HC_EDIT=true; renderHCForm(); }
@@ -1514,10 +1609,13 @@ function goRegistro(){ if(curTab!=='hc'){ setTab('hc'); } setTimeout(()=>{ const
 function composeHTML(){
   const mine=ROLE_TO_DISC[ME.role]||'oncologia';
   const areaOpts=Object.keys(EVOL_AREA).map(a=>'<option value="'+a+'" '+(a===mine?'selected':'')+'>'+EVOL_AREA[a]+'</option>').join('');
+  const quick=(TPL_BY_ROLE[ME.role]||[]).filter(tplAllowed);
   return '<div class="compose">'+
     '<div class="ch"><span class="av sm">'+esc(initials(ME.full_name))+'</span><b>'+esc(ME.full_name||'Profesional')+'</b>'+
-      '<select id="rArea" class="csel" onchange="regAreaChange()">'+areaOpts+'</select></div>'+
-    '<textarea id="rText" placeholder="Escribí la evolución o el dato clínico a sumar a la historia…"></textarea>'+
+      '<button class="btn primary sm" style="margin-left:auto" onclick="gnPicker()">'+PLUS+'Nueva nota</button></div>'+
+    (quick.length?'<div class="gquick"><span class="meta">Nota guiada:</span>'+quick.map(id=>'<button class="btn sm" onclick="gnOpen(\''+id+'\')">'+esc(NOTE_TPL[id].label)+'</button>').join('')+'</div>':'')+
+    '<div class="gquick"><span class="meta">Evolución libre ·</span><select id="rArea" class="csel" onchange="regAreaChange()">'+areaOpts+'</select></div>'+
+    '<textarea id="rText" placeholder="Escribí una evolución libre o el dato clínico a sumar a la historia…"></textarea>'+
     '<div id="rConfRow"></div>'+
     '<div class="cf"><input id="rWeight" type="number" step="0.1" inputmode="decimal" placeholder="Peso (kg) opcional" oninput="regImcHint()">'+
       '<span class="hint" id="rImc">Una vez guardado no se modifica (solo se agrega una aclaración). Podés editar el tuyo hasta 24 h.</span>'+
@@ -1527,7 +1625,7 @@ function composeHTML(){
 function regAreaChange(){
   const a=$('rArea')?$('rArea').value:null; const row=$('rConfRow'); if(!row)return;
   row.innerHTML=(a==='psicooncologia'&&can.confidential())
-    ? '<div style="margin-top:10px"><select id="rConf" class="csel"><option value="false">Normal (todo el equipo)</option><option value="true">Confidencial (solo psicooncología y dirección)</option></select></div>'
+    ? '<div style="margin-top:10px"><select id="rConf" class="csel"><option value="true" selected>Confidencial (solo psicooncología y dirección)</option><option value="false">Normal (todo el equipo)</option></select></div>'
     : '';
 }
 function regImcHint(){
@@ -1569,8 +1667,8 @@ async function renderRegistro(){
     : '';
   const entries=list.map(entryNote).join('');
   host.innerHTML=
-    '<div class="sec-h" style="margin:26px 2px 12px"><span class="sec-t">Registro clínico · '+all.length+' entrada'+(all.length===1?'':'s')+'</span><span class="meta" style="margin-left:auto">cada entrada queda firmada por autor y área</span></div>'+
     composeHTML()+
+    '<div class="sec-h" style="margin:24px 2px 4px"><span class="sec-t">Registro clínico · '+all.length+' entrada'+(all.length===1?'':'s')+'</span><span class="meta" style="margin-left:auto">cada entrada queda firmada por autor y área</span></div>'+
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 2px">'+chips+profSel+'</div>'+
     (entries?'<section class="sheet">'+entries+'</section>':'<div class="empty"><p>'+(all.length?'No hay entradas para este filtro.':'Todavía no hay entradas. Sumá la primera desde el campo de arriba.')+'</p></div>');
   regAreaChange();
@@ -1619,7 +1717,7 @@ function renderHCForm(){
     '<div class="sec" id="g7"><div class="sec-h"><span class="sec-t">Comentarios</span></div><div class="ff">'+fld('Lo que no entra en ningún otro campo','comentarios','textarea')+'</div></div>'+
     '<div class="sec" id="g8"><div class="sec-h"><span class="sec-t">Seguridad para la megadosis de vitamina C</span></div><div class="ff">'+
       sel('Screening G6PD','g6pd_status',[['no_evaluado','No evaluado'],['normal','Normal'],['deficiente','Deficiente']])+
-      '<div class="f"><div class="gate '+(g==='normal'?'ok':'')+'" style="margin-top:22px"><span class="ic"></span><p>Con G6PD normal el sistema habilita el registro de administraciones. Si figura «no evaluado» o «deficiente», el botón queda bloqueado.</p></div></div>'+
+      '<div class="f"><div class="gate '+(g==='normal'?'ok':'')+'" style="margin-top:22px"><span class="ic"></span><p>Si figura «no evaluado» o «deficiente», la megadosis muestra un aviso de posible contraindicación (riesgo de hemólisis). No bloquea el registro.</p></div></div>'+
     '</div></div>'+
     (can.editPatient()
       ? '<div class="savebar"><span class="dot-live"></span><span id="saveNote">Los cambios se guardan solos y quedan en la auditoría con tu nombre y la hora.</span></div>'
@@ -1663,8 +1761,9 @@ function entryNote(n){
   CUR_NOTES[n.id]=n;
   const a=DIR[n.author_id];
   const editable=noteEditable(n);
+  const st=(n.structured&&n.structured.tpl)?n.structured:null;
   const foot = editable
-    ? '<div class="ft"><span class="meta">editable por 24 h</span><button class="btn sm" onclick="openEditNote(\''+n.id+'\')">Editar</button></div>'
+    ? '<div class="ft"><span class="meta">editable por 24 h</span><button class="btn sm" onclick="'+(st?'gnEdit':'openEditNote')+'(\''+n.id+'\')">Editar</button></div>'
     : '<div class="ft"><span class="meta">Firmada · bloqueada para edición'+((n.updated_at&&n.updated_at!==n.created_at)?' · editada':'')+'</span></div>';
   let wLine='';
   if(n.weight_kg!=null){ const h=parseFloat(CUR.height_cm); const imc=(h>0)?(' · IMC '+(n.weight_kg/Math.pow(h/100,2)).toFixed(1)):''; wLine='<div class="meta" style="margin-top:8px">Peso: '+esc(n.weight_kg)+' kg'+imc+'</div>'; }
@@ -1673,9 +1772,9 @@ function entryNote(n){
   const isCorr=(n.content||'').indexOf(CORR_PREFIX)===0;
   const corrTag=isCorr?'<span class="tag"><span class="d"></span>Corrección de datos de base</span>':'';
   return '<div class="entry"><div class="eh"><span class="av sm">'+esc(initials(a?a.full_name:''))+'</span><span class="au">'+esc(a?a.full_name:'Profesional')+'</span>'+
-    areaTag+corrTag+(n.is_confidential?'<span class="tag warn"><span class="d"></span>Confidencial</span>':'')+
+    areaTag+(st?'<span class="tag"><span class="d"></span>'+esc(st.label||'Nota guiada')+'</span>':'')+corrTag+(n.is_confidential?'<span class="tag warn"><span class="d"></span>Confidencial</span>':'')+
     '<span class="meta" style="margin-left:auto">'+fmtDMShort(n.created_at)+' · '+fmtHM(n.created_at)+'</span></div>'+
-    '<p class="bd">'+esc(n.content)+'</p>'+wLine+foot+'</div>';
+    (st ? '<p class="bd pl">'+gnBodyHTML(n)+'</p>' : '<p class="bd">'+esc(n.content)+'</p>')+wLine+foot+'</div>';
 }
 let EVOL_FILTER='all', EVOL_PROF='all';
 function setEvolArea(a){ EVOL_FILTER=a; renderRegistro(); }
@@ -1721,7 +1820,7 @@ function noteAreaChange(){
   const a=$('nArea')?$('nArea').value:NOTE_DISC; NOTE_DISC=a;
   const row=$('nConfRow'); if(!row)return;
   row.innerHTML=(a==='psicooncologia'&&can.confidential())
-    ? '<div class="field"><label>Confidencialidad</label><select id="nConf"><option value="false">Normal (todo el equipo)</option><option value="true">Confidencial (solo psicooncología y dirección)</option></select></div>'
+    ? '<div class="field"><label>Confidencialidad</label><select id="nConf"><option value="true" selected>Confidencial (solo psicooncología y dirección)</option><option value="false">Normal (todo el equipo)</option></select></div>'
     : '';
 }
 function noteImcHint(){
@@ -1754,21 +1853,413 @@ async function addNote(){
   afterChange(); return true;
 }
 
+/* ============ NOTAS GUIADAS POR PLANTILLA ============
+   Cada nota guiada es UNA fila en notes: content (texto legible de las secciones con contenido)
+   + structured (jsonb, para reabrirla dentro de las 24 h). Las notas viejas no se tocan.
+   Tipos de campo: text (multilínea), line (corto), num, date, chips (opts; multi = varias).
+   map = columna de patients: se precarga "de la ficha" en las plantillas iniciales y, si la plantilla
+   tiene writeback, se escribe en la ficha al salir del campo (con corrección firmada si cambia un valor existente).
+   En las plantillas de seguimiento, cada sección de texto ofrece "Traer de la visita anterior". */
+const GF=(k,t,label,o)=>Object.assign({k,t,label:label||''},o||{});
+const CHIPS_RIESGO_PSI=['Sin riesgo','A monitorear','Derivar'];
+const NOTE_TPL={
+  med_inicial:{label:'Primera consulta (anamnesis)',desc:'Guía completa: motivo, antecedentes, hábitos, medicación, diagnóstico, examen, plan · llena la ficha',disc:'oncologia',kind:'inicial',writeback:true,secs:[
+    {k:'motivo',label:'Motivo de consulta',f:[GF('motivo','text')]},
+    {k:'enf',label:'Enfermedad actual',hint:'Inicio, evolución, síntomas, tratamientos previos.',f:[GF('enf_actual','text','',{map:'current_illness'})]},
+    {k:'antp',label:'Antecedentes personales',f:[GF('ant_pers','text','',{map:'personal_history'})]},
+    {k:'antf',label:'Antecedentes familiares',f:[GF('ant_fam','text','',{map:'family_history'})]},
+    {k:'hab',label:'Hábitos',habits:'toxic_habits',rows:[['act_fisica','alimentacion']],f:[GF('tabaco','chips','Tabaco',{opts:['Nunca','Ex fumador/a','Actual']}),GF('alcohol','chips','Alcohol',{opts:['No','Social','Frecuente']}),GF('act_fisica','line','Actividad física'),GF('alimentacion','line','Alimentación'),GF('hab_otros','line','Otros')]},
+    {k:'med',label:'Medicación habitual',f:[GF('medicacion','text','',{map:'usual_medication'})]},
+    {k:'alg',label:'Alergias',f:[GF('alergias','text','',{map:'allergies'})]},
+    {k:'dx',label:'Diagnóstico y estadificación',rows:[['dx','cie10'],['estadio','tnm_t','tnm_n','tnm_m'],['dx_fecha','oncologo']],f:[GF('dx','line','Diagnóstico de base',{map:'base_diagnosis'}),GF('cie10','line','CIE-10',{map:'cie10_code'}),GF('estadio','line','Estadio',{map:'stage'}),GF('tnm_t','line','T',{map:'tnm_t'}),GF('tnm_n','line','N',{map:'tnm_n'}),GF('tnm_m','line','M',{map:'tnm_m'}),GF('dx_fecha','date','Fecha de diagnóstico',{map:'diagnosis_date'}),GF('oncologo','line','Oncólogo/a tratante',{map:'treating_oncologist'})]},
+    {k:'ex',label:'Examen físico',anthro:true,rows:[['peso','talla']],f:[GF('peso','num','Peso',{unit:'kg',map:'weight_kg'}),GF('talla','num','Talla',{unit:'cm',map:'height_cm'}),GF('examen','text','Hallazgos',{map:'physical_exam'})]},
+    {k:'est',label:'Estudios / laboratorio',f:[GF('estudios','text')]},
+    {k:'plan',label:'Impresión y plan integrativo',f:[GF('plan','text','',{map:'care_plan'})]}
+  ]},
+  med_seguimiento:{label:'Seguimiento / control',desc:'Más corta: cómo evolucionó, examen, labs, ajuste del plan · trae la visita anterior',disc:'oncologia',kind:'seguimiento',writeback:true,secs:[
+    {k:'evo',label:'Evolución desde la última visita',f:[GF('evolucion','text','',{ph:'Cómo evolucionó, tolerancia a megadosis y al tratamiento oncológico…'})]},
+    {k:'sint',label:'Síntomas y tolerancia',f:[GF('sintomas','text','',{ph:'Náuseas, astenia, apetito…'})]},
+    {k:'ex',label:'Examen físico / antropometría',anthro:true,rows:[['peso']],f:[GF('peso','num','Peso',{unit:'kg',map:'weight_kg'}),GF('examen','text','Hallazgos')]},
+    {k:'lab',label:'Laboratorio',f:[GF('lab','text','',{src:['estudios']})]},
+    {k:'plan',label:'Ajuste del plan',prevLabel:'Traer plan anterior',f:[GF('plan','text','',{map:'care_plan',ph:'Megadosis, nutrición, psico, actividad física — qué cambia…'})]},
+    {k:'prox',label:'Próximo control',f:[GF('proximo','line','',{ph:'En 15 días / fecha'})]}
+  ]},
+  nut_inicial:{label:'Valoración nutricional inicial',desc:'Antropometría, cribado, ingesta, requerimientos y plan · carga peso y talla en la ficha',disc:'nutricion',kind:'inicial',writeback:true,secs:[
+    {k:'motivo',label:'Motivo / derivación',f:[GF('motivo','text')]},
+    {k:'antro',label:'Antropometría',anthro:true,rows:[['peso','talla'],['perdida','circ']],f:[GF('peso','num','Peso',{unit:'kg',map:'weight_kg'}),GF('talla','num','Talla',{unit:'cm',map:'height_cm'}),GF('perdida','line','% pérdida de peso',{ph:'ej.: 6 % en 3 meses'}),GF('circ','line','Circunferencias',{ph:'Brazo, pantorrilla…'})]},
+    {k:'riesgo',label:'Riesgo / cribado nutricional',f:[GF('riesgo_nut','chips','Riesgo',{opts:['Bajo','Moderado','Alto']}),GF('cribado','line','Herramienta',{ph:'MST, MUST, VGS-GP / PG-SGA…'}),GF('riesgo_obs','text','Observaciones')]},
+    {k:'ingesta',label:'Anamnesis alimentaria / ingesta actual',hint:'Apetito, recordatorio de 24 h, hábitos.',f:[GF('ingesta','text')]},
+    {k:'sint',label:'Síntomas que afectan la ingesta',f:[GF('sint_ing','chips','',{opts:['Náuseas','Mucositis','Disgeusia','Saciedad precoz','Diarrea','Constipación'],multi:true}),GF('sint_obs','text','Detalle')]},
+    {k:'req',label:'Requerimientos estimados',rows:[['kcal','prot']],f:[GF('kcal','line','Energía',{unit:'kcal/día'}),GF('prot','line','Proteínas',{unit:'g/kg/día'})]},
+    {k:'dxn',label:'Diagnóstico nutricional',f:[GF('dx_nut','text')]},
+    {k:'plan',label:'Plan nutricional / indicaciones',hint:'Plan, suplementos, vía oral / enteral.',f:[GF('plan_nut','text')]},
+    {k:'obj',label:'Objetivos y próximo control',f:[GF('objetivos','text')]}
+  ]},
+  nut_control:{label:'Control nutricional',desc:'Peso, IMC, adherencia, tolerancia y ajuste del plan · trae la visita anterior',disc:'nutricion',kind:'seguimiento',writeback:true,secs:[
+    {k:'peso',label:'Evolución del peso y adherencia',anthro:true,rows:[['peso']],f:[GF('peso','num','Peso',{unit:'kg',map:'weight_kg'}),GF('adherencia','text','Adherencia')]},
+    {k:'tol',label:'Tolerancia / síntomas',f:[GF('tolerancia','text')]},
+    {k:'plan',label:'Ajuste del plan / suplementos',prevLabel:'Traer plan anterior',f:[GF('plan_nut','text')]},
+    {k:'prox',label:'Próximo control',f:[GF('proximo','line','',{ph:'En 15 días / fecha'})]}
+  ]},
+  psi_inicial:{label:'Evaluación psicológica inicial',desc:'Motivo, situación emocional, antecedentes, red de apoyo, riesgo y plan · confidencial',disc:'psicooncologia',kind:'inicial',confidential:true,secs:[
+    {k:'motivo',label:'Motivo de consulta / derivación',f:[GF('motivo','text')]},
+    {k:'emo',label:'Situación emocional actual',hint:'Ánimo, ansiedad, angustia.',f:[GF('emocional','text'),GF('distress','chips','Termómetro de distress (0–10)',{opts:['0','1','2','3','4','5','6','7','8','9','10']})]},
+    {k:'antpsi',label:'Antecedentes psicológicos / psiquiátricos',hint:'Tratamientos previos, psicofármacos.',f:[GF('ant_psi','text')]},
+    {k:'red',label:'Red de apoyo / situación familiar y social',f:[GF('red','text')]},
+    {k:'afr',label:'Afrontamiento e impacto de la enfermedad',f:[GF('afrontamiento','text')]},
+    {k:'riesgo',label:'Señales de alarma / riesgo',f:[GF('riesgo_psi','chips','',{opts:CHIPS_RIESGO_PSI}),GF('riesgo_obs','text','Detalle')]},
+    {k:'imp',label:'Impresión y objetivos terapéuticos',f:[GF('impresion','text')]},
+    {k:'plan',label:'Plan de intervención / frecuencia',f:[GF('plan_psi','text')]}
+  ]},
+  psi_seguimiento:{label:'Sesión de seguimiento',desc:'Evolución, temas, intervenciones, acuerdos y riesgo · confidencial · trae la sesión anterior',disc:'psicooncologia',kind:'seguimiento',confidential:true,secs:[
+    {k:'evo',label:'Evolución emocional desde la última sesión',f:[GF('evol_emocional','text','',{src:['emocional']})]},
+    {k:'temas',label:'Temas trabajados en la sesión',f:[GF('temas','text')]},
+    {k:'interv',label:'Intervenciones / técnicas',f:[GF('intervenciones','text')]},
+    {k:'tareas',label:'Tareas / acuerdos',f:[GF('tareas','text')]},
+    {k:'riesgo',label:'Señales de alarma / riesgo',f:[GF('riesgo_psi','chips','',{opts:CHIPS_RIESGO_PSI}),GF('riesgo_obs','text','Detalle')]},
+    {k:'prox',label:'Próxima sesión',f:[GF('proximo','line','',{ph:'Fecha / frecuencia'})]}
+  ]},
+  enf_nota:{label:'Nota de enfermería',desc:'Observación y tolerancia · la megadosis y los signos vitales se cargan en sus pestañas',disc:'enfermeria',kind:'nota',secs:[
+    {k:'obs',label:'Motivo / observación',f:[GF('observacion','text')]},
+    {k:'tol',label:'Tolerancia / estado general',f:[GF('tolerancia','text')]}
+  ]}
+};
+const MED_TPLS=['med_inicial','med_seguimiento'];
+const TPL_BY_ROLE={admin:MED_TPLS,director_medico:MED_TPLS,oncologo:MED_TPLS,medico_funcional:MED_TPLS,nutricion:['nut_inicial','nut_control'],psicooncologia:['psi_inicial','psi_seguimiento'],enfermeria:['enf_nota'],ejercicio:[]};
+const FICHA_WRITERS=['admin','director_medico','oncologo','enfermeria']; // igual que la política RLS patients_update
+const GN_IC={
+  inicial:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>',
+  seguimiento:'<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.7 3M3 4v4h4"/></svg>',
+  nota:'<svg viewBox="0 0 24 24"><path d="M12 2.7 6.8 9.4a7 7 0 1 0 10.4 0z"/></svg>',
+  libre:'<svg viewBox="0 0 24 24"><path d="M12 20h9M4 20h4L19 9a2 2 0 0 0-3-3L5 17v3z"/></svg>',
+  mic:'<svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10a7 7 0 0 1-14 0M12 19v3"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>'
+};
+const GN_SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+let GN=null, GN_NO_STRUCT=false, GN_REC=null, GN_REC_KEY=null;
+
+function tplFields(tpl){ const o=[]; tpl.secs.forEach(s=>s.f.forEach(f=>o.push(f))); return o; }
+function tplSuggested(id){
+  const t=NOTE_TPL[id]; if(!t||t.kind==='nota') return false;
+  const has=((FCALC&&FCALC.notes)||[]).some(n=>n.discipline===t.disc);
+  return t.kind==='inicial' ? !has : has;
+}
+function tplAllowed(id){ return NOTE_TPL[id].disc!=='psicooncologia' || can.confidential(); }
+
+/* ---- selector de plantilla ---- */
+function newNote(){ if(curTab!=='hc') setTab('hc'); gnPicker(); }
+function gnPicker(){
+  const mine=(TPL_BY_ROLE[ME.role]||[]).filter(tplAllowed);
+  const others=Object.keys(NOTE_TPL).filter(id=>!mine.includes(id) && tplAllowed(id));
+  const item=(id)=>{ const t=NOTE_TPL[id];
+    return '<button onclick="modalClose();gnOpen(\''+id+'\')"><span class="ic">'+GN_IC[t.kind]+'</span><div><div class="nm">'+esc(t.label)+(tplSuggested(id)&&mine.includes(id)?' <span class="sug">sugerida</span>':'')+'</div><div class="ds">'+esc(EVOL_AREA[t.disc])+' · '+esc(t.desc)+'</div></div></button>'; };
+  const libre='<button onclick="modalClose();goRegistro()"><span class="ic">'+GN_IC.libre+'</span><div><div class="nm">Evolución libre</div><div class="ds">Una nota corta de texto libre</div></div></button>';
+  $('mTitle').textContent='Nueva nota — elegí el tipo';
+  $('mBody').innerHTML='<div class="tplmenu">'+mine.map(item).join('')+libre+'</div>'+
+    (others.length?'<details class="tplmore"><summary>Plantillas de otras áreas</summary><div class="tplmenu" style="margin-top:8px">'+others.map(item).join('')+'</div></details>':'');
+  $('mFoot').innerHTML='<button class="btn" onclick="modalClose()">Cancelar</button>';
+  $('modal').classList.add('show');
+}
+
+/* ---- abrir / dibujar ---- */
+function habitsParse(s){
+  const o={}, rest=[]; const KEY={'Tabaco':'tabaco','Alcohol':'alcohol','Actividad física':'act_fisica','Alimentación':'alimentacion','Otros':'hab_otros'};
+  (s||'').split(' · ').forEach(p=>{ const m=p.match(/^(Tabaco|Alcohol|Actividad física|Alimentación|Otros): (.*)$/); if(m) o[KEY[m[1]]]=m[2].trim(); else if(p.trim()) rest.push(p.trim()); });
+  if(rest.length) o.hab_otros=[o.hab_otros,rest.join(' · ')].filter(Boolean).join(' · ');
+  return o;
+}
+function habitsCompile(sec,data){
+  return sec.f.map(f=>{ const v=gnStr(data[f.k]); return v?(f.label+': '+v):''; }).filter(Boolean).join(' · ');
+}
+function gnOpen(tplId, note){
+  const tpl=NOTE_TPL[tplId]; if(!tpl) return;
+  if(note && !noteEditable(note)){ toast('Ya no se puede editar (pasaron 24 horas)'); return; }
+  const data={}, fromFicha={};
+  if(note && note.structured && note.structured.data) Object.assign(data, note.structured.data);
+  else if(tpl.kind==='inicial'){
+    tpl.secs.forEach(s=>{
+      s.f.forEach(f=>{ if(f.map && CUR[f.map]!=null && (''+CUR[f.map]).trim()!==''){ data[f.k]=''+CUR[f.map]; fromFicha[s.k]=true; } });
+      if(s.habits && CUR[s.habits]){ Object.assign(data, habitsParse(CUR[s.habits])); fromFicha[s.k]=true; }
+    });
+  }
+  GN={tplId, tpl, pid:CUR.id, noteId:note?note.id:null, data, fromFicha, touched:!!note, dirty:false, timer:null, chain:Promise.resolve(),
+      orig:{}, filled:{}, corr:{}, canWrite: !!tpl.writeback && FICHA_WRITERS.includes(ME.role), locked:false};
+  gnRender(); gnStatus(note?'saved':'idle');
+  document.body.classList.add('gn-open'); $('gn').hidden=false; $('gn').scrollTop=0;
+}
+function gnEdit(id){ const n=CUR_NOTES[id]; if(!n||!n.structured||!NOTE_TPL[n.structured.tpl]){ openEditNote(id); return; } gnOpen(n.structured.tpl, n); }
+function gnBodyHTML(n){   // texto de una nota guiada con los títulos de sección en negrita
+  const t=NOTE_TPL[n.structured.tpl], lbls=t?t.secs.map(x=>esc(x.label)):[];
+  return esc(n.content).split('\n').map(l=>{ const L=lbls.find(x=>l.startsWith(x+':')); return L?'<b>'+L+':</b>'+l.slice(L.length+1):l; }).join('\n');
+}
+function gnStr(v){ if(v==null) return ''; if(Array.isArray(v)) return v.join(', '); return (''+v).trim(); }
+function gnFieldHTML(f,sec){
+  const v=GN.data[f.k], lab=f.label?('<label class="fl">'+esc(f.label)+(f.unit?' ('+esc(f.unit)+')':'')+'</label>'):'';
+  const ph=f.ph?' placeholder="'+esc(f.ph)+'"':'';
+  let inner='';
+  if(f.t==='text'){
+    inner='<div class="gta"><textarea class="gff" data-gk="'+f.k+'"'+ph+'>'+esc(v||'')+'</textarea>'+
+      (GN_SR?'<button type="button" class="gmic" data-mic="'+f.k+'" title="Dictar por voz" aria-label="Dictar por voz">'+GN_IC.mic+'</button>':'')+'</div>';
+  } else if(f.t==='chips'){
+    const sel=Array.isArray(v)?v:(v?[v]:[]);
+    inner='<div class="gchips" data-chips="'+f.k+'">'+f.opts.map(o=>'<button type="button" class="gch'+(sel.includes(o)?' on':'')+'" data-v="'+esc(o)+'">'+esc(o)+'</button>').join('')+'</div>';
+  } else {
+    const type=f.t==='num'?'number" step="0.1" inputmode="decimal':(f.t==='date'?'date':'text');
+    inner='<input class="gff" type="'+type+'" data-gk="'+f.k+'" value="'+esc(v||'')+'"'+ph+'>';
+  }
+  return '<div class="gf">'+lab+inner+'</div>';
+}
+function gnSecHTML(s){
+  const kindSeg=GN.tpl.kind==='seguimiento', hasText=s.f.some(f=>f.t==='text');
+  const prev=(kindSeg&&hasText)?'<button type="button" class="gprev" data-prev="'+s.k+'">'+GN_IC.seguimiento+esc(s.prevLabel||'Traer de la visita anterior')+'</button>':'';
+  const byK={}; s.f.forEach(f=>byK[f.k]=f);
+  let body='', done=new Set();
+  s.f.forEach(f=>{
+    if(done.has(f.k)) return;
+    const row=(s.rows||[]).find(r=>r.includes(f.k));
+    if(row){ body+='<div class="grow" style="grid-template-columns:repeat('+row.length+',minmax(0,1fr))">'+row.map(k=>{done.add(k);return gnFieldHTML(byK[k],s);}).join('')+'</div>'; }
+    else { done.add(f.k); body+=gnFieldHTML(f,s); }
+  });
+  return '<div class="gsec" id="gs_'+s.k+'" data-sec="'+s.k+'"><div class="sh"><span class="lb">'+esc(s.label)+'</span>'+
+    (GN.fromFicha[s.k]?'<span class="fromficha">de la ficha</span>':'<span class="opt">· opcional</span>')+
+    '<div class="tools">'+prev+'</div></div>'+(s.hint?'<p class="hint">'+esc(s.hint)+'</p>':'')+body+
+    (s.anthro?'<div class="gcalc" id="gc_'+s.k+'"></div>':'')+'</div>';
+}
+function gnRender(){
+  const t=GN.tpl, ac=AREA_COL[t.disc]||{};
+  const writes = t.writeback ? (GN.canWrite
+      ? 'Lo que cargás en los campos de la ficha <b>la actualiza</b>; si cambiás un dato que ya existía queda una corrección firmada en el registro.'
+      : 'Tu rol no modifica la ficha del paciente: todo lo que cargás queda en esta nota.')
+    : (t.confidential ? '<b>Nota confidencial</b>: solo la ven psicooncología y dirección. No se copia nada a la ficha compartida.' : '');
+  $('gn').innerHTML='<div class="gn-in">'+
+    '<div class="gn-top"><span class="gn-pill" style="border-color:'+(ac.bd||'var(--line)')+';background:'+(ac.bg||'var(--panel-2)')+';color:'+(ac.t||'var(--ink-2)')+'">'+esc(t.label)+'</span>'+
+      '<span class="av sm">'+esc(initials(ME.full_name))+'</span><span class="gn-who">'+esc(ME.full_name||'Profesional')+' · '+esc(EVOL_AREA[t.disc]||'')+'</span>'+
+      '<span class="gn-save" id="gnSave"></span><button class="btn sm" onclick="gnClose()">Cerrar nota</button></div>'+
+    '<div class="gn-pt">Paciente: <b>'+esc(CUR.full_name||'—')+'</b>'+(CUR.hc_number!=null?' · HC '+esc(CUR.hc_number):'')+'</div>'+
+    '<div class="gn-call'+(t.confidential?' conf':'')+'"><span class="ic"></span><div>Completá solo lo que corresponda; los campos vacíos no son un problema. <b>Se guarda automáticamente</b> a medida que escribís y queda firmada con tu nombre (editable por vos 24 h). '+writes+'</div></div>'+
+    '<div class="gn-cols"><aside class="gn-idx"><h4>Secciones</h4><ul>'+t.secs.map(s=>'<li data-go="'+s.k+'">'+esc(s.label)+'</li>').join('')+'</ul></aside>'+
+      '<div class="gn-form">'+t.secs.map(gnSecHTML).join('')+
+      '<div class="gn-foot">'+GN_IC.check+'<span>Todo lo que escribís se guarda solo. Podés cerrar y volver cuando quieras.</span><button class="btn" onclick="gnClose()">Cerrar nota</button></div></div></div>'+
+    '</div>';
+  t.secs.forEach(s=>{ if(s.anthro) gnCalc(s.k); });
+  gnSpy();
+}
+function gnCalc(secK){
+  const o=$('gc_'+secK); if(!o) return;
+  const w=GN.data.peso, h=(GN.data.talla!=null&&GN.data.talla!=='')?GN.data.talla:CUR.height_cm;
+  const a=anthro(w,h);
+  o.textContent = a ? ('IMC '+a.imc.toFixed(1)+' · superficie '+a.bsa.toFixed(2)+' m² (se calcula solo'+((GN.data.talla==null||GN.data.talla==='')&&CUR.height_cm?' con la talla de la ficha: '+CUR.height_cm+' cm':'')+')')
+    : (h ? 'Cargá el peso para calcular IMC y superficie corporal.' : 'Con peso y talla se calculan IMC y superficie corporal.');
+}
+function gnSpy(){
+  if(!('IntersectionObserver' in window)) return;
+  if(GN._io) GN._io.disconnect();
+  const io=new IntersectionObserver(es=>{ es.forEach(e=>{ if(e.isIntersecting){ document.querySelectorAll('#gn .gn-idx li').forEach(li=>li.classList.toggle('cur',li.dataset.go===e.target.dataset.sec)); } }); },{root:$('gn'),rootMargin:'-20% 0px -70% 0px'});
+  document.querySelectorAll('#gn .gsec').forEach(s=>io.observe(s)); GN._io=io;
+}
+
+/* ---- estado de guardado ---- */
+function gnStatus(st){
+  if(GN) GN.st=st;
+  const o=$('gnSave'); if(!o) return;
+  const T={idle:'Se guarda solo', typing:'Se guarda solo', saving:'Guardando…', saved:'Se guarda solo · guardado recién', retry:'Reintentando…', locked:'Pasaron 24 h: la nota ya no se edita'};
+  o.className='gn-save'+((st==='retry'||st==='locked')?' warn':'');
+  o.innerHTML=(st==='retry'||st==='locked'?'':GN_IC.check)+esc(T[st]||T.idle);
+}
+function gnSchedule(){ if(!GN||GN.locked) return; GN.touched=true; GN.dirty=true; gnStatus('typing'); clearTimeout(GN.timer); GN.timer=setTimeout(gnFlush,1300); }
+function gnFlush(){
+  const g=GN; if(!g) return Promise.resolve();
+  clearTimeout(g.timer);
+  if(!g.dirty) return g.chain;
+  g.dirty=false;
+  g.chain=g.chain.then(()=>gnSaveNow(g));
+  return g.chain;
+}
+function gnCompile(tpl,data){
+  const out=[];
+  tpl.secs.forEach(s=>{
+    const parts=[];
+    s.f.forEach(f=>{
+      let v=gnStr(data[f.k]); if(!v) return;
+      if(f.t==='date') v=fmt(v);
+      parts.push(f.unit ? (f.label+' '+v+' '+f.unit) : (f.label ? f.label+': '+v : v));
+    });
+    if(s.anthro && gnStr(data.peso)){ const a=anthro(data.peso, gnStr(data.talla)||CUR.height_cm); if(a) parts.push('IMC '+a.imc.toFixed(1)+' · SC '+a.bsa.toFixed(2)+' m²'); }
+    if(parts.length) out.push(s.label+': '+parts.join(' · '));
+  });
+  return out.join('\n');
+}
+async function gnSaveNow(g){
+  if(g.locked) return;
+  const content=gnCompile(g.tpl,g.data);
+  if(!g.noteId && (!g.touched || !content.trim())) { if(GN===g) gnStatus('idle'); return; }  // no se crean notas vacías
+  if(GN===g) gnStatus('saving');
+  const w=num(gnStr(g.data.peso));
+  const rec={content, weight_kg:(w>0?w:null)};
+  if(!GN_NO_STRUCT) rec.structured={tpl:g.tplId, label:g.tpl.label, v:1, data:g.data};
+  try{
+    let res;
+    if(!g.noteId){
+      res=await DB().from('notes').insert(Object.assign({patient_id:g.pid, discipline:g.tpl.disc, author_id:ME.user_id, created_by:ME.user_id, is_confidential:!!g.tpl.confidential}, rec)).select('id,created_at').single();
+      if(!res.error){ g.noteId=res.data.id; }
+    } else {
+      res=await DB().from('notes').update(Object.assign({updated_by:ME.user_id}, rec)).eq('id',g.noteId).select('id');
+      if(!res.error && (!res.data || !res.data.length)){ g.locked=true; if(GN===g) gnStatus('locked'); toast('La nota ya no se puede editar (pasaron 24 h)'); return; }
+    }
+    if(res.error){
+      if(!GN_NO_STRUCT && /structured/i.test(res.error.message||'')){ GN_NO_STRUCT=true; g.dirty=true; return gnSaveNow(g); } // fallback: solo content
+      throw new Error(res.error.message);
+    }
+    if(GN===g) gnStatus(g.dirty?'typing':'saved');
+  }catch(e){
+    console.warn('Nota guiada: no se pudo guardar', e);
+    g.dirty=true; if(GN===g){ gnStatus('retry'); clearTimeout(g.timer); g.timer=setTimeout(gnFlush,4000); }
+  }
+}
+
+/* ---- escritura a la ficha (writeback) ----
+   Vacío en la ficha → se completa directo. Valor existente que cambia → se actualiza y queda una entrada
+   "Corrección de datos de base" firmada (misma que usa Corregir datos de base) + auditoría por trigger.
+   Nunca se borra un dato de la ficha desde una nota. El peso queda además en notes.weight_kg (historial). */
+function gnWriteback(col, val){
+  const g=GN; if(!g || !g.canWrite || g.pid!==CUR.id) return Promise.resolve();
+  g.wchain=(g.wchain||Promise.resolve()).then(()=>gnWritebackNow(g,col,val)).catch(e=>console.warn('writeback',e));   // de a una, en orden
+  return g.wchain;
+}
+async function gnWritebackNow(g, col, val){
+  if(g.pid!==CUR.id) return;
+  const newS=(val==null?'':(''+val).trim()); if(newS==='') return;
+  const oldS=(CUR[col]==null?'':(''+CUR[col]));
+  if(oldS===newS) return;
+  if(col==='weight_kg'||col==='height_cm'){ if(parseFloat(oldS)===parseFloat(newS)) return; }
+  const upd={updated_by:ME.user_id}; upd[col]=(col==='weight_kg'||col==='height_cm')?num(newS):newS;
+  const {data,error}=await DB().from('patients').update(upd).eq('id',CUR.id).select().single();
+  if(error){ toast('No se pudo actualizar la ficha: '+error.message); return; }
+  CUR=data;
+  if(oldS==='' ) { g.filled[col]=true; return; }
+  if(g.filled[col] || col==='weight_kg') return; // lo completó esta misma nota / el peso queda firmado en la nota
+  if(!(col in g.orig)) g.orig[col]=oldS;
+  const content=CORR_PREFIX+' · '+(FIELD_LABEL[col]||col)+': «'+g.orig[col]+'» → «'+newS+'»';
+  if(g.corr[col]){
+    const r=await DB().from('notes').update({content, updated_by:ME.user_id}).eq('id',g.corr[col]).select('id');
+    if(!r.error && r.data && r.data.length) return;
+  }
+  const r=await DB().from('notes').insert({patient_id:CUR.id, discipline:(ROLE_TO_DISC[ME.role]||'oncologia'), content, author_id:ME.user_id, created_by:ME.user_id}).select('id').single();
+  if(r.error){ toast('El dato se guardó pero no se pudo registrar la corrección: '+r.error.message); return; }
+  g.corr[col]=r.data.id;
+}
+function gnFieldDef(k){ return tplFields(GN.tpl).find(f=>f.k===k); }
+function gnSecOf(k){ return GN.tpl.secs.find(s=>s.f.some(f=>f.k===k)); }
+function gnAfterFieldDone(k){
+  if(!GN) return;
+  const f=gnFieldDef(k), s=gnSecOf(k);
+  if(f && f.map) gnWriteback(f.map, GN.data[k]);
+  if(s && s.habits) gnWriteback(s.habits, habitsCompile(s,GN.data));
+}
+
+/* ---- traer de la visita anterior ---- */
+function gnPrevValue(f){
+  if(f.map && CUR[f.map]!=null && (''+CUR[f.map]).trim()!=='') return ''+CUR[f.map];   // el valor vigente de la ficha
+  const keys=[f.k].concat(f.src||[]);
+  const notes=(FCALC&&FCALC.notes)||[];
+  for(const n of notes){
+    if(n.id===GN.noteId || n.discipline!==GN.tpl.disc || !n.structured || !n.structured.data) continue;
+    for(const key of keys){ const v=gnStr(n.structured.data[key]); if(v) return v; }
+  }
+  return '';
+}
+function gnPrev(secK){
+  const s=GN.tpl.secs.find(x=>x.k===secK); if(!s) return;
+  let got=0;
+  s.f.filter(f=>f.t==='text').forEach(f=>{
+    const v=gnPrevValue(f); if(!v) return;
+    const el=document.querySelector('#gn [data-gk="'+f.k+'"]'); if(!el) return;
+    const cur=(el.value||'').trim();
+    if(cur===v.trim()) { got++; return; }
+    el.value = cur ? (cur+'\n'+v) : v; GN.data[f.k]=el.value; got++;
+    gnAfterFieldDone(f.k);
+  });
+  if(!got){ toast('No hay una visita anterior con este campo'); return; }
+  gnSchedule(); gnFlush();
+}
+
+/* ---- dictado por voz (Web Speech API, es-AR) ---- */
+function gnMicUI(){ document.querySelectorAll('#gn .gmic').forEach(b=>b.classList.toggle('on', !!GN_REC && b.dataset.mic===GN_REC_KEY)); }
+function gnMic(k){
+  if(!GN_SR){ toast('Este navegador no permite dictado por voz'); return; }
+  if(GN_REC){ const was=GN_REC_KEY; try{GN_REC.stop();}catch(e){} GN_REC=null; GN_REC_KEY=null; gnMicUI(); if(was===k) return; }
+  const el=document.querySelector('#gn [data-gk="'+k+'"]'); if(!el) return;
+  const r=new GN_SR(); r.lang='es-AR'; r.continuous=true; r.interimResults=false;
+  r.onresult=e=>{ let t=''; for(let i=e.resultIndex;i<e.results.length;i++){ if(e.results[i].isFinal) t+=e.results[i][0].transcript; }
+    t=t.trim(); if(!t) return; el.value=(el.value && !/\s$/.test(el.value) ? el.value+' ' : el.value)+t; GN.data[k]=el.value; gnSchedule(); };
+  r.onerror=e=>{ if(e.error==='not-allowed'||e.error==='service-not-allowed') toast('Permití el micrófono para dictar'); };
+  r.onend=()=>{ if(GN_REC===r){ GN_REC=null; GN_REC_KEY=null; } gnMicUI(); if(GN){ gnAfterFieldDone(k); gnFlush(); } };
+  GN_REC=r; GN_REC_KEY=k;
+  try{ r.start(); }catch(e){ GN_REC=null; GN_REC_KEY=null; }
+  gnMicUI();
+}
+
+/* ---- cerrar ---- */
+async function gnClose(){
+  if(!GN) return;
+  if(GN_REC){ try{GN_REC.stop();}catch(e){} GN_REC=null; GN_REC_KEY=null; }
+  const g=GN;
+  await gnFlush(); await (g.wchain||Promise.resolve());
+  if((g.dirty || g.st==='retry') && !confirm('Todavía no se pudo guardar el último cambio (revisá la conexión). ¿Cerrar igual? Lo que ya figuraba como guardado queda en el registro.')) return;
+  clearTimeout(g.timer);
+  if(g._io) g._io.disconnect();
+  GN=null; $('gn').hidden=true; $('gn').innerHTML=''; document.body.classList.remove('gn-open');
+  if(g.noteId) toast('Nota guardada en el registro');
+  EVOL_FILTER='all'; EVOL_PROF='all';
+  await afterChange();
+}
+
+/* ---- eventos (delegados) ---- */
+(function gnWire(){
+  const root=$('gn'); if(!root) return;
+  root.addEventListener('input',e=>{
+    const el=e.target.closest('[data-gk]'); if(!el||!GN) return;
+    GN.data[el.dataset.gk]=el.value;
+    const s=gnSecOf(el.dataset.gk); if(s&&s.anthro) gnCalc(s.k);
+    gnSchedule();
+  });
+  root.addEventListener('change',e=>{ const el=e.target.closest('[data-gk]'); if(!el||!GN) return; gnAfterFieldDone(el.dataset.gk); gnFlush(); });
+  root.addEventListener('focusout',e=>{ if(e.target.closest('[data-gk]')) gnFlush(); });
+  root.addEventListener('click',e=>{
+    if(!GN) return;
+    const ch=e.target.closest('.gch');
+    if(ch){
+      const box=ch.closest('[data-chips]'), k=box.dataset.chips, f=gnFieldDef(k), v=ch.dataset.v;
+      if(f.multi){ const arr=Array.isArray(GN.data[k])?GN.data[k].slice():[]; const i=arr.indexOf(v); if(i>=0)arr.splice(i,1); else arr.push(v); GN.data[k]=arr; }
+      else GN.data[k]=(GN.data[k]===v?'':v);
+      const sel=Array.isArray(GN.data[k])?GN.data[k]:[GN.data[k]];
+      box.querySelectorAll('.gch').forEach(b=>b.classList.toggle('on', sel.includes(b.dataset.v)));
+      gnSchedule(); gnAfterFieldDone(k); return;
+    }
+    const pv=e.target.closest('[data-prev]'); if(pv){ gnPrev(pv.dataset.prev); return; }
+    const mc=e.target.closest('[data-mic]'); if(mc){ gnMic(mc.dataset.mic); return; }
+    const go=e.target.closest('[data-go]'); if(go){ const t=$('gs_'+go.dataset.go); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); return; }
+  });
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && GN) gnFlush(); });
+  window.addEventListener('beforeunload',e=>{ if(GN && (GN.dirty || GN.st==='saving' || GN.st==='retry')){ gnFlush(); e.preventDefault(); e.returnValue=''; } });
+})();
+
 /* ---------- Vitamina C ---------- */
 async function renderVitc(){
   const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
   const {data}=await DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:false});
   const g=CUR.g6pd_status||'no_evaluado';
   const consentOk = !!(FCALC.consBy && FCALC.consBy['vitamina_c'] && FCALC.consBy['vitamina_c'].signed_at);
-  const blocked = g!=='normal';   // solo el G6PD bloquea (seguridad clínica)
-  const gate = !blocked
-    ? '<div class="gate ok"><span class="ic"></span><p><b style="color:var(--ink)">Habilitado.</b> G6PD normal: se puede registrar la administración.</p></div>'
-    : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">Registro bloqueado.</b> '+(g==='deficiente'?'G6PD deficiente: la megadosis está contraindicada.':'Falta el screening de G6PD (debe figurar «normal» en la ficha).')+'</p></div>';
-  const consentNote = (!blocked && !consentOk)
+  // El G6PD ya no bloquea el registro: si no es normal se muestra un aviso visible (la base tampoco bloquea).
+  const g6pdWarn = g!=='normal';
+  const gate = !g6pdWarn
+    ? '<div class="gate ok"><span class="ic"></span><p><b style="color:var(--ink)">G6PD normal.</b> Se puede registrar la administración.</p></div>'
+    : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">Atención: '+esc(G6PD_LABEL[g])+'.</b> La megadosis puede estar contraindicada (riesgo de hemólisis). Verificá antes de administrar.</p></div>';
+  const consentNote = (!consentOk)
     ? '<div class="callout" style="border-color:rgba(224,164,88,.4);background:rgba(224,164,88,.07)"><span class="demo" style="flex:none">Recordatorio</span><p>No figura un consentimiento de megadosis firmado. No bloquea el registro, pero verificá que el consentimiento esté firmado. <button class="btn sm" style="margin-left:6px" onclick="goConsent()">Registrar consentimiento</button></p></div>'
     : '';
   const lastLab=(FCALC.labs&&FCALC.labs[0])?FCALC.labs[0].measured_at:null;
-  const labWarn=(!blocked && (lastLab==null||daysSince(lastLab)>DIAS_LAB_VIGENTE))
+  const labWarn=((lastLab==null||daysSince(lastLab)>DIAS_LAB_VIGENTE))
     ? '<div class="callout" style="border-color:rgba(224,164,88,.4);background:rgba(224,164,88,.07)"><span class="demo" style="flex:none">Atención</span><p>'+(lastLab==null?'No hay laboratorios cargados.':'El último laboratorio es del '+fmtDMShort(lastLab)+' (más de '+DIAS_LAB_VIGENTE+' días).')+' Verificá si corresponde pedir un control antes de la infusión.</p></div>'
     : '';
   const ind=FCALC.ind;
@@ -1782,11 +2273,11 @@ async function renderVitc(){
       (proxDosis?'<div class="row"><span class="k">Próxima sugerida</span><span class="v" style="color:var(--vital)">'+proxDosis+'</span></div>':'')+'</div></div>'+
       (ind.detail?'<p class="bd" style="margin-top:14px">'+esc(ind.detail)+'</p>':'')+'</div></section>' : '';
   const canReg=can.vitc();
-  const btn = canReg? '<button class="btn primary sm" onclick="openVitcModal()" '+(blocked?'disabled title="Requiere G6PD normal"':'')+'>'+PLUS+'Registrar administración</button>' : '';
+  const btn = canReg? '<button class="btn primary sm" onclick="openVitcModal()">'+PLUS+'Registrar administración</button>' : '';
   const rows=(data||[]).map(v=>{
     const ev = (v.adverse_events&&v.adverse_events.trim())?'<span class="st warn"><span class="d"></span>'+esc(v.adverse_events.slice(0,24))+'</span>':'<span class="st ok"><span class="d"></span>Ninguno</span>';
     return '<tr><td style="white-space:nowrap">'+fmtDMShort(v.administered_at)+' · '+fmtHM(v.administered_at)+'</td><td>'+v.dose_g+' g</td>'+
-      '<td class="quiet">'+(v.dilution_ml?v.dilution_ml+' ml':'—')+'</td><td class="quiet">'+(v.rate_g_min?v.rate_g_min+' g/min':'—')+'</td>'+
+      '<td class="quiet">'+(v.dilution_ml?v.dilution_ml+' ml':'—')+'</td><td class="quiet">'+(v.rate_g_min?v.rate_g_min+' gtt/min':'—')+'</td>'+
       '<td class="quiet">'+(v.hr_pre??'—')+' · '+(v.bp_pre||'—')+' · '+(v.glucose_pre??'—')+'</td>'+
       '<td class="quiet">'+(v.hr_post??'—')+' · '+(v.bp_post||'—')+' · '+(v.glucose_post??'—')+'</td>'+
       '<td>'+ev+'</td><td class="quiet">'+esc(lastNameOf(whoName(v.administered_by)))+'</td></tr>';
@@ -1804,7 +2295,7 @@ function openVitcModal(){
     '<div class="grid g3">'+
       '<div class="field"><label>Dosis (g)</label><input id="vDose" type="number" step="0.1"></div>'+
       '<div class="field"><label>Dilución (ml)</label><input id="vDil" type="number"></div>'+
-      '<div class="field"><label>Velocidad (g/min)</label><input id="vRate" type="number" step="0.1"></div>'+
+      '<div class="field"><label>Velocidad (gtt/min)</label><input id="vRate" type="number" step="1"></div>'+ // se guarda en rate_g_min, que ahora representa gotas/min
       '<div class="field"><label>FC pre</label><input id="vHrPre" type="number"></div>'+
       '<div class="field"><label>TA pre</label><input id="vBpPre" placeholder="120/80"></div>'+
       '<div class="field"><label>Glucemia pre</label><input id="vGluPre" type="number"></div>'+
@@ -1815,12 +2306,12 @@ function openVitcModal(){
 }
 async function addVitc(){
   const dose=num($('vDose').value); if(!dose){toast('Ingresá la dosis');return false;}
-  const rec={patient_id:CUR.id, administered_at:whenISO('vWhen'), dose_g:dose, dilution_ml:num($('vDil').value), rate_g_min:num($('vRate').value),
+  const rec={patient_id:CUR.id, administered_at:whenISO('vWhen'), dose_g:dose, dilution_ml:num($('vDil').value), rate_g_min:num($('vRate').value) /* columna histórica: ahora son gotas/min (gtt/min) */,
     hr_pre:num($('vHrPre').value), bp_pre:$('vBpPre').value||null, glucose_pre:num($('vGluPre').value),
     hr_post:num($('vHrPost').value), bp_post:$('vBpPost').value||null, glucose_post:num($('vGluPost').value),
     adverse_events:$('vAdv').value||null, administered_by:ME.user_id, created_by:ME.user_id};
   const {error}=await DB().from('vitc_administrations').insert(rec);
-  if(error){toast(error.message.includes('G6PD')?'Bloqueado: revisá el G6PD del paciente':error.message);return false;}
+  if(error){toast(error.message);return false;}
   toast('Administración registrada'); afterChange(); return true;
 }
 
@@ -2240,7 +2731,7 @@ async function printPatient(){
     return '<div class="pn"><b>'+fmtDT(x.measured_at)+'</b> — '+esc(p.join(' · ')||'—')+(x.otros?' · '+esc(x.otros):'')+(x.notes?'<br>'+esc(x.notes):'')+'</div>';
   }).join('')||'<p>Sin laboratorios.</p>';
   const notesHtml=(notes||[]).map(n=>{const au=DIR[n.author_id];
-    return '<div class="pn"><b>'+fmtDT(n.created_at)+'</b> — '+esc(au?au.full_name:'Profesional')+' ('+(DISC_LABEL[n.discipline]||n.discipline)+')'+(n.is_confidential?' · CONFIDENCIAL':'')+'<br>'+esc(n.content)+(n.weight_kg!=null?'<br>Peso: '+esc(n.weight_kg)+' kg':'')+'</div>';}).join('')||'<p>Sin evoluciones.</p>';
+    return '<div class="pn"><b>'+fmtDT(n.created_at)+'</b> — '+esc(au?au.full_name:'Profesional')+' ('+(DISC_LABEL[n.discipline]||n.discipline)+')'+(n.is_confidential?' · CONFIDENCIAL':'')+((n.structured&&n.structured.label)?' · '+esc(n.structured.label):'')+'<br>'+esc(n.content)+(n.weight_kg!=null?'<br>Peso: '+esc(n.weight_kg)+' kg':'')+'</div>';}).join('')||'<p>Sin evoluciones.</p>';
   const vitcHtml=(vitc||[]).map(v=>'<div class="pn"><b>'+fmtDT(v.administered_at)+'</b> — '+v.dose_g+' g'+(v.dilution_ml?' / '+v.dilution_ml+' ml':'')+'. Pre: FC '+(v.hr_pre??'—')+' TA '+(v.bp_pre??'—')+' Gluc '+(v.glucose_pre??'—')+'; Post: FC '+(v.hr_post??'—')+' TA '+(v.bp_post??'—')+' Gluc '+(v.glucose_post??'—')+(v.adverse_events?'. Eventos: '+esc(v.adverse_events):'')+'</div>').join('')||'<p>Sin administraciones.</p>';
   const tnm=[CUR.tnm_t&&('T'+CUR.tnm_t),CUR.tnm_n&&('N'+CUR.tnm_n),CUR.tnm_m&&('M'+CUR.tnm_m)].filter(Boolean).join(' ');
   const html='<!doctype html><html lang="es"><head><meta charset="utf-8"><title>HC '+(CUR.hc_number||'')+' - '+esc(CUR.full_name||'')+'</title>'+
@@ -2281,6 +2772,8 @@ async function printPatient(){
   }
   const modalBg=$('modal'); if(modalBg) modalBg.addEventListener('click',e=>{ if(e.target===modalBg) modalClose(); });
   setAuthMode('login');
+  // PWA: registra el service worker (si falla, la app funciona igual)
+  if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ try{ navigator.serviceWorker.register('/sw.js').catch(e=>console.warn('SW no registrado',e)); }catch(e){} }); }
   SB.auth.getSession().then(({data})=>{ if(data && data.session) loadMe(); else { $('booting').hidden=true; renderAuth('login'); } })
     .catch(()=>{ $('booting').hidden=true; renderAuth('login'); });
 })();
