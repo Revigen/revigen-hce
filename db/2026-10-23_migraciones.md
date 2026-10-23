@@ -32,3 +32,26 @@ Nullable: las notas existentes quedan con NULL. Inofensiva; se puede dejar aunqu
 - Supabase → Project Settings → API → Exposed schemas: confirmar que incluye `clinica`.
 - Supabase → Authentication → URL Configuration: Site URL y Redirect URLs = URL de producción de Vercel
   (hoy "Olvidé mi contraseña" manda a localhost).
+
+## 3) Indicaciones de megadosis completas (aditivo, una sentencia por columna)
+```sql
+alter table clinica.indications add column if not exists vitc_dilution_ml numeric;
+alter table clinica.indications add column if not exists vitc_rate_gtt_min numeric;
+alter table clinica.indications add column if not exists start_date date;
+alter table clinica.indications add column if not exists end_date date;
+alter table clinica.indications add column if not exists sessions_planned integer;
+alter table clinica.indications add column if not exists suspended_at timestamptz;
+alter table clinica.indications add column if not exists suspended_by uuid;
+alter table clinica.indications add column if not exists suspend_reason text;
+alter table clinica.indications add column if not exists replaced_by uuid;
+```
+Todas aceptan vacío. Modificar una indicación crea una versión nueva y marca la anterior con `active=false`
+y `replaced_by`; suspender completa `suspended_at/suspended_by/suspend_reason`. Nada se borra.
+
+Conteo de filas DESPUÉS de todos los cambios: idéntico al de antes (patients 13 · notes 43 · vitc 4 · vitals 8 ·
+audit_log 260 · staff 7 · resto 0).
+
+## Pendiente de decisión
+El rol `medico_funcional` no puede escribir `patients`, `indications` ni `vitc_administrations` según las
+políticas RLS. La app ahora muestra los permisos tal como están en la base. Si debe poder indicar o registrar
+megadosis, hay que ampliar esas políticas (`is_medic()` y `vitc_write`).
