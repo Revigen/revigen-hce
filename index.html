@@ -589,6 +589,30 @@ textarea.gff{min-height:66px;resize:vertical;line-height:1.5;padding-right:46px;
 .tplmenu .ds{color:var(--muted);font-size:12.5px;margin-top:2px;font-family:var(--f-ui)}
 .tplmenu .sug{font-size:11px;font-weight:600;color:#15803D;background:#E9F7ED;border:1px solid #BFE3C7;border-radius:999px;padding:1px 7px;margin-left:4px;vertical-align:1px}
 .tplmore summary{cursor:pointer;font-family:var(--f-ui);font-size:13px;color:var(--muted);padding:4px 2px}
+/* ====== Flujo simplificado: línea de tiempo, «Registrar», Tratamientos ====== */
+.tl-bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:10px 0 2px}
+.tl-chips{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px}
+.tl-chips button{flex:none;white-space:nowrap}
+.tl-day{font-family:var(--f-ui);font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:14px 2px 8px}
+.tl-day:first-letter{text-transform:uppercase}
+.tl-t{font-size:15px;font-weight:600;color:var(--ink);margin:0 0 4px}
+.entry .bd.tl-b{font-family:var(--f-ui);font-size:13.5px;line-height:1.6}
+.reg-h{font-family:var(--f-ui);font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:6px 2px -4px}
+.bd-side{margin:0;font-family:var(--f-ui);font-size:13.5px;line-height:1.6;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+.fab{display:none}
+@media (max-width:1040px){
+  /* en celular primero el contenido de la pestaña; los paneles laterales después */
+  .fgrid > #paneHost{order:1}
+  .fgrid > .side-a{order:2}
+  .fgrid > #sideB{order:3}
+  .pcard .acts .btn.primary{display:none}
+  .tabs button{padding-left:9px;padding-right:9px;font-size:14px}   /* que entren las 4 pestañas en el celular */
+  .fab{display:inline-flex;align-items:center;gap:8px;position:fixed;right:16px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:55;
+    height:52px;padding:0 20px 0 16px;border-radius:26px;background:var(--vital);color:#fff;font-weight:600;font-size:15px;
+    box-shadow:0 8px 22px rgba(60,107,58,.32)}
+  .fab svg{width:20px;height:20px;stroke:currentColor;fill:none}
+  .page{padding-bottom:calc(150px + env(safe-area-inset-bottom))}
+}
 /* ====== Celular / tablet: la pantalla siempre se adapta ======
    iOS Safari hace zoom automático (y no lo deshace) al tocar un campo con letra < 16 px:
    en pantallas táctiles o angostas todos los campos van a 16 px. */
@@ -704,24 +728,27 @@ let CUR_NOTES={}, NOTE_DISC=null, EDIT_NOTE_ID=null;
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
 const esc = s => (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function fmt(d){if(!d)return '—';const x=new Date(d);if(isNaN(x))return d;return x.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}
+// Una fecha 'AAAA-MM-DD' (nacimiento, diagnóstico…) es local: new Date() la toma como medianoche UTC y en Argentina mostraba el día anterior.
+function toDate(d){ if(typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)){ const [y,m,dd]=d.split('-').map(Number); return new Date(y,m-1,dd); } return new Date(d); }
+function todayLocal(){ return nowLocalInput().slice(0,10); }
+function fmt(d){if(!d)return '—';const x=toDate(d);if(isNaN(x))return d;return x.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});}
 function fmtDate(d){return fmt(d);}
 function fmtDT(d){if(!d)return '';const x=new Date(d);if(isNaN(x))return '';return x.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'})+' '+x.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}
-function fmtDMShort(d){if(!d)return '';const x=new Date(d);if(isNaN(x))return '';return x.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});}
+function fmtDMShort(d){if(!d)return '';const x=toDate(d);if(isNaN(x))return '';return x.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});}
 function fmtHM(d){if(!d)return '';const x=new Date(d);if(isNaN(x))return '';return x.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});}
-function edad(d){if(!d)return '';const b=new Date(d);if(isNaN(b))return '';let a=new Date().getFullYear()-b.getFullYear();const m=new Date().getMonth()-b.getMonth();if(m<0||(m===0&&new Date().getDate()<b.getDate()))a--;return a>=0&&a<130?a+' años':'';}
-function daysSince(d){if(!d)return Infinity;const x=new Date(d);if(isNaN(x))return Infinity;return (Date.now()-x.getTime())/86400000;}
+function edad(d){if(!d)return '';const b=toDate(d);if(isNaN(b))return '';let a=new Date().getFullYear()-b.getFullYear();const m=new Date().getMonth()-b.getMonth();if(m<0||(m===0&&new Date().getDate()<b.getDate()))a--;return a>=0&&a<130?a+' años':'';}
+function daysSince(d){if(!d)return Infinity;const x=toDate(d);if(isNaN(x))return Infinity;return (Date.now()-x.getTime())/86400000;}
 function num(v){return v===''||v==null?null:Number(v);}
 function initials(name){const p=(name||'').trim().split(/\s+/).filter(Boolean);if(!p.length)return '··';return ((p[0][0]||'')+(p.length>1?p[p.length-1][0]:'')).toUpperCase();}
 function esES(n){return (n||0).toLocaleString('es-AR');}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);}
 
-/* ---------- permisos (idénticos al sistema actual) ---------- */
+/* ---------- permisos: iguales a las políticas RLS de la base (si cambia una política, cambiar acá) ---------- */
 const can = {
-  createPatient:()=>['admin','director_medico','oncologo','medico_funcional','enfermeria'].includes(ME.role),
-  editPatient:  ()=>['admin','director_medico','oncologo','medico_funcional','enfermeria'].includes(ME.role),
-  indicate:     ()=>['admin','director_medico','oncologo','medico_funcional'].includes(ME.role),
-  vitc:         ()=>['admin','enfermeria','director_medico','medico_funcional'].includes(ME.role),
+  createPatient:()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),   // patients_insert
+  editPatient:  ()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),   // patients_update
+  indicate:     ()=>['admin','director_medico','oncologo'].includes(ME.role),                // ind_write = clinica.is_medic()
+  vitc:         ()=>['admin','enfermeria','director_medico'].includes(ME.role),              // vitc_write
   confidential: ()=>['admin','psicooncologia','director_medico'].includes(ME.role),
   director:     ()=>['admin','director_medico'].includes(ME.role),
   manageUsers:  ()=>ME.role==='admin'
@@ -997,7 +1024,7 @@ async function loadCache(){
     DB().from('appointments').select('patient_id,starts_at,discipline,professional_id,status,title'),
     DB().from('indications').select('patient_id,kind,active,vitc_target_dose_g').eq('kind','vitamina_c').eq('active',true),
     DB().from('consents').select('patient_id,kind,signed_at').eq('kind','vitamina_c'),
-    DB().from('labs').select('patient_id,measured_at,creatinina').order('measured_at',{ascending:false}),
+    DB().from('labs').select('patient_id,measured_at,creatinina,recorded_by').order('measured_at',{ascending:false}),
     DB().from('notes').select('patient_id,discipline,author_id,created_at').order('created_at',{ascending:false}),
     DB().from('vitc_administrations').select('patient_id,administered_at,adverse_events,administered_by').order('administered_at',{ascending:false}),
     DB().from('vitals').select('patient_id,measured_at,recorded_by').order('measured_at',{ascending:false}),
@@ -1007,7 +1034,7 @@ async function loadCache(){
   const byPatAppt=groupBy(appts,'patient_id');
   const indSet=new Set((IND.data||[]).map(r=>r.patient_id));
   const indByPat={}; (IND.data||[]).forEach(r=>{indByPat[r.patient_id]=r;});
-  const consSet=new Set((CON.data||[]).map(r=>r.patient_id));
+  const consSet=new Set((CON.data||[]).filter(r=>r.signed_at).map(r=>r.patient_id));   // cuenta solo el consentimiento firmado
   const labsByPat=groupBy(LB.data,'patient_id');
   const notesByPat=groupBy(NT.data,'patient_id');
   const vitcByPat=groupBy(VC.data,'patient_id');
@@ -1152,7 +1179,7 @@ async function renderInicio(){
   const pendRows=pendItems.length? pendItems.map(({pt,pd,prox})=>{
     let s='';
     if(pd.kind==='g6pd') s='Tiene indicación activa de megadosis de vitamina C. El G6PD no figura como normal en la ficha: verificá antes de administrar (riesgo de hemólisis).';
-    else if(pd.kind==='consent') s='Recibe megadosis de vitamina C y no hay consentimiento cargado en la historia.';
+    else if(pd.kind==='consent') s='Recibe megadosis de vitamina C y no hay un consentimiento firmado cargado en la historia.';
     else if(pd.kind==='lab') s='El último laboratorio está vencido y tiene un turno dentro de los próximos 7 días'+(prox?' ('+fmtDMShort(prox.starts_at)+' '+fmtHM(prox.starts_at)+').':'.');
     return '<div class="it '+pd.level+'"><span class="d"></span><div class="b">'+
       '<div class="t">'+esc(pt.full_name)+' · '+esc(pd.label.toLowerCase())+'</div>'+
@@ -1296,7 +1323,7 @@ async function doCreatePatient(last,first,dtype,doc,birth,phone,cov){
 async function openPatient(id){
   const {data,error}=await DB().from('patients').select('*').eq('id',id).single();
   if(error){toast(error.message);return;}
-  CUR=data; curView='ficha'; curTab='hc'; HC_BASE_OPEN=false; buildRail();
+  CUR=data; curView='ficha'; curTab=(ME.role==='enfermeria'?'trat':'hc'); HC_BASE_OPEN=false; TL_FILTER='todo'; EVOL_PROF='all'; buildRail();
   await renderFicha();
   window.scrollTo(0,0);
 }
@@ -1350,7 +1377,7 @@ async function loadFichaCalc(){
   const ap90=appts.filter(a=>{const t=new Date(a.starts_at).getTime();return t>=d90&&t<=now;});
   const as=ap90.filter(a=>a.status==='asistio').length, ab=ap90.filter(a=>a.status==='ausente').length;
   // consentimientos
-  const consBy={}; cons.forEach(c=>{ if(!consBy[c.kind]) consBy[c.kind]=c; });
+  const consBy={}; cons.forEach(c=>{ if(!consBy[c.kind] || (!consBy[c.kind].signed_at && c.signed_at)) consBy[c.kind]=c; });   // prioriza el firmado
   FCALC={appts,labs,notes,vitc,vitals,meds,cons,ind,areas,areaMeta,people,futureAppts,
     asist:{as,ab,tot:as+ab}, consBy, audit, lastCreat:labs.find(l=>l.creatinina!=null)||null};
   return FCALC;
@@ -1372,7 +1399,7 @@ async function renderFicha(){
   if(CUR.allergies) tags.push('<span class="tag crit"><span class="d"></span>Alergia: '+esc(CUR.allergies.split(/[\.\n]/)[0].slice(0,40))+'</span>');
   tags.push('<span class="tag '+(g==='normal'?'ok':'warn')+'"><span class="d"></span>'+esc(G6PD_LABEL[g])+'</span>');
   if(CUR.ecog||CUR.karnofsky!=null) tags.push('<span class="tag">'+(CUR.ecog?'ECOG '+CUR.ecog:'')+(CUR.ecog&&CUR.karnofsky!=null?' · ':'')+(CUR.karnofsky!=null?'Karnofsky '+CUR.karnofsky:'')+'</span>');
-  const tabs=[['resumen','Resumen'],['hc','Historia clínica'],['vitc','Megadosis'],['enf','Enfermería'],['indic','Indicaciones'],['docs','Documentos']];
+  const tabs=[['resumen','Resumen'],['hc','Historia'],['trat','Tratamientos'],['docs','Documentos']];
   if(can.director()) tabs.push(['audit','Auditoría']);
   p.innerHTML=
    '<div class="crumb"><button onclick="navigate(\'pacientes\')">Pacientes</button><span>›</span><span style="color:var(--ink-2)">'+esc(CUR.full_name||'—')+'</span></div>'+
@@ -1381,11 +1408,12 @@ async function renderFicha(){
        '<div class="line">'+line.join('')+'</div>'+
        '<div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap">'+tags.join('')+'</div></div>'+
      '<div class="acts">'+
-       '<button class="btn primary" onclick="newNote()">'+PLUS+'Nueva nota</button>'+
+       '<button class="btn primary" onclick="openRegistrar()">'+PLUS+'Registrar</button>'+
        '<button class="btn" onclick="printPatient()">'+ICPRINT+'Exportar HC</button></div></div>'+
    '<div class="subnav-wrap"><div class="tabs" role="tablist" id="tabBar">'+
      tabs.map(([t,l])=>'<button class="'+(curTab===t?'on':'')+'" data-t="'+t+'" onclick="setTab(\''+t+'\')">'+l+'</button>').join('')+'</div></div>'+
-   '<div class="fgrid"><div class="side-a" id="sideA"></div><div class="stack" id="paneHost"></div><div id="sideB"></div></div>';
+   '<div class="fgrid"><div class="side-a" id="sideA"></div><div class="stack" id="paneHost"></div><div id="sideB"></div></div>'+
+   '<button class="fab" onclick="openRegistrar()">'+PLUS+'Registrar</button>';
   renderSideA(); renderSideB();
   setTab(curTab);
 }
@@ -1395,7 +1423,6 @@ function renderSideA(){
   const lc=FCALC.lastCreat;
   const crit=
     critItem(CUR.allergies?'crit':'ok','Alergias',CUR.allergies?esc(CUR.allergies):'Sin alergias registradas')+
-    critItem(g==='normal'?'ok':'warn','Screening G6PD',esc(G6PD_LABEL[g].replace('G6PD ','')))+
     critItem(lc?'warn':'','Creatinina · último lab',lc?esc(lc.creatinina)+' mg/dL · '+fmtDMShort(lc.measured_at):'Sin laboratorios')+
     critItem('','Medicación habitual',CUR.usual_medication?esc(CUR.usual_medication):'—');
   const efRows=
@@ -1417,6 +1444,8 @@ function renderSideA(){
     : '<p class="meta" style="margin:0">Sin comentarios cargados.</p>';
   $('sideA').innerHTML='<div class="sheet">'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Datos críticos</span><span class="meta">De la ficha</span></div><div class="crit-list">'+crit+'</div></div>'+
+    (CUR.problem_list?'<div class="sec"><div class="sec-h"><span class="sec-t">Problemas activos</span></div><p class="bd-side">'+esc(CUR.problem_list)+'</p></div>':'')+
+    (CUR.care_plan?'<div class="sec"><div class="sec-h"><span class="sec-t">Plan vigente</span></div><p class="bd-side">'+esc(CUR.care_plan)+'</p></div>':'')+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Estado funcional</span></div><div class="rows">'+efRows+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Diagnóstico</span></div><div class="rows">'+dxRows+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Comentarios del equipo</span></div>'+com+'</div>'+
@@ -1449,9 +1478,11 @@ function renderSideB(){
 }
 function setTab(t){
   if(t==='audit'&&!can.director()) t='resumen';
+  if(t==='vitc'||t==='enf'||t==='indic') t='trat';   // Megadosis, Enfermería e Indicaciones quedaron unificadas en Tratamientos
+  if(t==='evol') t='hc';
   curTab=t;
   document.querySelectorAll('#tabBar button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
-  const map={resumen:renderResumen,hc:renderHC,evol:renderHC,vitc:renderVitc,enf:renderEnf,indic:renderIndic,docs:renderDocs,audit:renderAudit};
+  const map={resumen:renderResumen,hc:renderHC,trat:renderTrat,docs:renderDocs,audit:renderAudit};
   (map[t]||renderResumen)();
 }
 
@@ -1600,7 +1631,7 @@ function datosBaseReadHTML(){
   const com = CUR.comentarios ? '<div class="sec"><div class="sec-h"><span class="sec-t">Comentarios del equipo</span></div><p class="note" style="margin:0">«'+esc(CUR.comentarios)+'»</p></div>' : '';
   const btn = can.editPatient() ? '<button class="btn sm" onclick="corregirDatos()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Corregir datos de base</button>' : '';
   const note = can.editPatient() ? 'Cada corrección queda como entrada firmada en el registro.' : 'Solo lectura · para sumar información usá «Nueva nota», arriba.';
-  return '<div class="corrbar">'+btn+'<span class="meta">'+note+'</span></div><div class="sheet">'+
+  return '<div class="corrbar">'+btn+'<span class="meta">'+note+'</span>'+(can.director()?'<button class="btn sm dg" style="margin-left:auto" onclick="archivePatient()">Archivar paciente</button>':'')+'</div><div class="sheet">'+
     hcSec('Filiatorios y cobertura',fili)+
     hcSec('Estado funcional y antropometría',func)+
     hcSec('Antecedentes y hábitos',ant)+
@@ -1622,73 +1653,95 @@ function renderHC(){
   renderRegistro();
 }
 function corregirDatos(){ if(!can.editPatient()){toast('Tu rol no corrige los datos de base');return;} HC_EDIT=true; renderHCForm(); }
-function goRegistro(){ if(curTab!=='hc'){ setTab('hc'); } setTimeout(()=>{ const t=$('rText'); if(t){ try{t.focus();t.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){} } },280); }
-function composeHTML(){
-  const mine=ROLE_TO_DISC[ME.role]||'oncologia';
-  const areaOpts=Object.keys(EVOL_AREA).map(a=>'<option value="'+a+'" '+(a===mine?'selected':'')+'>'+EVOL_AREA[a]+'</option>').join('');
-  const quick=(TPL_BY_ROLE[ME.role]||[]).filter(tplAllowed);
-  return '<div class="compose">'+
-    '<div class="ch"><span class="av sm">'+esc(initials(ME.full_name))+'</span><b>'+esc(ME.full_name||'Profesional')+'</b>'+
-      '<button class="btn primary sm" style="margin-left:auto" onclick="gnPicker()">'+PLUS+'Nueva nota</button></div>'+
-    (quick.length?'<div class="gquick"><span class="meta">Nota guiada:</span>'+quick.map(id=>'<button class="btn sm" onclick="gnOpen(\''+id+'\')">'+esc(NOTE_TPL[id].label)+'</button>').join('')+'</div>':'')+
-    '<div class="gquick"><span class="meta">Evolución libre ·</span><select id="rArea" class="csel" onchange="regAreaChange()">'+areaOpts+'</select></div>'+
-    '<textarea id="rText" placeholder="Escribí una evolución libre o el dato clínico a sumar a la historia…"></textarea>'+
-    '<div id="rConfRow"></div>'+
-    '<div class="cf"><input id="rWeight" type="number" step="0.1" inputmode="decimal" placeholder="Peso (kg) opcional" oninput="regImcHint()">'+
-      '<span class="hint" id="rImc">Una vez guardado no se modifica (solo se agrega una aclaración). Podés editar el tuyo hasta 24 h.</span>'+
-      '<button class="btn primary" onclick="addRegistroEntry(this)">'+PLUS+'Agregar al registro</button></div>'+
-    '</div>';
+/* ---------- Historia: una sola línea de tiempo ----------
+   Notas (libres y guiadas), infusiones de megadosis, signos vitales, laboratorios, medicación,
+   documentos, consentimientos e indicaciones, todo junto y por día. Solo lectura: cada tipo se carga
+   desde «Registrar» y queda guardado en su tabla de siempre. */
+let TL_FILTER='todo';
+const TL_TYPES=[['todo','Todo'],['notas','Notas'],['megadosis','Megadosis'],['signos','Signos vitales'],['labs','Laboratorio'],['medicacion','Medicación'],['docs','Documentos'],['indicaciones','Indicaciones']];
+const LAB_COL={t:'#8A5212',bg:'#FBF1E1',bd:'#EBD6B6',d:'#D97706'}, DOC_COL={t:'#36423A',bg:'#EEF1EA',bd:'#E2E7DD',d:'#566055'};
+function setTlFilter(f){ TL_FILTER=f; renderRegistro(); }
+function tlTag(label,c){ return '<span class="tag disc" style="background:'+c.bg+';border-color:'+c.bd+';color:'+c.t+'"><span class="d" style="background:'+c.d+'"></span>'+esc(label)+'</span>'; }
+function tlEntry(o){
+  const a=DIR[o.who];
+  return '<div class="entry"><div class="eh"><span class="av sm">'+esc(initials(a?a.full_name:''))+'</span><span class="au">'+esc(a?a.full_name:'Profesional')+'</span>'+o.tag+
+    '<span class="meta" style="margin-left:auto">'+fmtDMShort(o.at)+' · '+fmtHM(o.at)+'</span></div>'+
+    '<div class="tl-t">'+o.title+'</div>'+((o.lines&&o.lines.length)?'<p class="bd tl-b">'+o.lines.join('<br>')+'</p>':'')+(o.foot?'<div class="ft">'+o.foot+'</div>':'')+'</div>';
 }
-function regAreaChange(){
-  const a=$('rArea')?$('rArea').value:null; const row=$('rConfRow'); if(!row)return;
-  row.innerHTML=(a==='psicooncologia'&&can.confidential())
-    ? '<div style="margin-top:10px"><select id="rConf" class="csel"><option value="true" selected>Confidencial (solo psicooncología y dirección)</option><option value="false">Normal (todo el equipo)</option></select></div>'
-    : '';
+function vsTxt(ta,fc,glu){ return [ta?'TA '+esc(ta):'', fc!=null?'FC '+esc(fc):'', glu!=null?'glucemia '+esc(glu):''].filter(Boolean).join(' · '); }
+function tlVitc(v){
+  const pre=vsTxt(v.bp_pre,v.hr_pre,v.glucose_pre), post=vsTxt(v.bp_post,v.hr_post,v.glucose_post);
+  const lines=[[v.dilution_ml?'en '+esc(v.dilution_ml)+' ml':'', v.rate_g_min?esc(v.rate_g_min)+' gtt/min':''].filter(Boolean).join(' · '), pre?'Antes: '+pre:'', post?'Después: '+post:''].filter(Boolean);
+  const ev=(v.adverse_events&&v.adverse_events.trim())?'<span class="st warn"><span class="d"></span>Evento adverso: '+esc(v.adverse_events)+'</span>':'<span class="st ok"><span class="d"></span>Sin eventos adversos</span>';
+  return tlEntry({who:v.administered_by, at:v.administered_at, tag:tlTag('Megadosis',AREA_COL.enfermeria), title:'Infusión de megadosis · '+esc(v.dose_g)+' g', lines, foot:ev});
 }
-function regImcHint(){
-  const o=$('rImc'); if(!o)return;
-  const w=parseFloat(($('rWeight')||{}).value), h=parseFloat(CUR.height_cm);
-  if(w>0&&h>0){const m=h/100; o.innerHTML='IMC con este peso: <b style="color:var(--vital)">'+(w/(m*m)).toFixed(1)+'</b>'+(CUR.weight_kg?' · peso en ficha '+CUR.weight_kg+' kg':'');}
-  else o.innerHTML='Una vez guardado no se modifica (solo se agrega una aclaración). Podés editar el tuyo hasta 24 h.';
+function tlVital(x){
+  const parts=[x.ta?'TA '+esc(x.ta):'', x.fc!=null?'FC '+x.fc:'', x.fr!=null?'FR '+x.fr:'', x.temp!=null?'T '+x.temp+' °C':'', x.sat_o2!=null?'Sat '+x.sat_o2+' %':'', x.hgt!=null?'HGT '+x.hgt:''].filter(Boolean);
+  return tlEntry({who:x.recorded_by, at:x.measured_at, tag:tlTag('Enfermería',AREA_COL.enfermeria), title:'Control de signos vitales', lines:[parts.join(' · ')].concat(x.notes?[esc(x.notes)]:[]).filter(Boolean)});
 }
-async function addRegistroEntry(btn){
-  const el=$('rText'); const txt=((el&&el.value)||'').trim(); if(!txt){toast('Escribí algo para agregar');return;}
-  const disc=$('rArea')?$('rArea').value:(ROLE_TO_DISC[ME.role]||'oncologia');
-  const rec={patient_id:CUR.id, discipline:disc, content:txt, author_id:ME.user_id, created_by:ME.user_id,
-    is_confidential:(disc==='psicooncologia'&&$('rConf'))?$('rConf').value==='true':false,
-    weight_kg:$('rWeight')?num($('rWeight').value):null};
-  if(btn)btn.disabled=true;
-  const {error}=await DB().from('notes').insert(rec);
-  if(btn)btn.disabled=false;
-  if(error){toast(error.message);return;}
-  toast('Agregado al registro'); EVOL_FILTER='all'; EVOL_PROF='all';
-  await loadFichaCalc(); renderSideA(); renderSideB(); renderRegistro();
+function tlLab(x){
+  const vals=ANALITOS.filter(a=>x[a[0]]!=null).map(a=>a[1]+' '+esc(x[a[0]])+' '+a[2]);
+  const lines=[vals.join(' · ')].concat(x.otros?[esc(x.otros)]:[]).concat(x.notes?[esc(x.notes)]:[]).filter(Boolean);
+  const foot=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver archivo</button>':'';
+  return tlEntry({who:x.recorded_by, at:x.measured_at, tag:tlTag('Laboratorio',LAB_COL), title:'Laboratorio', lines, foot});
+}
+function tlMed(x){
+  const lines=[[x.dosis?esc(x.dosis):'', x.dilucion_via?esc(x.dilucion_via):'', x.tiempo_infusion?esc(x.tiempo_infusion):''].filter(Boolean).join(' · ')].concat(x.obs?[esc(x.obs)]:[]).filter(Boolean);
+  return tlEntry({who:x.administered_by, at:x.administered_at, tag:tlTag('Enfermería',AREA_COL.enfermeria), title:'Medicación administrada · '+esc(x.medicamento), lines});
+}
+function tlDoc(a){
+  const open=a.url?'<a class="btn sm" href="'+esc(a.url)+'" target="_blank" rel="noopener">Abrir link</a>':'<button class="btn sm" onclick="verEstudio(\''+(a.storage_path||'').replace(/'/g,'')+'\')">Ver archivo</button>';
+  return tlEntry({who:a.uploaded_by, at:a.created_at, tag:tlTag('Documento',DOC_COL), title:esc(a.title||'Estudio'), lines:[], foot:open});
+}
+function tlConsent(c){
+  const KIND={hc_compartida:'Historia clínica compartida', vitamina_c:'Megadosis de Vitamina C'};
+  const open=c.storage_path?'<button class="btn sm" onclick="verEstudio(\''+c.storage_path.replace(/'/g,'')+'\')">Ver adjunto</button>':'';
+  return tlEntry({who:c.created_by, at:c.created_at, tag:tlTag('Consentimiento',DOC_COL), title:'Consentimiento · '+esc(KIND[c.kind]||c.kind), lines:[c.signed_at?'Firmado el '+fmt(c.signed_at):'Sin fecha de firma'].concat(c.notes?[esc(c.notes)]:[]), foot:open});
+}
+function tlInd(i){
+  return tlEntry({who:i.prescribed_by, at:i.created_at, tag:tlTag('Médica',AREA_COL.oncologia), title:'Indicación · '+esc(i.kind==='vitamina_c'?indSummary(i):'general'), lines:i.detail?[esc(i.detail)]:[], foot:indStatus(i)});
+}
+function tlDay(d){
+  const x=toDate(d), y=new Date(); y.setDate(y.getDate()-1);
+  if(sameDay(x)) return 'Hoy';
+  if(x.toDateString()===y.toDateString()) return 'Ayer';
+  return x.toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
 }
 async function renderRegistro(){
   const host=$('regHost'); if(!host)return;
-  const {data,error}=await DB().from('notes').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
-  if(error){host.innerHTML='<div class="callout"><p>'+esc(error.message)+'</p></div>';return;}
+  const pid=CUR.id, q=t=>DB().from(t).select('*').eq('patient_id',pid);
+  const [NT,VC,VS,LB,MD,AT,CO,IN]=await Promise.all([q('notes'),q('vitc_administrations'),q('vitals'),q('labs'),q('medications'),q('attachments'),q('consents'),q('indications')]);
+  if(NT.error){host.innerHTML='<div class="callout"><p>'+esc(NT.error.message)+'</p></div>';return;}
+  if(!CUR||CUR.id!==pid||curTab!=='hc'||!$('regHost')) return;   // cambió de paciente o de pestaña mientras cargaba
   CUR_NOTES={};
-  const all=data||[];
-  const counts={}; all.forEach(n=>counts[n.discipline]=(counts[n.discipline]||0)+1);
-  const areasPresent=Object.keys(EVOL_AREA).filter(a=>counts[a]);
-  const profs={}; all.forEach(n=>{ if(n.author_id&&DIR[n.author_id]) profs[n.author_id]=DIR[n.author_id].full_name; });
-  if(EVOL_FILTER!=='all' && !counts[EVOL_FILTER]) EVOL_FILTER='all';
-  let list=all;
-  if(EVOL_FILTER!=='all') list=list.filter(n=>n.discipline===EVOL_FILTER);
-  if(EVOL_PROF!=='all') list=list.filter(n=>n.author_id===EVOL_PROF);
-  const chips='<div class="subpills"><button class="'+(EVOL_FILTER==='all'?'on':'')+'" onclick="setEvolArea(\'all\')">Todas · '+all.length+'</button>'+
-    areasPresent.map(a=>'<button class="'+(EVOL_FILTER===a?'on':'')+'" onclick="setEvolArea(\''+a+'\')">'+EVOL_AREA[a]+' · '+counts[a]+'</button>').join('')+'</div>';
+  const items=[], push=(t,at,who,fn)=>{ if(at) items.push({t,at,who,fn}); };
+  (NT.data||[]).forEach(n=>push('notas',n.created_at,n.author_id,()=>entryNote(n)));
+  (VC.data||[]).filter(v=>!v.deleted_at).forEach(v=>push('megadosis',v.administered_at,v.administered_by,()=>tlVitc(v)));
+  (VS.data||[]).forEach(x=>push('signos',x.measured_at,x.recorded_by,()=>tlVital(x)));
+  (LB.data||[]).forEach(x=>push('labs',x.measured_at,x.recorded_by,()=>tlLab(x)));
+  (MD.data||[]).forEach(x=>push('medicacion',x.administered_at,x.administered_by,()=>tlMed(x)));
+  (AT.data||[]).forEach(x=>push('docs',x.created_at,x.uploaded_by,()=>tlDoc(x)));
+  (CO.data||[]).forEach(x=>push('docs',x.created_at,x.created_by,()=>tlConsent(x)));
+  (IN.data||[]).filter(i=>!i.deleted_at).forEach(i=>push('indicaciones',i.created_at,i.prescribed_by,()=>tlInd(i)));
+  items.sort((a,b)=>toDate(b.at)-toDate(a.at));
+  const counts={}; items.forEach(i=>counts[i.t]=(counts[i.t]||0)+1);
+  if(TL_FILTER!=='todo'&&!counts[TL_FILTER]) TL_FILTER='todo';
+  const profs={}; items.forEach(i=>{ if(i.who&&DIR[i.who]) profs[i.who]=DIR[i.who].full_name; });
+  if(EVOL_PROF!=='all'&&!profs[EVOL_PROF]) EVOL_PROF='all';
+  let list=items;
+  if(TL_FILTER!=='todo') list=list.filter(i=>i.t===TL_FILTER);
+  if(EVOL_PROF!=='all') list=list.filter(i=>i.who===EVOL_PROF);
+  const chips='<div class="subpills tl-chips">'+TL_TYPES.filter(([k])=>k==='todo'||counts[k]).map(([k,l])=>'<button class="'+(TL_FILTER===k?'on':'')+'" onclick="setTlFilter(\''+k+'\')">'+l+' · '+(k==='todo'?items.length:counts[k])+'</button>').join('')+'</div>';
   const profSel = Object.keys(profs).length>1
-    ? '<select onchange="setEvolProf(this.value)" class="csel"><option value="all">Todos los profesionales</option>'+Object.entries(profs).map(([uid,nm])=>'<option value="'+uid+'" '+(EVOL_PROF===uid?'selected':'')+'>'+esc(nm)+'</option>').join('')+'</select>'
+    ? '<select onchange="EVOL_PROF=this.value;renderRegistro()" class="csel" aria-label="Filtrar por profesional"><option value="all">Todos los profesionales</option>'+Object.entries(profs).map(([uid,nm])=>'<option value="'+uid+'" '+(EVOL_PROF===uid?'selected':'')+'>'+esc(nm)+'</option>').join('')+'</select>'
     : '';
-  const entries=list.map(entryNote).join('');
+  let html='', day=null;
+  list.forEach(i=>{ const d=tlDay(i.at); if(d!==day){ if(day!==null) html+='</section>'; html+='<div class="tl-day">'+esc(d)+'</div><section class="sheet">'; day=d; } html+=i.fn(); });
+  if(day!==null) html+='</section>';
   host.innerHTML=
-    composeHTML()+
-    '<div class="sec-h" style="margin:24px 2px 4px"><span class="sec-t">Registro clínico · '+all.length+' entrada'+(all.length===1?'':'s')+'</span><span class="meta" style="margin-left:auto">cada entrada queda firmada por autor y área</span></div>'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0 2px">'+chips+profSel+'</div>'+
-    (entries?'<section class="sheet">'+entries+'</section>':'<div class="empty"><p>'+(all.length?'No hay entradas para este filtro.':'Todavía no hay entradas. Sumá la primera desde el campo de arriba.')+'</p></div>');
-  regAreaChange();
+    '<div class="sec-h" style="margin:2px 2px 4px"><span class="sec-t">Historia clínica · '+items.length+' registro'+(items.length===1?'':'s')+'</span><span class="meta" style="margin-left:auto">cada registro queda firmado por autor y área</span></div>'+
+    '<div class="tl-bar">'+chips+profSel+'</div>'+
+    (html||'<div class="empty"><p>'+(items.length?'No hay registros para este filtro.':'Todavía no hay registros. Tocá «Registrar» para sumar el primero.')+'</p></div>');
 }
 
 function renderHCForm(){
@@ -1822,15 +1875,14 @@ async function renderEvol(){
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0">'+chips+profSel+'</div>'+
     (entries?'<section class="sheet">'+entries+'</section>':'<div class="empty"><p>'+(all.length?'No hay evoluciones para este filtro.':'Todavía no hay evoluciones registradas.')+'</p></div>');
 }
-function openNoteModal(presetDisc){
-  NOTE_DISC=presetDisc||ROLE_TO_DISC[ME.role]; EDIT_NOTE_ID=null;
-  const areaOpts=Object.keys(EVOL_AREA).map(a=>'<option value="'+a+'" '+(a===NOTE_DISC?'selected':'')+'>'+EVOL_AREA[a]+'</option>').join('');
-  modalOpen('Nueva evolución',
-    '<div class="field"><label>Área</label><select id="nArea" onchange="noteAreaChange()">'+areaOpts+'</select></div>'+
+function openNoteModal(){
+  NOTE_DISC=ROLE_TO_DISC[ME.role]||'oncologia'; EDIT_NOTE_ID=null;   // el área sale del rol: no se elige
+  modalOpen('Evolución libre',
+    '<p class="meta" style="margin:0">Se firma con tu nombre · área '+esc(EVOL_AREA[NOTE_DISC]||NOTE_DISC)+'.</p>'+
     '<div id="nConfRow"></div>'+
     '<div class="field"><label>Nota</label><textarea id="nText" style="min-height:130px" placeholder="Evolución, hallazgos, indicaciones…"></textarea></div>'+
     '<div class="field"><label>Peso (kg) — opcional</label><input id="nWeight" type="number" step="0.1" inputmode="decimal" oninput="noteImcHint()"></div>'+
-    '<div class="meta" id="nImc"></div>','Agregar', addNote);
+    '<div class="meta" id="nImc"></div>','Agregar al registro', addNote);
   noteAreaChange();
 }
 function noteAreaChange(){
@@ -1964,16 +2016,40 @@ function tplSuggested(id){
 function tplAllowed(id){ return NOTE_TPL[id].disc!=='psicooncologia' || can.confidential(); }
 
 /* ---- selector de plantilla ---- */
-function newNote(){ if(curTab!=='hc') setTab('hc'); gnPicker(); }
-function gnPicker(){
+/* ---- «Registrar»: un solo punto de entrada para todo lo que se carga en la historia ----
+   Arriba la nota de la consulta (plantillas del rol + evolución libre); abajo los datos
+   (infusión, signos, medicación, laboratorio, documentos, consentimiento, indicaciones, turno),
+   cada uno según los permisos del rol. */
+const IC_REG={
+  signos:'<svg viewBox="0 0 24 24"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>',
+  med:'<svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="4"/><path d="M12 8v8"/></svg>',
+  lab:'<svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/></svg>',
+  firma:'<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 17c1.5-2 3-2 4 0s2.5 2 4 0"/></svg>'
+};
+function openRegistrar(){
+  if(!CUR) return;
   const mine=(TPL_BY_ROLE[ME.role]||[]).filter(tplAllowed);
   const others=Object.keys(NOTE_TPL).filter(id=>!mine.includes(id) && tplAllowed(id));
-  const item=(id)=>{ const t=NOTE_TPL[id];
-    return '<button onclick="modalClose();gnOpen(\''+id+'\')"><span class="ic">'+GN_IC[t.kind]+'</span><div><div class="nm">'+esc(t.label)+(tplSuggested(id)&&mine.includes(id)?' <span class="sug">sugerida</span>':'')+'</div><div class="ds">'+esc(EVOL_AREA[t.disc])+' · '+esc(t.desc)+'</div></div></button>'; };
-  const libre='<button onclick="modalClose();goRegistro()"><span class="ic">'+GN_IC.libre+'</span><div><div class="nm">Evolución libre</div><div class="ds">Una nota corta de texto libre</div></div></button>';
-  $('mTitle').textContent='Nueva nota — elegí el tipo';
-  $('mBody').innerHTML='<div class="tplmenu">'+mine.map(item).join('')+libre+'</div>'+
-    (others.length?'<details class="tplmore"><summary>Plantillas de otras áreas</summary><div class="tplmenu" style="margin-top:8px">'+others.map(item).join('')+'</div></details>':'');
+  const item=(onclick,icon,name,ds,sug)=>'<button onclick="modalClose();'+onclick+'"><span class="ic">'+icon+'</span><div><div class="nm">'+name+(sug?' <span class="sug">sugerida</span>':'')+'</div>'+(ds?'<div class="ds">'+ds+'</div>':'')+'</div></button>';
+  const tpl=id=>item('gnOpen(\''+id+'\')', GN_IC[NOTE_TPL[id].kind], esc(NOTE_TPL[id].label), esc(NOTE_TPL[id].desc), mine.includes(id)&&tplSuggested(id));
+  const hasInd=!!(FCALC&&FCALC.ind);
+  const D=[];
+  if(can.vitc()) D.push(item('openVitcModal()', GN_IC.nota, 'Infusión de megadosis', hasInd?'Precargada con la indicación vigente · signos antes y después':'Dosis, goteo y signos antes y después'));
+  D.push(item('openVitalModal()', IC_REG.signos, 'Signos vitales', 'Control fuera de la infusión'));
+  D.push(item('openMedModal()', IC_REG.med, 'Medicación administrada', ''));
+  D.push(item('openLabModal()', IC_REG.lab, 'Laboratorio', 'Cargar los valores o leerlos del PDF'));
+  D.push(item('openUploadModal()', FILE_ICO, 'Documento o estudio', 'PDF o imagen'));
+  D.push(item('openLinkModal()', LINK_ICO, 'Link a un estudio', 'Visor online, carpeta compartida…'));
+  D.push(item('openConsentModal()', IC_REG.firma, 'Consentimiento', ''));
+  if(can.indicate()) D.push(item('openIndicModal(\'vitamina_c\','+hasInd+')', GN_IC.inicial, hasInd?'Modificar indicación de megadosis':'Indicar megadosis', hasInd?esc(indSummary(FCALC.ind)):'Dosis, frecuencia, dilución y goteo'));
+  if(can.indicate()) D.push(item('openIndicModal(\'general\')', GN_IC.inicial, 'Indicación general', ''));
+  D.push(item('openApptModal(\''+CUR.id+'\')', IC.agenda, 'Turno', ''));
+  const area=EVOL_AREA[ROLE_TO_DISC[ME.role]]||'';
+  $('mTitle').textContent='Registrar · '+(CUR.full_name||'paciente');
+  $('mBody').innerHTML='<p class="meta" style="margin:0">Se firma con tu nombre'+(area?' y tu área ('+esc(area)+')':'')+'.</p>'+
+    '<div class="reg-h">Nota de la consulta</div><div class="tplmenu">'+mine.map(tpl).join('')+item('openNoteModal()', GN_IC.libre, 'Evolución libre', 'Un texto corto, sin plantilla')+'</div>'+
+    '<div class="reg-h">Datos</div><div class="tplmenu">'+D.join('')+'</div>'+
+    (others.length?'<details class="tplmore"><summary>Plantillas de otras áreas</summary><div class="tplmenu" style="margin-top:8px">'+others.map(tpl).join('')+'</div></details>':'');
   $('mFoot').innerHTML='<button class="btn" onclick="modalClose()">Cancelar</button>';
   $('modal').classList.add('show');
 }
@@ -2029,6 +2105,7 @@ function gnFieldHTML(f,sec){
 function gnSecHTML(s){
   const kindSeg=GN.tpl.kind==='seguimiento', hasText=s.f.some(f=>f.t==='text');
   const prev=(kindSeg&&hasText)?'<button type="button" class="gprev" data-prev="'+s.k+'">'+GN_IC.seguimiento+esc(s.prevLabel||'Traer de la visita anterior')+'</button>':'';
+  const indBtn=(s.k==='plan'&&GN.tpl.disc==='oncologia'&&can.indicate())?'<button type="button" class="gprev" data-ind="1">'+GN_IC.nota+((FCALC&&FCALC.ind)?'Cambiar indicación de megadosis':'Indicar megadosis')+'</button>':'';
   const byK={}; s.f.forEach(f=>byK[f.k]=f);
   let body='', done=new Set();
   s.f.forEach(f=>{
@@ -2039,7 +2116,7 @@ function gnSecHTML(s){
   });
   return '<div class="gsec" id="gs_'+s.k+'" data-sec="'+s.k+'"><div class="sh"><span class="lb">'+esc(s.label)+'</span>'+
     (GN.fromFicha[s.k]?'<span class="fromficha">de la ficha</span>':'<span class="opt">· opcional</span>')+
-    '<div class="tools">'+prev+'</div></div>'+(s.hint?'<p class="hint">'+esc(s.hint)+'</p>':'')+body+
+    '<div class="tools">'+prev+indBtn+'</div></div>'+(s.hint?'<p class="hint">'+esc(s.hint)+'</p>':'')+body+
     (s.anthro?'<div class="gcalc" id="gc_'+s.k+'"></div>':'')+'</div>';
 }
 function gnRender(){
@@ -2253,6 +2330,7 @@ async function gnClose(){
       box.querySelectorAll('.gch').forEach(b=>b.classList.toggle('on', sel.includes(b.dataset.v)));
       gnSchedule(); gnAfterFieldDone(k); return;
     }
+    const ib=e.target.closest('[data-ind]'); if(ib){ openIndicModal('vitamina_c', !!(FCALC&&FCALC.ind), true); return; }
     const pv=e.target.closest('[data-prev]'); if(pv){ gnPrev(pv.dataset.prev); return; }
     const mc=e.target.closest('[data-mic]'); if(mc){ gnMic(mc.dataset.mic); return; }
     const go=e.target.closest('[data-go]'); if(go){ const t=$('gs_'+go.dataset.go); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); return; }
@@ -2262,8 +2340,8 @@ async function gnClose(){
 })();
 
 /* ---------- Vitamina C ---------- */
-async function renderVitc(){
-  const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
+async function renderVitc(hostEl){
+  const host=hostEl||$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
   const {data}=await DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:false});
   const g=CUR.g6pd_status||'no_evaluado';
   const consentOk = !!(FCALC.consBy && FCALC.consBy['vitamina_c'] && FCALC.consBy['vitamina_c'].signed_at);
@@ -2279,18 +2357,8 @@ async function renderVitc(){
   const labWarn=((lastLab==null||daysSince(lastLab)>DIAS_LAB_VIGENTE))
     ? '<div class="callout" style="border-color:rgba(224,164,88,.4);background:rgba(224,164,88,.07)"><span class="demo" style="flex:none">Atención</span><p>'+(lastLab==null?'No hay laboratorios cargados.':'El último laboratorio es del '+fmtDMShort(lastLab)+' (más de '+DIAS_LAB_VIGENTE+' días).')+' Verificá si corresponde pedir un control antes de la infusión.</p></div>'
     : '';
-  const ind=FCALC.ind;
-  let proxDosis=''; if(ind && ind.vitc_frequency && data && data[0]){ const iv=FREQ_DAYS[ind.vitc_frequency]||7; proxDosis=fmtDMShort(new Date(new Date(data[0].administered_at).getTime()+iv*86400000).toISOString()); }
-  const indCard = ind? '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Indicación vigente</span><span class="st ok" style="font-size:13px"><span class="d"></span>Activa desde el '+fmtDMShort(ind.created_at)+'</span></div>'+
-      '<div class="two"><div class="rows"><div class="row"><span class="k">Dosis objetivo</span><span class="v">'+(ind.vitc_target_dose_g?ind.vitc_target_dose_g+' g':'—')+'</span></div>'+
-      '<div class="row"><span class="k">Frecuencia</span><span class="v">'+(ind.vitc_frequency?esc(FREQ_LABEL[ind.vitc_frequency]||ind.vitc_frequency):'—')+'</span></div>'+
-      '<div class="row"><span class="k">Indicada por</span><span class="v">'+esc(lastNameOf(whoName(ind.prescribed_by)))+'</span></div></div>'+
-      '<div class="rows"><div class="row"><span class="k">Administraciones</span><span class="v">'+(data?data.length:0)+'</span></div>'+
-      '<div class="row"><span class="k">Última</span><span class="v">'+((data&&data[0])?fmtDMShort(data[0].administered_at)+' · '+data[0].dose_g+' g':'—')+'</span></div>'+
-      (proxDosis?'<div class="row"><span class="k">Próxima sugerida</span><span class="v" style="color:var(--vital)">'+proxDosis+'</span></div>':'')+'</div></div>'+
-      (ind.detail?'<p class="bd" style="margin-top:14px">'+esc(ind.detail)+'</p>':'')+'</div></section>' : '';
   const canReg=can.vitc();
-  const btn = canReg? '<button class="btn primary sm" onclick="openVitcModal()">'+PLUS+'Registrar administración</button>' : '';
+  const btn = canReg? '<button class="btn primary sm" onclick="openVitcModal()">'+PLUS+'Registrar infusión</button>' : '';
   const rows=(data||[]).map(v=>{
     const ev = (v.adverse_events&&v.adverse_events.trim())?'<span class="st warn"><span class="d"></span>'+esc(v.adverse_events.slice(0,24))+'</span>':'<span class="st ok"><span class="d"></span>Ninguno</span>';
     return '<tr><td style="white-space:nowrap">'+fmtDMShort(v.administered_at)+' · '+fmtHM(v.administered_at)+'</td><td>'+v.dose_g+' g</td>'+
@@ -2299,42 +2367,54 @@ async function renderVitc(){
       '<td class="quiet">'+(v.hr_post??'—')+' · '+(v.bp_post||'—')+' · '+(v.glucose_post??'—')+'</td>'+
       '<td>'+ev+'</td><td class="quiet">'+esc(lastNameOf(whoName(v.administered_by)))+'</td></tr>';
   }).join('');
-  const table = rows? '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Administraciones registradas</span>'+btn+'</div></div>'+
+  const table = rows? '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Infusiones de megadosis</span>'+btn+'</div></div>'+
       '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th>Dosis</th><th>Dilución</th><th>Velocidad</th><th style="min-width:140px">Pre</th><th style="min-width:140px">Post</th><th style="min-width:130px">Eventos</th><th>Administró</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '<div class="savebar">Pre y post muestran frecuencia cardíaca · tensión arterial · glucemia.</div></section>'
-    : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Administraciones registradas</span>'+btn+'</div><p class="meta" style="margin:0">Sin administraciones registradas.</p></div></section>';
-  host.innerHTML=gate+consentNote+labWarn+indCard+table+(canReg?'':'<div class="callout"><p>Solo enfermería, médico funcional y dirección registran administraciones de megadosis.</p></div>');
+    : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Infusiones de megadosis</span>'+btn+'</div><p class="meta" style="margin:0">Sin administraciones registradas.</p></div></section>';
+  const relevant=!!FCALC.ind||!!(data&&data.length);   // los avisos de seguridad solo si la paciente tiene megadosis
+  host.innerHTML=(relevant?gate+consentNote+labWarn:'')+table+(canReg?'':'<div class="callout"><p>Las infusiones de megadosis las registran enfermería y la dirección médica.</p></div>');
 }
 function goConsent(){ DOC_TAB='consent'; setTab('docs'); }
 function openVitcModal(){
-  modalOpen('Administración de megadosis de vitamina C',
-    '<div class="field"><label>Fecha y hora de la administración</label><input id="vWhen" type="datetime-local" value="'+nowLocalInput()+'"></div>'+
+  if(!can.vitc()){ toast('Las infusiones las registran enfermería y la dirección médica'); return; }
+  const ind=FCALC&&FCALC.ind, pv=x=>(x!=null&&x!=='')?' value="'+esc(x)+'"':'';
+  modalOpen('Infusión de megadosis de vitamina C',
+    (ind?'<p class="meta" style="margin:0">Precargado de la indicación vigente ('+esc(indSummary(ind))+'). Si hoy cambió algo, corregilo acá.</p>'
+        :'<p class="meta" style="margin:0">No hay una indicación de megadosis vigente cargada.</p>')+
+    '<div class="field"><label>Fecha y hora</label><input id="vWhen" type="datetime-local" value="'+nowLocalInput()+'"></div>'+
     '<div class="grid g3">'+
-      '<div class="field"><label>Dosis (g)</label><input id="vDose" type="number" step="0.1"></div>'+
-      '<div class="field"><label>Dilución (ml)</label><input id="vDil" type="number"></div>'+
-      '<div class="field"><label>Velocidad (gtt/min)</label><input id="vRate" type="number" step="1"></div>'+ // se guarda en rate_g_min, que ahora representa gotas/min
-      '<div class="field"><label>FC pre</label><input id="vHrPre" type="number"></div>'+
-      '<div class="field"><label>TA pre</label><input id="vBpPre" placeholder="120/80"></div>'+
-      '<div class="field"><label>Glucemia pre</label><input id="vGluPre" type="number"></div>'+
-      '<div class="field"><label>FC post</label><input id="vHrPost" type="number"></div>'+
-      '<div class="field"><label>TA post</label><input id="vBpPost" placeholder="120/80"></div>'+
-      '<div class="field"><label>Glucemia post</label><input id="vGluPost" type="number"></div>'+
-    '</div><div class="field"><label>Eventos adversos</label><textarea id="vAdv" placeholder="Ninguno / describir"></textarea></div>','Registrar', addVitc);
+      '<div class="field"><label>Dosis (g)</label><input id="vDose" type="number" step="0.1" inputmode="decimal"'+pv(ind&&ind.vitc_target_dose_g)+'></div>'+
+      '<div class="field"><label>Dilución (ml)</label><input id="vDil" type="number" inputmode="numeric"'+pv(ind&&ind.vitc_dilution_ml)+'></div>'+
+      '<div class="field"><label>Velocidad (gtt/min)</label><input id="vRate" type="number" step="1" inputmode="numeric"'+pv(ind&&ind.vitc_rate_gtt_min)+'></div>'+ // se guarda en rate_g_min, que ahora representa gotas/min
+    '</div>'+
+    '<div class="reg-h">Signos antes</div><div class="grid g3">'+
+      '<div class="field"><label>TA</label><input id="vBpPre" placeholder="120/80"></div>'+
+      '<div class="field"><label>FC</label><input id="vHrPre" type="number" inputmode="numeric"></div>'+
+      '<div class="field"><label>Glucemia</label><input id="vGluPre" type="number" inputmode="numeric"></div>'+
+    '</div>'+
+    '<div class="reg-h">Signos después</div><div class="grid g3">'+
+      '<div class="field"><label>TA</label><input id="vBpPost" placeholder="120/80"></div>'+
+      '<div class="field"><label>FC</label><input id="vHrPost" type="number" inputmode="numeric"></div>'+
+      '<div class="field"><label>Glucemia</label><input id="vGluPost" type="number" inputmode="numeric"></div>'+
+    '</div>'+
+    '<p class="meta" style="margin:0">Los signos de antes y después quedan registrados en la infusión: no hace falta cargar un control de signos aparte.</p>'+
+    '<div class="field"><label>Eventos adversos</label><textarea id="vAdv" placeholder="Ninguno / describir"></textarea></div>','Registrar infusión', addVitc);
 }
 async function addVitc(){
   const dose=num($('vDose').value); if(!dose){toast('Ingresá la dosis');return false;}
-  const rec={patient_id:CUR.id, administered_at:whenISO('vWhen'), dose_g:dose, dilution_ml:num($('vDil').value), rate_g_min:num($('vRate').value) /* columna histórica: ahora son gotas/min (gtt/min) */,
+  const ind=FCALC&&FCALC.ind;
+  const rec={patient_id:CUR.id, indication_id:ind?ind.id:null, administered_at:whenISO('vWhen'), dose_g:dose, dilution_ml:num($('vDil').value), rate_g_min:num($('vRate').value) /* columna histórica: ahora son gotas/min (gtt/min) */,
     hr_pre:num($('vHrPre').value), bp_pre:$('vBpPre').value||null, glucose_pre:num($('vGluPre').value),
     hr_post:num($('vHrPost').value), bp_post:$('vBpPost').value||null, glucose_post:num($('vGluPost').value),
     adverse_events:$('vAdv').value||null, administered_by:ME.user_id, created_by:ME.user_id};
   const {error}=await DB().from('vitc_administrations').insert(rec);
   if(error){toast(error.message);return false;}
-  toast('Administración registrada'); afterChange(); return true;
+  toast('Infusión registrada'); afterChange(); return true;
 }
 
 /* ---------- Enfermería ---------- */
-async function renderEnf(){
-  const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
+async function renderEnf(hostEl){
+  const host=hostEl||$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
   const [VS,MD]=await Promise.all([
     DB().from('vitals').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:false}),
     DB().from('medications').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:false})
@@ -2370,6 +2450,7 @@ async function addVital(){
 }
 function openMedModal(){
   modalOpen('Medicación administrada',
+    '<div class="field"><label>Fecha y hora</label><input id="mdWhen" type="datetime-local" value="'+nowLocalInput()+'"></div>'+
     '<div class="grid g2">'+
       '<div class="field"><label>Medicamento</label><input id="mdName"></div>'+
       '<div class="field"><label>Dosis</label><input id="mdDose"></div>'+
@@ -2379,7 +2460,7 @@ function openMedModal(){
 }
 async function addMed(){
   const name=($('mdName').value||'').trim(); if(!name){toast('Ingresá el medicamento');return false;}
-  const rec={patient_id:CUR.id, medicamento:name, dosis:$('mdDose').value||null, dilucion_via:$('mdDil').value||null, tiempo_infusion:$('mdTime').value||null, obs:$('mdObs').value||null, administered_by:ME.user_id};
+  const rec={patient_id:CUR.id, administered_at:whenISO('mdWhen'), medicamento:name, dosis:$('mdDose').value||null, dilucion_via:$('mdDil').value||null, tiempo_infusion:$('mdTime').value||null, obs:$('mdObs').value||null, administered_by:ME.user_id};
   const {error}=await DB().from('medications').insert(rec); if(error){toast(error.message);return false;}
   toast('Medicación registrada'); afterChange(); return true;
 }
@@ -2432,6 +2513,7 @@ async function readLabFile(){
 async function addLab(){
   const g=id=>{const e=$(id);return e&&e.value!==''?e.value:null;};
   let sp=null; const f=$('lbFile')&&$('lbFile').files[0];
+  if(!f && !['lbHb','lbHto','lbGb','lbPlaq','lbGluc','lbCreat','lbUrea','lbOtros'].some(id=>g(id)!=null)){ toast('Cargá al menos un valor o adjuntá el archivo'); return false; }
   if(f){ if(f.size>25*1024*1024){toast('El archivo supera los 25 MB');return false;}
     const clean=f.name.replace(/[^a-zA-Z0-9._-]/g,'_'); sp=CUR.id+'/lab_'+Date.now()+'_'+clean;
     const {error:e1}=await SB.storage.from('estudios').upload(sp,f,{upsert:false}); if(e1){toast(e1.message);return false;} }
@@ -2443,39 +2525,135 @@ async function addLab(){
 }
 
 /* ---------- Indicaciones ---------- */
-async function renderIndic(){
-  const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
-  const {data}=await DB().from('indications').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
-  const rows=(data||[]).map(i=>{
-    const tag=i.active?'<span class="tag ok"><span class="d"></span>Activa</span>':'<span class="tag"><span class="d"></span>Inactiva</span>';
-    const title=(i.kind==='vitamina_c'?'Megadosis de Vitamina C':'General')+(i.vitc_target_dose_g?' · objetivo '+i.vitc_target_dose_g+' g':'')+(i.vitc_frequency?' · '+(FREQ_LABEL[i.vitc_frequency]||i.vitc_frequency):'');
-    return '<div class="entry"><div class="eh">'+tag+'<span class="au">'+title+'</span><span class="meta" style="margin-left:auto">'+fmtDMShort(i.created_at)+' · '+esc(lastNameOf(whoName(i.prescribed_by)))+'</span></div>'+
-      (i.detail?'<p class="bd">'+esc(i.detail)+'</p>':'')+'</div>';
-  }).join('');
-  host.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap"><span class="meta">'+(can.indicate()?'Solo las cargan los médicos':'Solo los médicos cargan indicaciones')+'</span>'+
-    (can.indicate()?'<button class="btn primary sm" onclick="openIndicModal()">'+PLUS+'Nueva indicación</button>':'')+'</div>'+
-    (rows?'<section class="sheet">'+rows+'</section>':'<div class="empty"><p>Sin indicaciones cargadas.</p></div>');
+/* ---------- Tratamientos: indicación vigente + infusiones + enfermería + historial de indicaciones ---------- */
+async function renderTrat(){
+  const host=$('paneHost');
+  host.innerHTML='<div id="trInd"></div><div id="trVitc" class="stack"><div class="loading">Cargando…</div></div><div id="trEnf" class="stack"></div><div id="trHist"></div>';
+  renderIndCard($('trInd'));
+  await Promise.all([renderVitc($('trVitc')), renderEnf($('trEnf')), renderIndic($('trHist'))]);
 }
-function openIndicModal(){
-  modalOpen('Nueva indicación',
-    '<div class="field"><label>Tipo de indicación</label><select id="iKind" onchange="toggleIndicFields()"><option value="general">General</option><option value="vitamina_c">Megadosis de Vitamina C</option></select></div>'+
-    '<div id="iVitcFields" class="hidden"><div class="grid g2">'+
-      '<div class="field"><label>Dosis objetivo (g)</label><input id="iDose" type="number" step="0.1" placeholder="Ej: 56"></div>'+
-      '<div class="field"><label>Frecuencia</label><select id="iFreq"><option value="">Elegí la frecuencia</option><option value="mensual">1 vez por mes</option><option value="semanal">1 vez por semana</option><option value="2x_semana">2 veces por semana</option><option value="3x_semana">3 veces por semana</option></select></div>'+
+
+/* ---------- Indicaciones ----------
+   La de megadosis vigente es la única con active=true. Modificar crea una versión nueva y marca la anterior
+   como reemplazada (replaced_by); suspender la cierra con motivo. Nada se borra: todo queda en el historial y en la auditoría. */
+let IND_FROM_NOTE=false;
+function indSummary(i){
+  return ['Megadosis'+(i.vitc_target_dose_g?' '+i.vitc_target_dose_g+' g':''), i.vitc_frequency?(FREQ_LABEL[i.vitc_frequency]||i.vitc_frequency):'',
+    i.vitc_dilution_ml?'en '+i.vitc_dilution_ml+' ml':'', i.vitc_rate_gtt_min?i.vitc_rate_gtt_min+' gtt/min':''].filter(Boolean).join(' · ');
+}
+function indStatus(i){
+  if(i.active) return '<span class="st ok"><span class="d"></span>Vigente</span>';
+  if(i.suspended_at) return '<span class="st warn"><span class="d"></span>Suspendida el '+fmtDMShort(i.suspended_at)+(i.suspended_by?' por '+esc(lastNameOf(whoName(i.suspended_by))):'')+(i.suspend_reason?' · '+esc(i.suspend_reason):'')+'</span>';
+  if(i.replaced_by) return '<span class="st off"><span class="d"></span>Reemplazada por una indicación posterior</span>';
+  return '<span class="st off"><span class="d"></span>Inactiva</span>';
+}
+function vitcSince(ind){
+  const from=toDate(ind.start_date||ind.created_at).getTime();
+  return (FCALC.vitc||[]).filter(v=>!v.deleted_at && new Date(v.administered_at).getTime()>=from).length;
+}
+function renderIndCard(host){
+  if(!host) return;
+  const ind=FCALC.ind, ci=can.indicate();
+  if(!ind){
+    host.innerHTML='<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Indicación de megadosis</span><span class="st off"><span class="d"></span>Sin indicación vigente</span></div>'+
+      '<p class="meta" style="margin:0'+(ci?' 0 14px':'')+'">'+(ci?'Cargá dosis, frecuencia, dilución y goteo: enfermería los ve precargados en cada infusión.':'Las indicaciones las cargan la dirección médica y oncología.')+'</p>'+
+      (ci?'<button class="btn primary sm" onclick="openIndicModal(\'vitamina_c\',false)">'+PLUS+'Indicar megadosis</button>':'')+'</div></section>';
+    return;
+  }
+  const done=vitcSince(ind), last=(FCALC.vitc||[])[0]||null;
+  let prox=''; if(ind.vitc_frequency&&last){ const iv=FREQ_DAYS[ind.vitc_frequency]||7; prox=fmtDMShort(new Date(new Date(last.administered_at).getTime()+iv*86400000).toISOString()); }
+  const sessDone=ind.sessions_planned && done>=ind.sessions_planned, dateDone=ind.end_date && daysSince(ind.end_date)>=1;
+  const warnEnd=(sessDone||dateDone)?'<div class="gate" style="margin-top:14px"><span class="ic"></span><p><b style="color:var(--ink)">'+(sessDone?'Se completaron las '+ind.sessions_planned+' sesiones indicadas.':'La indicación terminó el '+fmt(ind.end_date)+'.')+'</b> Revisá si se renueva, se modifica o se suspende.</p></div>':'';
+  const row=(k,v)=>'<div class="row"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';
+  host.innerHTML='<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Indicación de megadosis vigente</span><span class="st ok"><span class="d"></span>Desde el '+fmtDMShort(ind.start_date||ind.created_at)+'</span></div>'+
+    '<div class="two"><div class="rows">'+
+      row('Dosis',ind.vitc_target_dose_g?esc(ind.vitc_target_dose_g)+' g':'—')+
+      row('Frecuencia',ind.vitc_frequency?esc(FREQ_LABEL[ind.vitc_frequency]||ind.vitc_frequency):'—')+
+      row('Dilución',ind.vitc_dilution_ml?esc(ind.vitc_dilution_ml)+' ml':'—')+
+      row('Velocidad',ind.vitc_rate_gtt_min?esc(ind.vitc_rate_gtt_min)+' gtt/min':'—')+'</div>'+
+    '<div class="rows">'+
+      row('Sesiones',done+(ind.sessions_planned?' de '+ind.sessions_planned:'')+' realizada'+(done===1&&!ind.sessions_planned?'':'s'))+
+      row('Última',last?fmtDMShort(last.administered_at)+' · '+esc(last.dose_g)+' g':'—')+
+      (prox?row('Próxima sugerida','<span style="color:var(--vital)">'+prox+'</span>'):'')+
+      (ind.end_date?row('Hasta',fmt(ind.end_date)):'')+
+      row('Indicó',esc(lastNameOf(whoName(ind.prescribed_by))))+'</div></div>'+
+    (ind.detail?'<p class="bd" style="margin-top:14px">'+esc(ind.detail)+'</p>':'')+warnEnd+
+    (ci?'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="btn primary sm" onclick="openIndicModal(\'vitamina_c\',true)">Modificar</button><button class="btn sm dg" onclick="openSuspendInd()">Suspender</button></div>':'')+
+    '</div></section>';
+}
+async function renderIndic(hostEl){
+  const host=hostEl||$('paneHost');
+  const {data}=await DB().from('indications').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
+  const rows=(data||[]).filter(i=>!i.deleted_at).map(i=>'<div class="entry"><div class="eh">'+indStatus(i)+'<span class="au">'+esc(i.kind==='vitamina_c'?indSummary(i):'Indicación general')+'</span>'+
+    '<span class="meta" style="margin-left:auto">'+fmtDMShort(i.created_at)+' · '+esc(lastNameOf(whoName(i.prescribed_by)))+'</span></div>'+(i.detail?'<p class="bd">'+esc(i.detail)+'</p>':'')+'</div>').join('');
+  host.innerHTML='<div class="sec-h" style="margin:6px 2px 10px"><span class="sec-t">Historial de indicaciones</span>'+(can.indicate()?'<button class="btn sm" onclick="openIndicModal(\'general\')">'+PLUS+'Indicación general</button>':'')+'</div>'+
+    (rows?'<section class="sheet">'+rows+'</section>':'<div class="empty" style="padding:28px 12px"><p>Sin indicaciones cargadas.</p></div>');
+}
+function openIndicModal(kind, modify, fromNote){
+  if(!can.indicate()){ toast('Las indicaciones las cargan la dirección médica y oncología'); return; }
+  IND_FROM_NOTE=!!fromNote;
+  const prev=(modify&&FCALC&&FCALC.ind)?FCALC.ind:null;
+  kind=prev?'vitamina_c':(kind||'general');
+  const v=k=>(prev&&prev[k]!=null)?esc(prev[k]):'';
+  const freqOpts=[['','Elegí la frecuencia'],['mensual','1 vez por mes'],['semanal','1 vez por semana'],['2x_semana','2 veces por semana'],['3x_semana','3 veces por semana']]
+    .map(([k,l])=>'<option value="'+k+'" '+((prev&&prev.vitc_frequency===k)?'selected':'')+'>'+l+'</option>').join('');
+  modalOpen(prev?'Modificar indicación de megadosis':(kind==='vitamina_c'?'Indicar megadosis de vitamina C':'Nueva indicación'),
+    (prev?'<p class="meta" style="margin:0">Vigente: '+esc(indSummary(prev))+'. Al guardar, esta queda en el historial como reemplazada.</p>':'')+
+    '<div class="field'+(prev?' hidden':'')+'"><label>Tipo de indicación</label><select id="iKind" onchange="toggleIndicFields()"><option value="general" '+(kind==='general'?'selected':'')+'>General</option><option value="vitamina_c" '+(kind==='vitamina_c'?'selected':'')+'>Megadosis de Vitamina C</option></select></div>'+
+    '<div id="iVitcFields"><div class="grid g2">'+
+      '<div class="field"><label>Dosis (g)</label><input id="iDose" type="number" step="0.1" inputmode="decimal" placeholder="Ej: 56" value="'+v('vitc_target_dose_g')+'"></div>'+
+      '<div class="field"><label>Frecuencia *</label><select id="iFreq">'+freqOpts+'</select></div>'+
+      '<div class="field"><label>Dilución (ml)</label><input id="iDil" type="number" inputmode="numeric" placeholder="Ej: 500" value="'+v('vitc_dilution_ml')+'"></div>'+
+      '<div class="field"><label>Velocidad (gtt/min)</label><input id="iRate" type="number" inputmode="numeric" placeholder="Ej: 30" value="'+v('vitc_rate_gtt_min')+'"></div>'+
+      '<div class="field"><label>Desde</label><input id="iStart" type="date" value="'+todayLocal()+'"></div>'+
+      '<div class="field"><label>Cantidad de sesiones (opcional)</label><input id="iSess" type="number" inputmode="numeric" placeholder="Ej: 12" value="'+v('sessions_planned')+'"></div>'+
+      '<div class="field"><label>Hasta (opcional)</label><input id="iEnd" type="date" value="'+v('end_date')+'"></div>'+
     '</div></div>'+
-    '<div class="field"><label>Detalle</label><textarea id="iDetail" placeholder="Indicación, aclaraciones…"></textarea></div>','Guardar', addIndic);
+    '<div class="field"><label>Detalle'+(kind==='general'&&!prev?' *':'')+'</label><textarea id="iDetail" placeholder="Indicación, aclaraciones, controles previos…">'+v('detail')+'</textarea></div>',
+    'Guardar indicación', addIndic);
   toggleIndicFields();
 }
 function toggleIndicFields(){ const b=$('iVitcFields'); if(b) b.classList.toggle('hidden', $('iKind').value!=='vitamina_c'); }
 async function addIndic(){
-  const kind=$('iKind').value;
-  if(kind==='vitamina_c' && !$('iFreq').value){ toast('Elegí la frecuencia de la megadosis'); return false; }
-  const rec={patient_id:CUR.id, kind, detail:$('iDetail').value||null,
-    vitc_target_dose_g: kind==='vitamina_c'? num($('iDose').value) : null,
-    vitc_frequency: kind==='vitamina_c'? ($('iFreq').value||null) : null,
-    prescribed_by:ME.user_id, created_by:ME.user_id, active:true};
-  const {error}=await DB().from('indications').insert(rec); if(error){toast(error.message);return false;}
-  toast('Indicación guardada'); afterChange(); return true;
+  const kind=$('iKind').value, vc=kind==='vitamina_c';
+  if(vc && !$('iFreq').value){ toast('Elegí la frecuencia de la megadosis'); return false; }
+  const rec={patient_id:CUR.id, kind, detail:($('iDetail').value||'').trim()||null, prescribed_by:ME.user_id, created_by:ME.user_id, active:true,
+    vitc_target_dose_g: vc?num($('iDose').value):null, vitc_frequency: vc?($('iFreq').value||null):null,
+    vitc_dilution_ml: vc?num($('iDil').value):null, vitc_rate_gtt_min: vc?num($('iRate').value):null,
+    start_date: vc?($('iStart').value||null):null, end_date: vc?($('iEnd').value||null):null, sessions_planned: vc?num($('iSess').value):null};
+  if(!vc && !rec.detail){ toast('Escribí la indicación'); return false; }
+  const {data,error}=await DB().from('indications').insert(rec).select('id').single();
+  if(error){ toast(error.message); return false; }
+  if(vc){   // la nueva reemplaza a cualquier indicación de megadosis que siguiera vigente (no se borra: queda en el historial)
+    const {error:e2}=await DB().from('indications').update({active:false, replaced_by:data.id, updated_by:ME.user_id})
+      .eq('patient_id',CUR.id).eq('kind','vitamina_c').eq('active',true).neq('id',data.id);
+    if(e2) toast('La indicación nueva se guardó, pero no se pudo cerrar la anterior: '+e2.message);
+  }
+  toast(vc?'Indicación de megadosis guardada':'Indicación guardada');
+  if(vc && IND_FROM_NOTE && GN) gnAppendPlan('Indicación de megadosis: '+indSummary(rec)+'.');
+  IND_FROM_NOTE=false;
+  afterChange(); return true;
+}
+function openSuspendInd(){
+  const ind=FCALC&&FCALC.ind; if(!ind||!can.indicate()) return;
+  modalOpen('Suspender megadosis',
+    '<p class="meta" style="margin:0">Vigente: '+esc(indSummary(ind))+'. Queda en el historial como suspendida, con tu nombre, la fecha y el motivo.</p>'+
+    '<div class="field"><label>Motivo *</label><textarea id="isReason" placeholder="Ej: fin del tratamiento, intolerancia, decisión de la paciente…"></textarea></div>',
+    'Suspender', async ()=>{
+      const r=($('isReason').value||'').trim(); if(!r){ toast('Escribí el motivo'); return false; }
+      const {data,error}=await DB().from('indications').update({active:false, suspended_at:new Date().toISOString(), suspended_by:ME.user_id, suspend_reason:r, updated_by:ME.user_id}).eq('id',ind.id).select('id');
+      if(error){ toast(error.message); return false; }
+      if(!data||!data.length){ toast('No se pudo suspender: tu rol no modifica indicaciones'); return false; }
+      toast('Megadosis suspendida'); afterChange(); return true;
+    });
+}
+/* desde la nota guiada: el cambio de indicación queda escrito en «Ajuste del plan» de la nota */
+function gnAppendPlan(txt){
+  if(!GN) return;
+  const s=GN.tpl.secs.find(x=>x.k==='plan'), f=s&&s.f.find(x=>x.t==='text'); if(!f) return;
+  const el=document.querySelector('#gn [data-gk="'+f.k+'"]'); if(!el) return;
+  el.value=(el.value.trim()?el.value.trim()+'\n':'')+txt; GN.data[f.k]=el.value;
+  gnSchedule(); gnAfterFieldDone(f.k); gnFlush();
 }
 
 /* ---------- Documentos (estudios + laboratorios + consentimientos) ---------- */
@@ -2603,7 +2781,7 @@ async function renderAudit(){
 
 /* ===================== ETIQUETAS AUDITORÍA ===================== */
 const TABLE_LABEL={patients:'Ficha del paciente',notes:'Evolución',vitals:'Signos vitales',medications:'Medicación',vitc_administrations:'Megadosis de Vitamina C',indications:'Indicación',consents:'Consentimiento',attachments:'Estudio/adjunto',appointments:'Turno',labs:'Laboratorio',staff:'Usuario'};
-const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',treatment_response:'Evaluación de respuesta',response_date:'Fecha de evaluación',comentarios:'Comentarios',g6pd_status:'G6PD',referred_by:'Derivado por',ecog:'ECOG',karnofsky:'Karnofsky',weight_kg:'Peso (kg)',height_cm:'Talla (cm)',physical_exam:'Examen físico',problem_list:'Lista de problemas',cie10_code:'CIE-10',tnm_t:'TNM T',tnm_n:'TNM N',tnm_m:'TNM M',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma'};
+const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',treatment_response:'Evaluación de respuesta',response_date:'Fecha de evaluación',comentarios:'Comentarios',g6pd_status:'G6PD',referred_by:'Derivado por',ecog:'ECOG',karnofsky:'Karnofsky',weight_kg:'Peso (kg)',height_cm:'Talla (cm)',physical_exam:'Examen físico',problem_list:'Lista de problemas',cie10_code:'CIE-10',tnm_t:'TNM T',tnm_n:'TNM N',tnm_m:'TNM M',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma',active:'Vigente',detail:'Detalle',vitc_target_dose_g:'Dosis (g)',vitc_frequency:'Frecuencia',vitc_dilution_ml:'Dilución (ml)',vitc_rate_gtt_min:'Velocidad (gtt/min)',start_date:'Desde',end_date:'Hasta',sessions_planned:'Sesiones indicadas',suspended_at:'Suspendida',suspend_reason:'Motivo de suspensión',replaced_by:'Reemplazada por',indication_id:'Indicación'};
 
 /* ===================== AGENDA ===================== */
 function fmtDTShort(d){ if(!d)return ''; const x=new Date(d); return x.toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+x.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
@@ -2631,8 +2809,9 @@ async function renderAgenda(){
       '<td>'+esc(a.discipline?(DISC_LABEL[a.discipline]||a.discipline):(a.title||'—'))+'</td>'+
       '<td class="quiet">'+(prof?esc(prof.full_name):'—')+'</td>'+
       '<td><span class="st '+st[0]+'"><span class="d"></span>'+st[1]+'</span>'+(a.absence_reason?' <span class="meta">· '+esc(a.absence_reason)+'</span>':'')+'</td>'+
-      '<td style="white-space:nowrap"><button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'asistio\')">Asistió</button> '+
+      '<td style="white-space:nowrap">'+(a.status==='cancelado'?'':'<button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'asistio\')">Asistió</button> '+
         '<button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'ausente\')">Ausente</button> '+
+        '<button class="btn sm dg" onclick="setApptStatus(\''+a.id+'\',\'cancelado\')">Cancelar</button> ')+
         '<a class="btn sm" href="'+gcalLink(a,pt.full_name||'')+'" target="_blank" rel="noopener">Google Calendar</a></td></tr>';
   }).join('');
   const tbl=(title,list)=> list.length? '<section class="card" style="margin-bottom:20px"><div class="sec" style="padding-bottom:0"><div class="sec-h"><span class="sec-t">'+title+'</span><span class="meta">'+list.length+'</span></div></div>'+
@@ -2642,10 +2821,11 @@ async function renderAgenda(){
 }
 async function setApptStatus(id,st){
   let reason=null;
+  if(st==='cancelado' && !confirm('¿Cancelar este turno?')) return;
   if(st==='ausente'){ reason=prompt('Motivo de la ausencia (opcional):'); if(reason==='')reason=null; }
   const {error}=await DB().from('appointments').update({status:st, absence_reason:reason, updated_by:ME.user_id}).eq('id',id);
   if(error){toast(error.message);return;}
-  toast(st==='asistio'?'Marcado: asistió':'Marcado: ausente');
+  toast({asistio:'Marcado: asistió',ausente:'Marcado: ausente',cancelado:'Turno cancelado'}[st]||'Turno actualizado');
   if(curView==='agenda') renderAgenda(); else if(curView==='ficha') afterChange();
 }
 async function openApptModal(presetPid){
@@ -2737,7 +2917,7 @@ async function printPatient(){
     DB().from('indications').select('*').eq('patient_id',CUR.id).eq('kind','vitamina_c').eq('active',true).order('created_at',{ascending:false})
   ]);
   const indA=(inds||[])[0]||null;
-  const indLine=indA?('<p style="margin:0 0 8px"><b>Indicación vigente:</b> '+[indA.vitc_target_dose_g?('objetivo '+indA.vitc_target_dose_g+' g'):null, indA.vitc_frequency?(FREQ_LABEL[indA.vitc_frequency]||indA.vitc_frequency):null].filter(Boolean).join(' · ')+'</p>'):'';
+  const indLine=indA?('<p style="margin:0 0 8px"><b>Indicación vigente:</b> '+indSummary(indA)+'</p>'):'';
   const row=(l,v)=> (v||v===0)?'<tr><td class="k">'+esc(l)+'</td><td>'+esc(v)+'</td></tr>':'';
   const sec=(t,rows)=> rows?'<h3>'+t+'</h3><table>'+rows+'</table>':'';
   const a=anthro(CUR.weight_kg,CUR.height_cm); const anth=a?('IMC '+a.imc.toFixed(1)+' kg/m² · BSA '+a.bsa.toFixed(2)+' m²'):'';
