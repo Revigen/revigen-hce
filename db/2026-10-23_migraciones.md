@@ -70,3 +70,21 @@ alter policy vitc_write on clinica.vitc_administrations
   with check (clinica.my_role() = any (array['enfermeria','director_medico','admin']));
 ```
 El médico funcional sigue sin crear ni editar la ficha del paciente (`patients_insert` / `patients_update`), como antes.
+
+## 5) Infusiones con varios componentes, catálogo y plantillas (aditivo, una sentencia por vez)
+- `indications`: nueva restricción `indications_kind_check2` (general | vitamina_c | infusion), creada ANTES de
+  quitar la vieja `indications_kind_check` (general | vitamina_c), así la tabla nunca quedó sin control.
+  Columnas nuevas: `protocol_name text`, `vehicle text`. Volumen y goteo usan `vitc_dilution_ml` y `vitc_rate_gtt_min`.
+- Tablas nuevas (RLS activo, auditoría `trg_audit`, sin acceso anónimo):
+  - `infusion_components` (catálogo: name, unit, usual_dose, max_dose, g6pd_alert, notes, active) — escribe dirección/admin.
+  - `infusion_templates` (plantillas de protocolo: name, components jsonb, vehicle, volume_ml, rate_gtt_min, active) — escribe dirección/admin.
+  - `indication_components` (componentes de cada indicación: indication_id, patient_id, component_id, name, unit, dose) — escribe quien indica.
+  - `infusion_components_given` (componentes de cada infusión: administration_id, patient_id, component_id, name, unit, dose, given, reason) — escribe quien registra infusiones.
+- `vitc_administrations.dose_g` sigue obligatoria: en infusiones sin vitamina C se guarda 0 y el detalle va en `infusion_components_given`.
+
+### Rollback
+Las tablas nuevas se pueden dejar (vacías no afectan). Para volver a la restricción anterior (solo si no hay filas `infusion`):
+```sql
+alter table clinica.indications add constraint indications_kind_check check (kind = any (array['general','vitamina_c']));
+alter table clinica.indications drop constraint indications_kind_check2;
+```
