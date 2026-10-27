@@ -88,3 +88,14 @@ Las tablas nuevas se pueden dejar (vacías no afectan). Para volver a la restric
 alter table clinica.indications add constraint indications_kind_check check (kind = any (array['general','vitamina_c']));
 alter table clinica.indications drop constraint indications_kind_check2;
 ```
+
+## 6) Catálogo precargado desde la «Guía de protocolos para la consulta» (sueroterapia) — 27/10
+- `infusion_components`: nueva columna `category text` (Vitaminas, Antioxidantes, Minerales, Aminoácidos, Otros).
+- Datos de configuración cargados (no son datos de pacientes):
+  - 45 componentes con unidad, dosis máxima de aviso (tope del rango de referencia de la guía), aviso G6PD
+    (vitamina C y azul de metileno) y precauciones resumidas.
+  - 21 plantillas de protocolo, solo donde la guía da una fórmula explícita: megadosis de vitamina C
+    10/15/25/50/75/100 g, cocktail de Myers, azul de metileno, ALA, regulador de presión arterial,
+    regulador del ánimo, antioxidante, detox hepático, antiage (colágeno), quelación EDTA, antiinflamatorio
+    (DMSO), soporte inmunológico, brain boost, capilar/uñas, taurina, NAD+. Las dosis que la guía no fija
+    quedan vacías y la app exige completarlas al indicar.
