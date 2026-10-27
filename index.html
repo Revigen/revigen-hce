@@ -632,6 +632,8 @@ textarea.gff{min-height:66px;resize:vertical;line-height:1.5;padding-right:46px;
 .inf-warn{flex-basis:100%;font-family:var(--f-ui);font-size:12.5px;color:#8A5212}
 .inf-note{flex-basis:100%;font-family:var(--f-ui);font-size:12px;color:var(--faint)}
 .inf-add{align-self:flex-start}
+.inf-vitc{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 13px;border-radius:999px;border:1px solid #0E9BB5;background:#E4F5F8;color:#0E7490;font-family:var(--f-ui);font-size:13px;font-weight:600}
+.inf-vitc svg{width:14px;height:14px;stroke:currentColor;fill:none}
 .inf-ok{margin:0;color:#15803D!important}
 .inf-dur{margin:-6px 0 0;color:var(--vital)!important;font-weight:600}
 .inf-tpl,.cat-chk{display:flex;align-items:center;gap:8px;font-family:var(--f-ui);font-size:13.5px;color:var(--ink-2)}
@@ -2721,6 +2723,7 @@ async function renderTrat(){
    Puede haber varios protocolos vigentes a la vez. Las indicaciones viejas 'vitamina_c' se leen como un protocolo
    de un solo componente. Nada se borra: modificar crea una versión nueva y la anterior queda reemplazada. */
 let CATALOG=null, TEMPLATES=null, INF=null, IND_FROM_NOTE=false;
+const CAT_ORDER=['Vitaminas','Antioxidantes','Minerales','Aminoácidos','Otros'];
 async function loadCatalog(force){
   if(CATALOG&&!force) return CATALOG;
   const [C,T]=await Promise.all([DB().from('infusion_components').select('*').order('name'), DB().from('infusion_templates').select('*').order('name')]);
@@ -2729,6 +2732,7 @@ async function loadCatalog(force){
 }
 function normTxt(s){ return (s||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().trim(); }
 function catOf(id){ return (CATALOG||[]).find(c=>c.id===id)||null; }
+function catVitC(){ return (CATALOG||[]).find(c=>c.active && /^vitamina\s*c\b/.test(normTxt(c.name)))||null; }   // la base de casi todos los protocolos
 function indComps(i){ return i.kind==='vitamina_c' ? [{component_id:null,name:'Vitamina C',unit:'g',dose:i.vitc_target_dose_g}] : (i.comps||[]); }
 function compG6pd(c){ const k=c.component_id?catOf(c.component_id):null; return !!(k&&k.g6pd_alert) || /vitamina\s*c\b/.test(normTxt(c.name)); }
 function indG6pd(i){ return indComps(i).some(compG6pd); }
@@ -2838,7 +2842,7 @@ async function openInfusionModal(prevId, fromNote){
     return k?{component_id:k.id, dose:(c.dose!=null?String(c.dose):'')}:{component_id:'', legacy:true, name:c.name, unit:c.unit, dose:(c.dose!=null?String(c.dose):'')};
   });
   INF={prevId:prev?prev.id:null, fromNote:!!fromNote, name:prev?(prev.protocol_name||''):'',
-    rows:prev?rowsFrom(prev):[{component_id:'',dose:''}],
+    rows:prev?rowsFrom(prev):(catVitC()?[{component_id:catVitC().id, dose:catVitC().usual_dose!=null?String(catVitC().usual_dose):''}]:[{component_id:'',dose:''}]),
     vehicle:prev?(prev.vehicle||''):'Solución fisiológica 0,9 %', vol:prev&&prev.vitc_dilution_ml!=null?String(prev.vitc_dilution_ml):'', rate:prev&&prev.vitc_rate_gtt_min!=null?String(prev.vitc_rate_gtt_min):'',
     freq:prev?(prev.vitc_frequency||''):'', start:todayLocal(), sess:prev&&prev.sessions_planned!=null?String(prev.sessions_planned):'', end:prev?(prev.end_date||''):'', detail:prev?(prev.detail||''):'', saveTpl:false};
   modalOpen(prev?'Modificar infusión':'Indicar infusión','<div id="infForm"></div>','Guardar indicación', saveInfusion);
@@ -2847,6 +2851,7 @@ async function openInfusionModal(prevId, fromNote){
 function infSet(k,i,v){ if(!INF) return; if(i==null) INF[k]=v; else INF.rows[i][k]=v; }
 function infSetComp(i,id){ const r=INF.rows[i], c=catOf(id); r.component_id=id; if(c && (r.dose==null||r.dose==='') && c.usual_dose!=null) r.dose=String(c.usual_dose); renderInfForm(); }
 function infAdd(){ INF.rows.push({component_id:'',dose:''}); renderInfForm(); }
+function infAddVitC(){ const v=catVitC(); if(!v) return; const empty=INF.rows.find(r=>!r.legacy&&!r.component_id); if(empty){ empty.component_id=v.id; } else INF.rows.unshift({component_id:v.id, dose:v.usual_dose!=null?String(v.usual_dose):''}); renderInfForm(); }
 function infDel(i){ INF.rows.splice(i,1); if(!INF.rows.length) INF.rows.push({component_id:'',dose:''}); renderInfForm(); }
 function infTpl(id){
   const t=(TEMPLATES||[]).find(x=>x.id===id); if(!t) return;
@@ -2867,7 +2872,10 @@ function renderInfForm(){
     return;
   }
   const tpls=(TEMPLATES||[]).filter(t=>t.active);
-  const opts=r=>'<option value="">Elegí un componente…</option>'+cat.map(c=>'<option value="'+c.id+'" '+(c.id===r.component_id?'selected':'')+'>'+esc(c.name)+' ('+esc(c.unit)+')</option>').join('');
+  const vit=catVitC(), op=(c,r)=>'<option value="'+c.id+'" '+(c.id===r.component_id?'selected':'')+'>'+esc(c.name)+' ('+esc(c.unit)+')</option>';
+  const cats=[...new Set(cat.filter(c=>!vit||c.id!==vit.id).map(c=>c.category||'Otros'))].sort((a,b)=>CAT_ORDER.indexOf(a)-CAT_ORDER.indexOf(b));
+  const opts=r=>'<option value="">Elegí un componente…</option>'+(vit?op(vit,r):'')+
+    cats.map(g=>'<optgroup label="'+esc(g)+'">'+cat.filter(c=>(c.category||'Otros')===g&&(!vit||c.id!==vit.id)).map(c=>op(c,r)).join('')+'</optgroup>').join('');
   const rows=INF.rows.map((r,i)=>{
     const c=r.legacy?null:catOf(r.component_id);
     const over=c&&c.max_dose!=null&&parseFloat(String(r.dose).replace(',','.'))>Number(c.max_dose);
@@ -2893,12 +2901,13 @@ function renderInfForm(){
   el.innerHTML=
     (INF.prevId?'<p class="meta" style="margin:0">Al guardar, la indicación anterior queda en el historial como reemplazada.</p>':'')+
     '<div class="field"><label>Nombre del protocolo (opcional)</label><input value="'+esc(INF.name)+'" placeholder="Ej: Megadosis + magnesio" oninput="infSet(\'name\',null,this.value)"></div>'+
-    (tpls.length?'<div class="vi-chips"><span class="meta">Plantillas:</span>'+tpls.map(t=>'<button type="button" onclick="infTpl(\''+t.id+'\')">'+esc(t.name)+'</button>').join('')+'</div>':'')+
+    (tpls.length?'<div class="field"><label>Cargar un protocolo de plantilla</label><select onchange="if(this.value)infTpl(this.value)"><option value="">Elegí una plantilla… ('+tpls.length+')</option>'+tpls.map(t=>'<option value="'+t.id+'">'+esc(t.name)+'</option>').join('')+'</select></div>':'')+
     '<div class="reg-h">Componentes</div><div class="inf-list">'+rows+'</div>'+
-    '<button type="button" class="btn sm inf-add" onclick="infAdd()">'+PLUS+'Agregar componente</button>'+
+    '<div class="vi-chips">'+((catVitC()&&!INF.rows.some(r=>r.component_id===catVitC().id))?'<button type="button" class="inf-vitc" onclick="infAddVitC()">'+PLUS+'Vitamina C</button>':'')+
+      '<button type="button" class="btn sm inf-add" onclick="infAdd()">'+PLUS+'Agregar componente</button></div>'+
     alerts.join('')+
     '<div class="reg-h">Vehículo y goteo</div>'+
-    '<div class="field"><label>Vehículo</label><input list="infVeh" value="'+esc(INF.vehicle)+'" oninput="infSet(\'vehicle\',null,this.value)"><datalist id="infVeh"><option value="Solución fisiológica 0,9 %"><option value="Dextrosa 5 %"><option value="Ringer lactato"></datalist></div>'+
+    '<div class="field"><label>Vehículo</label><input list="infVeh" value="'+esc(INF.vehicle)+'" oninput="infSet(\'vehicle\',null,this.value)"><datalist id="infVeh"><option value="Solución fisiológica 0,9 %"><option value="Ringer lactato"><option value="Agua destilada estéril"><option value="Dextrosa 5 %"></datalist></div>'+
     '<div class="grid g2"><div class="field"><label>Volumen (ml)</label><input type="number" inputmode="numeric" value="'+esc(INF.vol)+'" oninput="infSet(\'vol\',null,this.value)" onchange="renderInfForm()"></div>'+
       '<div class="field"><label>Goteo (gtt/min)</label><input type="number" inputmode="numeric" value="'+esc(INF.rate)+'" oninput="infSet(\'rate\',null,this.value)" onchange="renderInfForm()"></div></div>'+
     (dur?'<p class="meta inf-dur">'+esc(dur)+'</p>':'')+
@@ -2915,6 +2924,8 @@ async function saveInfusion(){
   const rows=infChosen().map(c=>({component_id:c.component_id, name:c.name, unit:c.unit, dose:num(String(c.dose??'').replace(',','.').trim())}));
   if(!rows.length){ toast('Agregá al menos un componente'); return false; }
   if(rows.some(r=>r.dose!=null&&isNaN(r.dose))){ toast('Revisá las dosis: solo números'); return false; }
+  const sinDosis=rows.filter(r=>r.dose==null);
+  if(sinDosis.length){ toast('Completá la dosis de: '+sinDosis.map(r=>r.name).join(', ')); return false; }
   if(!INF.freq){ toast('Elegí la frecuencia'); return false; }
   const key=rows.map(c=>c.component_id||normTxt(c.name)).sort().join('|');
   const same=(FCALC.inds||[]).find(i=>i.id!==INF.prevId && indComps(i).map(c=>c.component_id||normTxt(c.name)).sort().join('|')===key);
@@ -2989,11 +3000,11 @@ function askChoice(o){
 function catField(id,key,label,val,type){
   const fid='cf_'+key+'_'+id;
   if(type==='check') return '<label class="cat-chk"><input type="checkbox" id="'+fid+'" '+(val?'checked':'')+'> '+label+'</label>';
-  return '<div class="field"><label for="'+fid+'">'+label+'</label><input id="'+fid+'"'+(type==='num'?' type="number" step="any" inputmode="decimal"':'')+(key==='unit'?' list="catUnits"':'')+' value="'+esc(val??'')+'"></div>';
+  return '<div class="field"><label for="'+fid+'">'+label+'</label><input id="'+fid+'"'+(type==='num'?' type="number" step="any" inputmode="decimal"':'')+(key==='unit'?' list="catUnits"':'')+(key==='cat'?' list="catCats"':'')+' value="'+esc(val??'')+'"></div>';
 }
 function catForm(c){
   const id=c?c.id:'new';
-  return '<div class="grid g2">'+catField(id,'name','Nombre *',c&&c.name)+catField(id,'unit','Unidad *',c&&c.unit)+catField(id,'usual','Dosis habitual',c&&c.usual_dose,'num')+catField(id,'max','Dosis máxima (aviso)',c&&c.max_dose,'num')+'</div>'+
+  return '<div class="grid g2">'+catField(id,'name','Nombre *',c&&c.name)+catField(id,'unit','Unidad *',c&&c.unit)+catField(id,'cat','Categoría',c&&c.category)+catField(id,'usual','Dosis habitual',c&&c.usual_dose,'num')+catField(id,'max','Dosis máxima (aviso)',c&&c.max_dose,'num')+'</div>'+
     catField(id,'g6pd','Avisar G6PD (riesgo de hemólisis)',c&&c.g6pd_alert,'check')+
     '<div class="field"><label for="cf_notes_'+id+'">Observaciones (compatibilidad, preparación)</label><input id="cf_notes_'+id+'" value="'+esc((c&&c.notes)||'')+'"></div>';
 }
@@ -3001,10 +3012,12 @@ async function renderCatalogo(){
   const p=$('page'); p.innerHTML='<div class="loading">Cargando el catálogo…</div>';
   if(!can.catalog()){ p.innerHTML='<div class="callout"><p>El catálogo lo administra la dirección médica.</p></div>'; return; }
   await loadCatalog(true);
-  const items=(CATALOG||[]).map(c=>'<details class="cat-item"><summary><span class="cat-n"><b>'+esc(c.name)+'</b><span class="meta">'+esc(c.unit)+' · dosis habitual '+(c.usual_dose!=null?esc(c.usual_dose):'—')+(c.max_dose!=null?' · máx. '+esc(c.max_dose):'')+'</span></span>'+
+  const groups=[...new Set((CATALOG||[]).map(c=>c.category||'Otros'))].sort((a,b)=>(CAT_ORDER.indexOf(a)+99*(CAT_ORDER.indexOf(a)<0))-(CAT_ORDER.indexOf(b)+99*(CAT_ORDER.indexOf(b)<0)));
+  const itemHTML=c=>'<details class="cat-item"><summary><span class="cat-n"><b>'+esc(c.name)+'</b><span class="meta">'+esc(c.unit)+' · dosis habitual '+(c.usual_dose!=null?esc(c.usual_dose):'—')+(c.max_dose!=null?' · máx. '+esc(c.max_dose):'')+'</span></span>'+
       (c.g6pd_alert?'<span class="tag warn">G6PD</span>':'')+(c.active?'':'<span class="tag">De baja</span>')+'</summary>'+
       '<div class="cat-form">'+catForm(c)+'<div class="cat-acts"><button class="btn primary sm" onclick="saveCatItem(\''+c.id+'\')">Guardar cambios</button>'+
-      '<button class="btn sm'+(c.active?' dg':'')+'" onclick="toggleCatItem(\''+c.id+'\','+(!c.active)+')">'+(c.active?'Dar de baja':'Reactivar')+'</button></div></div></details>').join('');
+      '<button class="btn sm'+(c.active?' dg':'')+'" onclick="toggleCatItem(\''+c.id+'\','+(!c.active)+')">'+(c.active?'Dar de baja':'Reactivar')+'</button></div></div></details>';
+  const items=groups.map(g=>'<div class="tl-day">'+esc(g)+' · '+(CATALOG||[]).filter(c=>(c.category||'Otros')===g).length+'</div><section class="sheet cat-list">'+(CATALOG||[]).filter(c=>(c.category||'Otros')===g).map(itemHTML).join('')+'</section>').join('');
   const nameOf=id=>{ const c=catOf(id); return c?c.name:'(componente dado de baja)'; };
   const tpls=(TEMPLATES||[]).map(t=>'<div class="entry"><div class="eh"><span class="au">'+esc(t.name)+'</span>'+(t.active?'':'<span class="tag">De baja</span>')+
       '<button class="btn sm'+(t.active?' dg':'')+'" style="margin-left:auto" onclick="toggleTpl(\''+t.id+'\','+(!t.active)+')">'+(t.active?'Dar de baja':'Reactivar')+'</button></div>'+
@@ -3012,16 +3025,17 @@ async function renderCatalogo(){
   p.innerHTML='<div class="phead-page"><div><div class="eyebrow">Gestión · dirección médica</div><h1>Catálogo de componentes</h1></div></div>'+
     '<div class="callout" style="margin-bottom:20px"><p>Lo que se elige al indicar una infusión: nadie escribe nombres ni unidades a mano. Un componente dado de baja no se borra; solo deja de ofrecerse. Cada cambio queda en la auditoría.</p></div>'+
     '<datalist id="catUnits"><option value="g"><option value="mg"><option value="mcg"><option value="mEq"><option value="UI"><option value="ml"><option value="ampolla"></datalist>'+
+    '<datalist id="catCats">'+CAT_ORDER.map(x=>'<option value="'+x+'">').join('')+'</datalist>'+
     '<div class="stack">'+
       '<details class="cat-item"'+((CATALOG||[]).length?'':' open')+'><summary><span class="cat-n"><b>+ Nuevo componente</b></span></summary><div class="cat-form">'+catForm(null)+'<div class="cat-acts"><button class="btn primary sm" onclick="saveCatItem(\'new\')">Agregar al catálogo</button></div></div></details>'+
-      (items?'<section class="sheet cat-list">'+items+'</section>':'<div class="empty" style="padding:28px 12px"><p>Todavía no hay componentes cargados.</p></div>')+
+      (items?'<div>'+items+'</div>':'<div class="empty" style="padding:28px 12px"><p>Todavía no hay componentes cargados.</p></div>')+
       '<div class="sec-h" style="margin:10px 2px 0"><span class="sec-t">Plantillas de protocolo</span><span class="meta">Se crean al indicar una infusión, con «Guardar también como plantilla»</span></div>'+
       (tpls?'<section class="sheet">'+tpls+'</section>':'<div class="empty" style="padding:24px 12px"><p>Sin plantillas todavía.</p></div>')+
     '</div>';
 }
 async function saveCatItem(id){
   const v=k=>{ const e=$('cf_'+k+'_'+id); return e?(e.type==='checkbox'?e.checked:e.value.trim()):null; };
-  const rec={name:v('name'), unit:v('unit'), usual_dose:num(v('usual')), max_dose:num(v('max')), g6pd_alert:!!v('g6pd'), notes:v('notes')||null};
+  const rec={name:v('name'), unit:v('unit'), category:v('cat')||'Otros', usual_dose:num(v('usual')), max_dose:num(v('max')), g6pd_alert:!!v('g6pd'), notes:v('notes')||null};
   if(!rec.name||!rec.unit){ toast('Completá nombre y unidad'); return; }
   if((CATALOG||[]).some(c=>c.id!==id && normTxt(c.name)===normTxt(rec.name))){ toast('Ya hay un componente con ese nombre en el catálogo'); return; }
   const q=id==='new' ? DB().from('infusion_components').insert(rec).select('id') : DB().from('infusion_components').update(Object.assign({updated_by:ME.user_id},rec)).eq('id',id).select('id');
