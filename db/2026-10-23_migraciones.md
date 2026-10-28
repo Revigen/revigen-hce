@@ -99,3 +99,20 @@ alter table clinica.indications drop constraint indications_kind_check2;
     regulador del ánimo, antioxidante, detox hepático, antiage (colágeno), quelación EDTA, antiinflamatorio
     (DMSO), soporte inmunológico, brain boost, capilar/uñas, taurina, NAD+. Las dosis que la guía no fija
     quedan vacías y la app exige completarlas al indicar.
+
+## 7) Estudios, laboratorios y consentimientos: fecha del estudio y corrección de fechas — 27/10
+- `attachments`: nueva columna `study_date date` (fecha real del estudio; antes solo se veía la fecha de subida).
+- Función nueva `clinica.update_lab(p_id uuid, p_measured_at timestamptz default null, p_storage_path text default null)`
+  (security definer). Los laboratorios no tienen política de UPDATE, así que la corrección pasa solo por acá:
+  exige ser staff y ser quien lo cargó o dirección médica/admin; solo cambia la fecha y/o adjunta el archivo
+  si faltaba (`coalesce`, nunca borra). `execute` revocado a `public` y `anon`, otorgado a `authenticated`.
+- La auditoría (`trg_audit`) registra cada corrección con el valor anterior y el nuevo, y la app además deja
+  una nota «Corrección de fecha · …: «antes» → «después»» en la historia del paciente.
+- Sin cambios de datos: el consentimiento existente (firmado_at 06/10 00:00 UTC) se mostraba 05/10 en Argentina;
+  se corrigió en la app al leer la fecha. Las fechas nuevas se guardan al mediodía para que no corran de día.
+
+### Rollback
+```sql
+revoke execute on function clinica.update_lab(uuid, timestamptz, text) from authenticated;
+```
+La columna `study_date` se puede dejar (vacía no afecta).
