@@ -667,6 +667,25 @@ details.cat-item:not(.cat-list .cat-item){border:1px solid var(--line);border-ra
 .cat-form input{width:100%;background:var(--void);border:1px solid var(--line);border-radius:9px;padding:10px 12px;color:var(--ink);font:inherit;font-size:14px}
 .cat-form .cat-chk input{width:18px}
 .cat-acts{display:flex;gap:8px;flex-wrap:wrap}
+/* ====== Archivos (PDF o fotos que se unen en un PDF) ====== */
+.fc{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--line);border-radius:12px;padding:10px;background:var(--void)}
+.fc-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.fc-list:empty{display:none}
+.fc-img{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel);aspect-ratio:3/4}
+.fc-img img{width:100%;height:100%;object-fit:cover;display:block}
+.fc-n{position:absolute;top:4px;left:4px;min-width:22px;height:22px;border-radius:11px;background:rgba(20,30,20,.72);color:#fff;font-family:var(--f-ui);font-size:12px;display:grid;place-items:center;padding:0 5px}
+.fc-b{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:space-between;background:rgba(255,255,255,.92)}
+.fc-b button{flex:1;min-height:32px;font-size:15px;color:var(--ink-2)}
+.fc-pdf{grid-column:1/-1;display:flex;align-items:center;gap:8px;font-family:var(--f-ui);font-size:13px;color:var(--ink-2)}
+.fc-pdf svg{width:18px;height:18px;stroke:var(--muted);fill:none;flex:none}
+.fc-pdf span{flex:1;min-width:0;overflow-wrap:anywhere}
+.fc-acts{display:flex;gap:8px;flex-wrap:wrap}
+.fc-acts .btn{cursor:pointer}
+.fc-hint{margin:0}
+@media (hover:hover) and (pointer:fine){ .fc-cam{display:none} }
+.files a{position:relative}
+.fd-fix{margin-left:6px;width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--muted);font-size:13px;flex:none}
+.entry .ft .btn + .btn{margin-left:6px}
 /* ====== Celular / tablet: la pantalla siempre se adapta ======
    iOS Safari hace zoom automático (y no lo deshace) al tocar un campo con letra < 16 px:
    en pantallas táctiles o angostas todos los campos van a 16 px. */
@@ -1530,7 +1549,7 @@ function renderSideB(){
   }).join('') : '<div class="meta">Sin turnos futuros programados.</div>';
   const asistTxt = f.asist.tot? ('Asistencia: '+f.asist.as+' de '+f.asist.tot+' turnos en los últimos 90 días.') : 'Sin turnos en los últimos 90 días.';
   const ppl = f.people.length? f.people.map(x=>'<div class="p"><span class="av">'+esc(initials(x.s.full_name))+'</span><div><div class="n">'+esc(x.s.full_name)+'</div><div class="r">'+(ROLE_LABEL[x.s.role]||'')+' · '+x.n+' registro'+(x.n===1?'':'s')+'</div></div></div>').join('') : '<div class="meta">Todavía nadie registró atención.</div>';
-  const consRow=(kind,label)=>{const c=f.consBy[kind];return '<div class="row"><span class="k">'+label+'</span><span class="v">'+(c?'<span class="st ok"><span class="d"></span>'+(c.signed_at?fmtDMShort(c.signed_at):fmtDMShort(c.created_at))+'</span>':'<span class="st warn"><span class="d"></span>Falta</span>')+'</span></div>';};
+  const consRow=(kind,label)=>{const c=f.consBy[kind];return '<div class="row"><span class="k">'+label+'</span><span class="v">'+(c?'<span class="st ok"><span class="d"></span>'+(c.signed_at?fmtDMShort(sigDate(c.signed_at)):fmtDMShort(c.created_at))+'</span>':'<span class="st warn"><span class="d"></span>Falta</span>')+'</span></div>';};
   let logHtml='';
   if(can.director()){
     const ACT={INSERT:'creó',UPDATE:'modificó',DELETE:'eliminó'};
@@ -1542,7 +1561,7 @@ function renderSideB(){
     '<div class="sec"><div class="sec-h"><span class="sec-t">Próximos turnos</span><button class="btn sm" onclick="openApptModal(\''+CUR.id+'\')">Agendar</button></div>'+
       '<div class="tl">'+tl+'</div><div class="meta" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--div)">'+asistTxt+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Quiénes la atienden</span><span class="meta">Por sus registros</span></div><div class="people">'+ppl+'</div></div>'+
-    '<div class="sec"><div class="sec-h"><span class="sec-t">Consentimientos</span></div><div class="rows">'+consRow('vitamina_c','Megadosis de Vit. C')+consRow('hc_compartida','Historia clínica compartida')+'</div></div>'+
+    '<div class="sec"><div class="sec-h"><span class="sec-t">Consentimientos</span></div><div class="rows">'+consRow('vitamina_c','Megadosis de Vit. C')+(f.consBy.sueroterapia?consRow('sueroterapia','Sueroterapia'):'')+consRow('hc_compartida','Historia clínica compartida')+'</div></div>'+
     logHtml+'</div>';
 }
 function setTab(t){
@@ -1753,23 +1772,28 @@ function tlVital(x){
   return tlEntry({who:x.recorded_by, at:x.measured_at, tag:tlTag('Enfermería',AREA_COL.enfermeria), title:'Control de signos vitales', lines:[parts.join(' · ')].concat(x.notes?[esc(x.notes)]:[]).filter(Boolean)});
 }
 function tlLab(x){
+  REC['lab'+x.id]=x;
   const vals=ANALITOS.filter(a=>x[a[0]]!=null).map(a=>a[1]+' '+esc(x[a[0]])+' '+a[2]);
   const lines=[vals.join(' · ')].concat(x.otros?[esc(x.otros)]:[]).concat(x.notes?[esc(x.notes)]:[]).filter(Boolean);
-  const foot=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver archivo</button>':'';
-  return tlEntry({who:x.recorded_by, at:x.measured_at, tag:tlTag('Laboratorio',LAB_COL), title:'Laboratorio', lines, foot});
+  const foot=(x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver archivo</button>':'')+
+    (canFix(x.recorded_by)?'<button class="btn sm" onclick="openDateFix(\'lab\',\''+x.id+'\')">Corregir fecha</button>'+(x.storage_path?'':'<button class="btn sm" onclick="openAttachLater(\'lab\',\''+x.id+'\')">Adjuntar</button>'):'');
+  return tlEntry({who:x.recorded_by, at:x.measured_at, tag:tlTag('Laboratorio',LAB_COL), title:'Laboratorio del '+fmt(x.measured_at), lines, foot});
 }
 function tlMed(x){
   const lines=[[x.dosis?esc(x.dosis):'', x.dilucion_via?esc(x.dilucion_via):'', x.tiempo_infusion?esc(x.tiempo_infusion):''].filter(Boolean).join(' · ')].concat(x.obs?[esc(x.obs)]:[]).filter(Boolean);
   return tlEntry({who:x.administered_by, at:x.administered_at, tag:tlTag('Enfermería',AREA_COL.enfermeria), title:'Medicación administrada · '+esc(x.medicamento), lines});
 }
 function tlDoc(a){
+  REC['doc'+a.id]=a;
   const open=a.url?'<a class="btn sm" href="'+esc(a.url)+'" target="_blank" rel="noopener">Abrir link</a>':'<button class="btn sm" onclick="verEstudio(\''+(a.storage_path||'').replace(/'/g,'')+'\')">Ver archivo</button>';
-  return tlEntry({who:a.uploaded_by, at:a.created_at, tag:tlTag('Documento',DOC_COL), title:esc(a.title||'Estudio'), lines:[], foot:open});
+  return tlEntry({who:a.uploaded_by, at:a.created_at, tag:tlTag('Documento',DOC_COL), title:esc(a.title||'Estudio'), lines:a.study_date?['Fecha del estudio: '+fmt(a.study_date)]:[],
+    foot:open+(canFix(a.uploaded_by)?'<button class="btn sm" onclick="openDateFix(\'doc\',\''+a.id+'\')">'+(a.study_date?'Corregir fecha':'Poner fecha del estudio')+'</button>':'')});
 }
 function tlConsent(c){
-  const KIND={hc_compartida:'Historia clínica compartida', vitamina_c:'Megadosis de Vitamina C'};
-  const open=c.storage_path?'<button class="btn sm" onclick="verEstudio(\''+c.storage_path.replace(/'/g,'')+'\')">Ver adjunto</button>':'';
-  return tlEntry({who:c.created_by, at:c.created_at, tag:tlTag('Consentimiento',DOC_COL), title:'Consentimiento · '+esc(KIND[c.kind]||c.kind), lines:[c.signed_at?'Firmado el '+fmt(c.signed_at):'Sin fecha de firma'].concat(c.notes?[esc(c.notes)]:[]), foot:open});
+  REC['consent'+c.id]=c;
+  const open=(c.storage_path?'<button class="btn sm" onclick="verEstudio(\''+c.storage_path.replace(/'/g,'')+'\')">Ver adjunto</button>':'')+
+    (canFix(c.created_by)?'<button class="btn sm" onclick="openDateFix(\'consent\',\''+c.id+'\')">Corregir fecha</button>'+(c.storage_path?'':'<button class="btn sm" onclick="openAttachLater(\'consent\',\''+c.id+'\')">Adjuntar firmado</button>'):'');
+  return tlEntry({who:c.created_by, at:c.created_at, tag:tlTag('Consentimiento',DOC_COL), title:'Consentimiento · '+esc(CONSENT_KIND[c.kind]||c.kind), lines:[c.signed_at?'Firmado el '+fmt(sigDate(c.signed_at)):'Sin fecha de firma'].concat(c.notes?[esc(c.notes)]:[]), foot:open});
 }
 function tlInd(i){
   return tlEntry({who:i.prescribed_by, at:i.created_at, tag:tlTag('Médica',AREA_COL.oncologia), title:'Indicación · '+esc(i.kind==='vitamina_c'?indSummary(i):'general'), lines:i.detail?[esc(i.detail)]:[], foot:indStatus(i)});
@@ -1913,8 +1937,8 @@ function entryNote(n){
   if(n.weight_kg!=null){ const h=parseFloat(CUR.height_cm); const imc=(h>0)?(' · IMC '+(n.weight_kg/Math.pow(h/100,2)).toFixed(1)):''; wLine='<div class="meta" style="margin-top:8px">Peso: '+esc(n.weight_kg)+' kg'+imc+'</div>'; }
   const ac=AREA_COL[n.discipline];
   const areaTag='<span class="tag disc"'+(ac?' style="background:'+ac.bg+';border-color:'+ac.bd+';color:'+ac.t+'"':'')+'><span class="d" style="background:'+(ac?ac.d:'var(--sage)')+'"></span>'+esc(EVOL_AREA[n.discipline]||DISC_LABEL[n.discipline]||n.discipline)+'</span>';
-  const isCorr=(n.content||'').indexOf(CORR_PREFIX)===0;
-  const corrTag=isCorr?'<span class="tag"><span class="d"></span>Corrección de datos de base</span>':'';
+  const isCorr=(n.content||'').indexOf(CORR_PREFIX)===0, isDateCorr=(n.content||'').indexOf(DATE_CORR)===0;
+  const corrTag=isCorr?'<span class="tag"><span class="d"></span>Corrección de datos de base</span>':(isDateCorr?'<span class="tag"><span class="d"></span>Corrección de fecha</span>':'');
   return '<div class="entry"><div class="eh"><span class="av sm">'+esc(initials(a?a.full_name:''))+'</span><span class="au">'+esc(a?a.full_name:'Profesional')+'</span>'+
     areaTag+(st?'<span class="tag"><span class="d"></span>'+esc(st.label||'Nota guiada')+'</span>':'')+corrTag+(n.is_confidential?'<span class="tag warn"><span class="d"></span>Confidencial</span>':'')+
     '<span class="meta" style="margin-left:auto">'+fmtDMShort(n.created_at)+' · '+fmtHM(n.created_at)+'</span></div>'+
@@ -2641,38 +2665,144 @@ async function addMed(){
 }
 
 /* ---------- Laboratorio (dentro de Documentos) ---------- */
+/* ---------- Archivos: un PDF, o varias fotos que se unen en un solo PDF ----------
+   Se usa en laboratorios, consentimientos y estudios. Las fotos se achican (máx. 1800 px), se pasan a JPEG
+   y se arma el PDF en el navegador (una foto por hoja A4, en el orden elegido). No depende de librerías externas. */
+const FC={};   // archivos elegidos por formulario: {pdf:File|null, imgs:[{file,url}]}
+const DATE_CORR='Corrección de fecha';
+const CONSENT_KIND={vitamina_c:'Megadosis de Vitamina C', sueroterapia:'Sueroterapia / infusiones', hc_compartida:'Historia clínica compartida', otro:'Otro'};
+let REC={};    // registros mostrados (para corregir fecha o adjuntar archivo)
+function fcReset(id){ const c=FC[id]; if(c&&c.imgs) c.imgs.forEach(x=>URL.revokeObjectURL(x.url)); FC[id]={pdf:null, imgs:[]}; }
+function fileCollectorHTML(id,label){
+  fcReset(id);
+  return '<div class="field"><label>'+label+'</label><div class="fc" id="fc_'+id+'"><div class="fc-list" id="fcl_'+id+'"></div>'+
+    '<div class="fc-acts"><label class="btn sm"><input type="file" accept="application/pdf,image/*" multiple hidden onchange="fcAdd(\''+id+'\',this)">'+PLUS+'Elegir PDF o fotos</label>'+
+    '<label class="btn sm fc-cam"><input type="file" accept="image/*" capture="environment" hidden onchange="fcAdd(\''+id+'\',this)">Sacar foto</label></div>'+
+    '<p class="meta fc-hint" id="fch_'+id+'">Un PDF, o una o varias fotos (por ejemplo, una por hoja): las fotos se unen en un solo PDF, en este orden.</p></div></div>';
+}
+function fcAdd(id,input){
+  const c=FC[id]||(FC[id]={pdf:null,imgs:[]});
+  const files=[...(input.files||[])]; input.value='';
+  for(const f of files){
+    const isPdf=f.type==='application/pdf'||/\.pdf$/i.test(f.name);
+    if(isPdf){
+      if(c.imgs.length||c.pdf||files.filter(x=>x.type==='application/pdf').length>1){ toast('Se puede adjuntar un solo PDF, o varias fotos. Para juntar hojas, usá fotos.'); continue; }
+      c.pdf=f;
+    } else if((f.type||'').startsWith('image/')||/\.(jpe?g|png|heic|heif|webp)$/i.test(f.name)){
+      if(c.pdf){ toast('Ya elegiste un PDF: quitalo para usar fotos.'); continue; }
+      if(c.imgs.length>=40){ toast('Hasta 40 fotos por documento'); break; }
+      c.imgs.push({file:f, url:URL.createObjectURL(f)});
+    } else toast('«'+f.name+'» no es un PDF ni una foto');
+  }
+  fcRender(id);
+}
+function fcMove(id,i,d){ const a=FC[id].imgs, j=i+d; if(j<0||j>=a.length) return; [a[i],a[j]]=[a[j],a[i]]; fcRender(id); }
+function fcDel(id,i){ const c=FC[id]; if(i<0){ c.pdf=null; } else { URL.revokeObjectURL(c.imgs[i].url); c.imgs.splice(i,1); } fcRender(id); }
+function fcRender(id){
+  if(id==='lab') LAB_BUILT=null;   // cambió la selección: hay que volver a armar el PDF
+  const el=$('fcl_'+id), c=FC[id]; if(!el||!c) return;
+  const mb=b=>(b/1024/1024).toFixed(1).replace('.',',')+' MB';
+  el.innerHTML=c.pdf
+    ? '<div class="fc-pdf">'+FILE_ICO+'<span>'+esc(c.pdf.name)+' · '+mb(c.pdf.size)+'</span><button type="button" class="btn sm" aria-label="Quitar" onclick="fcDel(\''+id+'\',-1)">✕</button></div>'
+    : c.imgs.map((x,i)=>'<div class="fc-img"><img src="'+x.url+'" alt="Hoja '+(i+1)+'"><span class="fc-n">'+(i+1)+'</span>'+
+        '<div class="fc-b"><button type="button" aria-label="Subir" onclick="fcMove(\''+id+'\','+i+',-1)">↑</button><button type="button" aria-label="Bajar" onclick="fcMove(\''+id+'\','+i+',1)">↓</button><button type="button" aria-label="Quitar" onclick="fcDel(\''+id+'\','+i+')">✕</button></div></div>').join('');
+  const h=$('fch_'+id); if(h) h.textContent=c.imgs.length>1?(c.imgs.length+' fotos: se van a unir en un PDF de '+c.imgs.length+' hojas, en este orden.'):(c.pdf?'Se sube el PDF tal cual.':'Un PDF, o una o varias fotos (por ejemplo, una por hoja): las fotos se unen en un solo PDF, en este orden.');
+}
+function fcHas(id){ const c=FC[id]; return !!(c&&(c.pdf||c.imgs.length)); }
+async function imgToJpeg(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('No se pudo leer la foto «'+file.name+'». Usá fotos JPG o PNG.')); i.src=url; });
+    const sc=Math.min(1, 1800/Math.max(img.naturalWidth,img.naturalHeight));
+    const w=Math.max(1,Math.round(img.naturalWidth*sc)), h=Math.max(1,Math.round(img.naturalHeight*sc));
+    const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+    const cx=cv.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,w,h); cx.drawImage(img,0,0,w,h);
+    const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.82));
+    return {bytes:new Uint8Array(await blob.arrayBuffer()), w, h};
+  } finally { URL.revokeObjectURL(url); }
+}
+function jpegsToPdf(pages){   // PDF 1.4 mínimo: una imagen JPEG por hoja A4, centrada
+  const enc=new TextEncoder(), parts=[], offs=[]; let len=0;
+  const put=x=>{ const b=(typeof x==='string')?enc.encode(x):x; parts.push(b); len+=b.length; };
+  const obj=(n,fn)=>{ offs[n]=len; put(n+' 0 obj\n'); fn(); put('\nendobj\n'); };
+  put('%PDF-1.4\n'); put(new Uint8Array([37,226,227,207,211,10]));
+  const n=pages.length, total=2+3*n, kids=pages.map((_,i)=>(3+3*i)+' 0 R').join(' ');
+  obj(1,()=>put('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2,()=>put('<< /Type /Pages /Kids ['+kids+'] /Count '+n+' >>'));
+  pages.forEach((p,i)=>{
+    const pg=3+3*i, im=pg+1, ct=pg+2, land=p.w>p.h, pw=land?841.89:595.28, ph=land?595.28:841.89, m=18;
+    const s=Math.min((pw-2*m)/p.w,(ph-2*m)/p.h), dw=p.w*s, dh=p.h*s, x=(pw-dw)/2, y=(ph-dh)/2;
+    const cs='q '+dw.toFixed(2)+' 0 0 '+dh.toFixed(2)+' '+x.toFixed(2)+' '+y.toFixed(2)+' cm /Im0 Do Q';
+    obj(pg,()=>put('<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+pw+' '+ph+'] /Resources << /XObject << /Im0 '+im+' 0 R >> >> /Contents '+ct+' 0 R >>'));
+    obj(im,()=>{ put('<< /Type /XObject /Subtype /Image /Width '+p.w+' /Height '+p.h+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length '+p.bytes.length+' >>\nstream\n'); put(p.bytes); put('\nendstream'); });
+    obj(ct,()=>put('<< /Length '+cs.length+' >>\nstream\n'+cs+'\nendstream'));
+  });
+  const xref=len;
+  put('xref\n0 '+(total+1)+'\n0000000000 65535 f \n');
+  for(let k=1;k<=total;k++) put(String(offs[k]).padStart(10,'0')+' 00000 n \n');
+  put('trailer\n<< /Size '+(total+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n');
+  return new Blob(parts,{type:'application/pdf'});
+}
+async function fcBuild(id, baseName){   // → {blob,name,type} o null si no eligió nada
+  const c=FC[id]; if(!c) return null;
+  if(c.pdf) return {blob:c.pdf, name:c.pdf.name, type:'application/pdf'};
+  if(!c.imgs.length) return null;
+  const pages=[]; for(const x of c.imgs) pages.push(await imgToJpeg(x.file));
+  return {blob:jpegsToPdf(pages), name:(baseName||'documento')+'_'+c.imgs.length+'_hojas.pdf', type:'application/pdf'};
+}
+async function uploadBuilt(built, prefix){
+  if(built.blob.size>25*1024*1024) throw new Error('El archivo supera los 25 MB');
+  const clean=built.name.replace(/[^a-zA-Z0-9._-]/g,'_'), sp=CUR.id+'/'+prefix+Date.now()+'_'+clean;
+  const {error}=await SB.storage.from('estudios').upload(sp, built.blob, {upsert:false, contentType:built.type});
+  if(error) throw new Error(error.message);
+  return sp;
+}
+function dropUpload(sp){ if(sp) SB.storage.from('estudios').remove([sp]).then(()=>{},()=>{}); }   // si falla el guardado, no queda un archivo suelto
+function noonISO(d){ return new Date(d+'T12:00:00').toISOString(); }
+function sigDate(ts){   // fecha de firma: las viejas se guardaron a las 00:00 UTC (en Argentina se veían un día antes)
+  if(!ts) return null; const s=String(ts);
+  return /T00:00:00(\.0+)?(Z|\+00(:?00)?)$/.test(s) ? toDate(s.slice(0,10)) : new Date(s);
+}
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function canFix(by){ return by===ME.user_id || can.director(); }
+
+/* ---------- Laboratorio (dentro de Documentos) ---------- */
 function labTable(data){
-  const rows=(data||[]).map(x=>{
-    const ver=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver archivo</button>':'—';
-    return '<tr><td style="white-space:nowrap">'+fmtDMShort(x.measured_at)+'</td><td>'+(x.hemoglobina??'—')+'</td><td>'+(x.hematocrito??'—')+'</td><td>'+(x.leucocitos!=null?esES(x.leucocitos):'—')+'</td><td>'+(x.plaquetas!=null?esES(x.plaquetas):'—')+'</td><td>'+(x.glucemia??'—')+'</td><td>'+(x.creatinina??'—')+'</td><td>'+(x.urea??'—')+'</td><td class="quiet">'+(x.otros?esc(x.otros):'—')+'</td><td>'+ver+'</td></tr>';
+  const rows=(data||[]).map(x=>{ REC['lab'+x.id]=x;
+    const ver=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver archivo</button>':'';
+    const fix=canFix(x.recorded_by)?'<button class="btn sm" onclick="openDateFix(\'lab\',\''+x.id+'\')">Corregir fecha</button>'+(x.storage_path?'':'<button class="btn sm" onclick="openAttachLater(\'lab\',\''+x.id+'\')">Adjuntar</button>'):'';
+    return '<tr><td style="white-space:nowrap">'+fmt(x.measured_at)+'</td><td>'+(x.hemoglobina??'—')+'</td><td>'+(x.hematocrito??'—')+'</td><td>'+(x.leucocitos!=null?esES(x.leucocitos):'—')+'</td><td>'+(x.plaquetas!=null?esES(x.plaquetas):'—')+'</td><td>'+(x.glucemia??'—')+'</td><td>'+(x.creatinina??'—')+'</td><td>'+(x.urea??'—')+'</td><td class="quiet">'+(x.otros?esc(x.otros):'—')+'</td><td style="white-space:nowrap">'+(ver+fix||'—')+'</td></tr>';
   }).join('');
-  return rows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:110px">Fecha</th><th>Hb</th><th>Hto</th><th>Leucocitos</th><th>Plaquetas</th><th>Glucemia</th><th>Creatinina</th><th>Urea</th><th style="min-width:140px">Otros</th><th>Archivo</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="meta" style="margin:0">Sin laboratorios cargados.</p>';
+  return rows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:100px">Fecha</th><th>Hb</th><th>Hto</th><th>Leucocitos</th><th>Plaquetas</th><th>Glucemia</th><th>Creatinina</th><th>Urea</th><th style="min-width:140px">Otros</th><th style="min-width:200px">Archivo</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="meta" style="margin:0">Sin laboratorios cargados.</p>';
 }
 function openLabModal(){
+  LAB_BUILT=null;
   modalOpen('Cargar laboratorio',
-    '<div class="field"><label>Archivo del laboratorio (PDF o foto) — opcional</label><input id="lbFile" type="file" accept="application/pdf,image/*"></div>'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:-4px"><span class="meta" id="lbReadMsg">Subí el archivo y tocá «Leer» para completar los valores solo; después revisalos.</span><button class="btn sm" id="lbRead" onclick="readLabFile()">Leer automáticamente</button></div>'+
+    fileCollectorHTML('lab','Archivo del laboratorio — opcional')+
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:-4px;flex-wrap:wrap"><span class="meta" id="lbReadMsg">Elegí el archivo y tocá «Leer» para completar los valores solo; después revisalos.</span><button class="btn sm" id="lbRead" onclick="readLabFile()">Leer automáticamente</button></div>'+
     '<div class="grid g3">'+
-      '<div class="field"><label>Fecha</label><input id="lbDate" type="date"></div>'+
-      '<div class="field"><label>Hemoglobina (g/dL)</label><input id="lbHb" type="number" step="0.1"></div>'+
-      '<div class="field"><label>Hematocrito (%)</label><input id="lbHto" type="number" step="0.1"></div>'+
-      '<div class="field"><label>Leucocitos (/mm³)</label><input id="lbGb" type="number"></div>'+
-      '<div class="field"><label>Plaquetas (/mm³)</label><input id="lbPlaq" type="number"></div>'+
-      '<div class="field"><label>Glucemia (mg/dL)</label><input id="lbGluc" type="number"></div>'+
-      '<div class="field"><label>Creatinina (mg/dL)</label><input id="lbCreat" type="number" step="0.01"></div>'+
-      '<div class="field"><label>Urea (mg/dL)</label><input id="lbUrea" type="number"></div>'+
+      '<div class="field"><label>Fecha del análisis</label><input id="lbDate" type="date" value="'+todayLocal()+'"></div>'+
+      '<div class="field"><label>Hemoglobina (g/dL)</label><input id="lbHb" type="number" step="0.1" inputmode="decimal"></div>'+
+      '<div class="field"><label>Hematocrito (%)</label><input id="lbHto" type="number" step="0.1" inputmode="decimal"></div>'+
+      '<div class="field"><label>Leucocitos (/mm³)</label><input id="lbGb" type="number" inputmode="numeric"></div>'+
+      '<div class="field"><label>Plaquetas (/mm³)</label><input id="lbPlaq" type="number" inputmode="numeric"></div>'+
+      '<div class="field"><label>Glucemia (mg/dL)</label><input id="lbGluc" type="number" inputmode="numeric"></div>'+
+      '<div class="field"><label>Creatinina (mg/dL)</label><input id="lbCreat" type="number" step="0.01" inputmode="decimal"></div>'+
+      '<div class="field"><label>Urea (mg/dL)</label><input id="lbUrea" type="number" inputmode="numeric"></div>'+
     '</div><div class="field"><label>Otros valores</label><input id="lbOtros" placeholder="Ej: TSH 2.1 · LDH 210 · Vit D 28…"></div>'+
     '<div class="field"><label>Observación (opcional)</label><input id="lbNotes"></div>','Guardar laboratorio', addLab);
 }
 function fileToBase64(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>{ const s=String(r.result); res(s.slice(s.indexOf(',')+1)); }; r.onerror=rej; r.readAsDataURL(f); }); }
+let LAB_BUILT=null;   // el PDF ya armado para leer, se reutiliza al guardar
 async function readLabFile(){
-  const f=$('lbFile')&&$('lbFile').files[0]; const msg=$('lbReadMsg'), btn=$('lbRead');
-  if(!f){ if(msg){msg.style.color='var(--alert)';msg.textContent='Elegí primero el archivo del laboratorio.';} return; }
-  if(f.size>8*1024*1024){ if(msg){msg.style.color='var(--alert)';msg.textContent='Para la lectura automática el archivo debe pesar menos de 8 MB.';} return; }
-  btn.disabled=true; if(msg){msg.style.color='';msg.textContent='Leyendo el laboratorio…';}
+  const msg=$('lbReadMsg'), btn=$('lbRead');
+  if(!fcHas('lab')){ if(msg){msg.style.color='var(--alert)';msg.textContent='Elegí primero el PDF o las fotos del laboratorio.';} return; }
+  btn.disabled=true; if(msg){msg.style.color='';msg.textContent=FC.lab.imgs.length?'Uniendo las fotos y leyendo el laboratorio…':'Leyendo el laboratorio…';}
   try{
-    const b64=await fileToBase64(f);
-    const resp=await SB.functions.invoke('read-lab',{body:{fileBase64:b64, mediaType:f.type||'application/pdf'}});
+    const b=await fcBuild('lab','laboratorio'); LAB_BUILT=b;
+    if(b.blob.size>8*1024*1024){ if(msg){msg.style.color='var(--alert)';msg.textContent='Para la lectura automática el archivo debe pesar menos de 8 MB. Cargá los valores a mano.';} btn.disabled=false; return; }
+    const b64=await fileToBase64(b.blob);
+    const resp=await SB.functions.invoke('read-lab',{body:{fileBase64:b64, mediaType:b.type||'application/pdf'}});
     if(resp.error){ if(msg){msg.style.color='var(--crit)';msg.textContent='No se pudo leer automáticamente. Cargá los valores a mano.';} btn.disabled=false; return; }
     const d=resp.data||{};
     if(d.error){ if(msg){msg.style.color='var(--crit)';msg.textContent=d.error;} btn.disabled=false; return; }
@@ -2681,32 +2811,73 @@ async function readLabFile(){
     if(v.measured_at) setv('lbDate', String(v.measured_at).slice(0,10));
     setv('lbHb',v.hemoglobina);setv('lbHto',v.hematocrito);setv('lbGb',v.leucocitos);setv('lbPlaq',v.plaquetas);
     setv('lbGluc',v.glucemia);setv('lbCreat',v.creatinina);setv('lbUrea',v.urea);setv('lbOtros',v.otros);
-    if(msg){msg.style.color='var(--vital)';msg.textContent='Listo. Revisá los valores y corregí lo que haga falta antes de guardar.';}
-  }catch(e){ if(msg){msg.style.color='var(--crit)';msg.textContent='No se pudo leer el archivo. Cargá los valores a mano.';} }
+    if(msg){msg.style.color='var(--vital)';msg.textContent='Listo. Revisá los valores y la fecha antes de guardar.';}
+  }catch(e){ if(msg){msg.style.color='var(--crit)';msg.textContent=e.message||'No se pudo leer el archivo. Cargá los valores a mano.';} }
   btn.disabled=false;
 }
 async function addLab(){
   const g=id=>{const e=$(id);return e&&e.value!==''?e.value:null;};
-  let sp=null; const f=$('lbFile')&&$('lbFile').files[0];
-  if(!f && !['lbHb','lbHto','lbGb','lbPlaq','lbGluc','lbCreat','lbUrea','lbOtros'].some(id=>g(id)!=null)){ toast('Cargá al menos un valor o adjuntá el archivo'); return false; }
+  const hasFile=fcHas('lab');
+  if(!hasFile && !['lbHb','lbHto','lbGb','lbPlaq','lbGluc','lbCreat','lbUrea','lbOtros'].some(id=>g(id)!=null)){ toast('Cargá al menos un valor o adjuntá el archivo'); return false; }
   const day=$('lbDate').value||todayLocal();
-  const sameLab=(FCALC.labs||[]).find(l=>{ const d=new Date(l.measured_at); return (d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'))===day; });
+  const sameLab=(FCALC.labs||[]).find(l=>ymd(new Date(l.measured_at))===day);
   if(sameLab){
     const vals=ANALITOS.filter(a=>sameLab[a[0]]!=null).map(a=>a[1]+' '+sameLab[a[0]]).join(' · ');
-    const ch=await askChoice({where:'Al cargar un laboratorio', title:'Ya hay un laboratorio del '+fmt(day), existing:'Laboratorio · '+fmtDMShort(sameLab.measured_at), detail:(vals||'Sin valores cargados')+(sameLab.storage_path?' · con archivo adjunto':''),
+    const ch=await askChoice({where:'Al cargar un laboratorio', title:'Ya hay un laboratorio del '+fmt(day), existing:'Laboratorio · '+fmt(sameLab.measured_at), detail:(vals||'Sin valores cargados')+(sameLab.storage_path?' · con archivo adjunto':''),
       why:'Si es el mismo análisis, no hace falta cargarlo otra vez.', primary:'Ver el que ya está', secondary:'Es otro análisis'});
     if(ch==='primary'){ modalClose(); DOC_TAB='labs'; setTab('docs'); return false; }
     if(ch!=='secondary') return false;
   }
-  if(f){ if(f.size>25*1024*1024){toast('El archivo supera los 25 MB');return false;}
-    const clean=f.name.replace(/[^a-zA-Z0-9._-]/g,'_'); sp=CUR.id+'/lab_'+Date.now()+'_'+clean;
-    const {error:e1}=await SB.storage.from('estudios').upload(sp,f,{upsert:false}); if(e1){toast(e1.message);return false;} }
-  const rec={patient_id:CUR.id, recorded_by:ME.user_id, storage_path:sp,
-    measured_at: $('lbDate').value? new Date($('lbDate').value+'T12:00:00').toISOString() : new Date().toISOString(),
+  let sp=null;
+  if(hasFile){ try{ const b=LAB_BUILT||await fcBuild('lab','laboratorio'); sp=await uploadBuilt(b,'lab_'); }catch(e){ toast(e.message); return false; } }
+  const rec={patient_id:CUR.id, recorded_by:ME.user_id, storage_path:sp, measured_at:noonISO(day),
     hemoglobina:g('lbHb'),hematocrito:g('lbHto'),leucocitos:g('lbGb'),plaquetas:g('lbPlaq'),glucemia:g('lbGluc'),creatinina:g('lbCreat'),urea:g('lbUrea'),otros:g('lbOtros'),notes:g('lbNotes')};
-  const {error}=await DB().from('labs').insert(rec); if(error){toast(error.message);return false;}
+  const {error}=await DB().from('labs').insert(rec); if(error){ dropUpload(sp); toast(error.message); return false; }
+  LAB_BUILT=null; fcReset('lab');
   toast('Laboratorio guardado'); DOC_TAB='labs'; afterChange(); return true;
 }
+
+/* ---------- Corregir la fecha de un laboratorio, consentimiento o estudio ----------
+   Queda el rastro: entrada firmada «Corrección de fecha» en el registro + auditoría (valor anterior y nuevo). */
+function recInfo(kind,id){
+  const r=REC[kind+id]; if(!r) return null;
+  if(kind==='lab') return {r, by:r.recorded_by, label:'Laboratorio', cur:ymd(new Date(r.measured_at)), field:'Fecha del análisis'};
+  if(kind==='consent') return {r, by:r.created_by, label:'Consentimiento · '+(CONSENT_KIND[r.kind]||r.kind), cur:r.signed_at?ymd(sigDate(r.signed_at)):'', field:'Fecha de firma'};
+  return {r, by:r.uploaded_by, label:'Estudio «'+(r.title||'documento')+'»', cur:r.study_date||'', field:'Fecha del estudio'};
+}
+function openDateFix(kind,id){
+  const it=recInfo(kind,id); if(!it) return;
+  if(!canFix(it.by)){ toast('Solo quien lo cargó o la dirección médica pueden corregirlo'); return; }
+  modalOpen('Corregir fecha',
+    '<p class="meta" style="margin:0">'+esc(it.label)+'. Queda registrado en la historia: la fecha anterior, la nueva, quién la cambió y cuándo.</p>'+
+    '<div class="field"><label>'+esc(it.field)+'</label><input id="dfDate" type="date" value="'+esc(it.cur)+'" max="'+todayLocal()+'"></div>','Guardar fecha', async ()=>{
+      const d=$('dfDate').value; if(!d){ toast('Elegí la fecha'); return false; }
+      if(d===it.cur){ toast('Es la misma fecha'); return false; }
+      let error;
+      if(kind==='lab') ({error}=await DB().rpc('update_lab',{p_id:id, p_measured_at:noonISO(d), p_storage_path:null}));
+      else if(kind==='consent'){ const r=await DB().from('consents').update({signed_at:noonISO(d)}).eq('id',id).select('id'); error=r.error||((!r.data||!r.data.length)?{message:'No se pudo guardar'}:null); }
+      else { const r=await DB().from('attachments').update({study_date:d}).eq('id',id).select('id'); error=r.error||((!r.data||!r.data.length)?{message:'No se pudo guardar'}:null); }
+      if(error){ toast(error.message); return false; }
+      await DB().from('notes').insert({patient_id:CUR.id, discipline:(ROLE_TO_DISC[ME.role]||'oncologia'), author_id:ME.user_id, created_by:ME.user_id,
+        content:DATE_CORR+' · '+it.label+': «'+(it.cur?fmt(it.cur):'sin fecha')+'» → «'+fmt(d)+'»'});
+      toast('Fecha corregida'); afterChange(); return true;
+    });
+}
+/* adjuntar el PDF o las fotos a un laboratorio o consentimiento que se guardó sin archivo */
+function openAttachLater(kind,id){
+  const it=recInfo(kind,id); if(!it) return;
+  if(!canFix(it.by)){ toast('Solo quien lo cargó o la dirección médica pueden adjuntarle el archivo'); return; }
+  modalOpen('Adjuntar archivo', '<p class="meta" style="margin:0">'+esc(it.label)+(it.cur?' · '+fmt(it.cur):'')+'</p>'+fileCollectorHTML('later','Archivo'),'Adjuntar', async ()=>{
+    if(!fcHas('later')){ toast('Elegí el PDF o las fotos'); return false; }
+    let sp; try{ sp=await uploadBuilt(await fcBuild('later', kind==='lab'?'laboratorio':'consentimiento'), kind==='lab'?'lab_':'consent_'); }catch(e){ toast(e.message); return false; }
+    let error;
+    if(kind==='lab') ({error}=await DB().rpc('update_lab',{p_id:id, p_measured_at:null, p_storage_path:sp}));
+    else { const r=await DB().from('consents').update({storage_path:sp}).eq('id',id).select('id'); error=r.error||((!r.data||!r.data.length)?{message:'No se pudo guardar'}:null); }
+    if(error){ dropUpload(sp); toast(error.message); return false; }
+    fcReset('later'); toast('Archivo adjuntado'); afterChange(); return true;
+  });
+}
+
 
 /* ---------- Indicaciones ---------- */
 /* ---------- Tratamientos: infusiones vigentes + infusiones registradas + enfermería + historial ---------- */
@@ -3058,17 +3229,19 @@ let DOC_TAB='todos';
 const FILE_ICO='<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
 const LINK_ICO='<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
 function estudiosFiles(atts){
-  return atts.map(a=>{
+  return atts.map(a=>{ REC['doc'+a.id]=a;
     const open = a.url? 'window.open(\''+esc(a.url)+'\',\'_blank\')' : 'verEstudio(\''+(a.storage_path||'').replace(/'/g,'')+'\')';
-    return '<a href="#" onclick="'+open+';return false">'+(a.url?LINK_ICO:FILE_ICO)+'<span class="fn">'+esc(a.title||'Estudio')+'</span>'+(a.discipline?'<span class="tag disc">'+esc(EVOL_AREA[a.discipline]||DISC_LABEL[a.discipline]||a.discipline)+'</span>':'')+'<span class="fd">'+fmtDMShort(a.created_at)+'</span></a>';
+    const fix = canFix(a.uploaded_by)?'<button type="button" class="fd-fix" aria-label="Corregir la fecha del estudio" onclick="event.stopPropagation();event.preventDefault();openDateFix(\'doc\',\''+a.id+'\')">✎</button>':'';
+    return '<a href="#" onclick="'+open+';return false">'+(a.url?LINK_ICO:FILE_ICO)+'<span class="fn">'+esc(a.title||'Estudio')+'</span>'+(a.discipline?'<span class="tag disc">'+esc(EVOL_AREA[a.discipline]||DISC_LABEL[a.discipline]||a.discipline)+'</span>':'')+
+      '<span class="fd">'+(a.study_date?'Estudio '+fmt(a.study_date):'Subido '+fmtDMShort(a.created_at))+'</span>'+fix+'</a>';
   }).join('');
 }
 function consentCards(cons){
-  const KIND={hc_compartida:'Historia clínica compartida', vitamina_c:'Megadosis de Vitamina C'};
-  return cons.map(x=>{
+  return cons.map(x=>{ REC['consent'+x.id]=x;
     const ver=x.storage_path?'<button class="btn sm" onclick="verEstudio(\''+x.storage_path.replace(/'/g,'')+'\')">Ver adjunto</button>':(x.document_url?'<a class="btn sm" href="'+esc(x.document_url)+'" target="_blank" rel="noopener">Ver enlace</a>':'');
-    return '<div class="entry"><div class="eh"><span class="tag ok"><span class="d"></span>'+esc(KIND[x.kind]||x.kind)+'</span>'+(x.signed_at?'<span class="au">firmado '+fmtDMShort(x.signed_at)+'</span>':'<span class="au">sin fecha de firma</span>')+'<span class="meta" style="margin-left:auto">'+fmtDMShort(x.created_at)+' · '+esc(lastNameOf(whoName(x.created_by)))+'</span></div>'+
-      (x.notes?'<p class="bd">'+esc(x.notes)+'</p>':'')+(ver?'<div class="ft">'+ver+'</div>':'')+'</div>';
+    const fix=canFix(x.created_by)?'<button class="btn sm" onclick="openDateFix(\'consent\',\''+x.id+'\')">Corregir fecha</button>'+(x.storage_path?'':'<button class="btn sm" onclick="openAttachLater(\'consent\',\''+x.id+'\')">Adjuntar firmado</button>'):'';
+    return '<div class="entry"><div class="eh"><span class="tag ok"><span class="d"></span>'+esc(CONSENT_KIND[x.kind]||x.kind)+'</span>'+(x.signed_at?'<span class="au">firmado el '+fmt(sigDate(x.signed_at))+'</span>':'<span class="au">sin fecha de firma</span>')+'<span class="meta" style="margin-left:auto">cargado '+fmtDMShort(x.created_at)+' · '+esc(lastNameOf(whoName(x.created_by)))+'</span></div>'+
+      (x.notes?'<p class="bd">'+esc(x.notes)+'</p>':'')+((ver||fix)?'<div class="ft">'+ver+fix+'</div>':'')+'</div>';
   }).join('');
 }
 function docSection(title,inner){ return '<div style="margin-top:4px"><div class="sec-h" style="margin:14px 2px 8px"><span class="sec-t">'+title+'</span></div>'+inner+'</div>'; }
@@ -3086,9 +3259,8 @@ async function renderDocs(){
     '<button class="'+(t==='estudios'?'on':'')+'" onclick="setDoc(\'estudios\')">Estudios · '+atts.length+'</button>'+
     '<button class="'+(t==='labs'?'on':'')+'" onclick="setDoc(\'labs\')">Laboratorios · '+labs.length+'</button>'+
     '<button class="'+(t==='consent'?'on':'')+'" onclick="setDoc(\'consent\')">Consentimientos · '+cons.length+'</button></div>';
-  // acciones según el filtro
   let acts='';
-  if(t==='estudios'||t==='todos') acts+='<button class="btn sm" onclick="openUploadModal()">Subir archivo</button><button class="btn sm" onclick="openLinkModal()">Agregar link</button>';
+  if(t==='estudios'||t==='todos') acts+='<button class="btn sm" onclick="openUploadModal()">Subir estudio</button><button class="btn sm" onclick="openLinkModal()">Agregar link</button>';
   if(t==='labs'||t==='todos') acts+='<button class="btn primary sm" onclick="openLabModal()">Cargar laboratorio</button>';
   if(t==='consent'||t==='todos') acts+='<button class="btn sm" onclick="openConsentModal()">Registrar consentimiento</button>';
   const actRow='<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">'+acts+'</div>';
@@ -3104,64 +3276,69 @@ async function renderDocs(){
 }
 function setDoc(t){ DOC_TAB=t; renderDocs(); }
 function openUploadModal(){
-  modalOpen('Subir archivo','<div class="field"><label>Título / descripción</label><input id="atTitle" placeholder="Ej: Biopsia mama 03/2026, TAC, laboratorio…"></div><div class="field"><label>Archivo (PDF, imagen, etc.)</label><input id="atFile" type="file"></div>','Subir archivo', uploadEstudio);
+  modalOpen('Subir estudio',
+    '<div class="field"><label>Título / descripción *</label><input id="atTitle" placeholder="Ej: Biopsia de mama, TAC de tórax…"></div>'+
+    '<div class="field"><label>Fecha del estudio</label><input id="atDate" type="date" max="'+todayLocal()+'"></div>'+
+    fileCollectorHTML('doc','Archivo'),'Subir estudio', uploadEstudio);
 }
 async function uploadEstudio(){
-  const f=$('atFile').files[0]; if(!f){toast('Elegí un archivo');return false;}
-  if(f.size>25*1024*1024){toast('El archivo supera los 25 MB');return false;}
-  const ttl=($('atTitle').value||f.name).trim();
+  if(!fcHas('doc')){ toast('Elegí el PDF o las fotos'); return false; }
+  const ttl=($('atTitle').value||'').trim(); if(!ttl){ toast('Ponele un título al estudio'); return false; }
   const {data:same}=await DB().from('attachments').select('title,created_at,uploaded_by,storage_path').eq('patient_id',CUR.id);
-  const dupA=(same||[]).find(a=>normTxt(a.title)===normTxt(ttl) || (a.storage_path||'').endsWith('_'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_')));
+  const pdfName=FC.doc.pdf?FC.doc.pdf.name.replace(/[^a-zA-Z0-9._-]/g,'_'):null;
+  const dupA=(same||[]).find(a=>normTxt(a.title)===normTxt(ttl) || (pdfName && (a.storage_path||'').endsWith('_'+pdfName)));
   if(dupA){
-    const ch=await askChoice({where:'Al subir un documento', title:'Parece que ese archivo ya está cargado', existing:dupA.title||'Documento', detail:'Subido el '+fmtDMShort(dupA.created_at)+' por '+whoName(dupA.uploaded_by),
+    const ch=await askChoice({where:'Al subir un estudio', title:'Parece que ese estudio ya está cargado', existing:dupA.title||'Documento', detail:'Subido el '+fmtDMShort(dupA.created_at)+' por '+whoName(dupA.uploaded_by),
       why:'Evita tener dos copias del mismo estudio.', primary:'No subirlo', secondary:'Subirlo igual'});
     if(ch!=='secondary') return false;
   }
-  const clean=f.name.replace(/[^a-zA-Z0-9._-]/g,'_'); const path=CUR.id+'/'+Date.now()+'_'+clean;
-  const {error:e1}=await SB.storage.from('estudios').upload(path,f,{upsert:false}); if(e1){toast(e1.message);return false;}
-  const {error:e2}=await DB().from('attachments').insert({patient_id:CUR.id, title:($('atTitle').value||f.name), discipline:ROLE_TO_DISC[ME.role], storage_path:path, kind:'archivo', uploaded_by:ME.user_id});
-  if(e2){toast(e2.message);return false;}
-  toast('Estudio subido'); afterChange(); return true;
+  let sp; try{ sp=await uploadBuilt(await fcBuild('doc', ttl.slice(0,40)), ''); }catch(e){ toast(e.message); return false; }
+  const {error:e2}=await DB().from('attachments').insert({patient_id:CUR.id, title:ttl, study_date:$('atDate').value||null, discipline:ROLE_TO_DISC[ME.role], storage_path:sp, kind:'archivo', uploaded_by:ME.user_id});
+  if(e2){ dropUpload(sp); toast(e2.message); return false; }
+  fcReset('doc'); toast('Estudio subido'); afterChange(); return true;
 }
 function openLinkModal(){
-  modalOpen('Agregar link','<div class="field"><label>Título</label><input id="lkTitle" placeholder="Ej: TAC en visor online, carpeta de Drive…"></div><div class="field"><label>Link (URL)</label><input id="lkUrl" placeholder="https://…"></div>','Guardar link', addEstudioLink);
+  modalOpen('Agregar link','<div class="field"><label>Título</label><input id="lkTitle" placeholder="Ej: TAC en visor online, carpeta de Drive…"></div><div class="field"><label>Link (URL)</label><input id="lkUrl" placeholder="https://…"></div>'+
+    '<div class="field"><label>Fecha del estudio</label><input id="lkDate" type="date" max="'+todayLocal()+'"></div>','Guardar link', addEstudioLink);
 }
 async function addEstudioLink(){
   const t=($('lkTitle').value||'').trim(), u=($('lkUrl').value||'').trim();
   if(!u){toast('Pegá el link');return false;} if(!t){toast('Ponele un título al link');return false;}
   let url=u; if(!/^https?:\/\//i.test(url)) url='https://'+url;
-  const {error}=await DB().from('attachments').insert({patient_id:CUR.id, title:t, url:url, kind:'link', discipline:ROLE_TO_DISC[ME.role], uploaded_by:ME.user_id});
+  const {error}=await DB().from('attachments').insert({patient_id:CUR.id, title:t, url:url, study_date:$('lkDate').value||null, kind:'link', discipline:ROLE_TO_DISC[ME.role], uploaded_by:ME.user_id});
   if(error){toast(error.message);return false;}
   toast('Link agregado'); afterChange(); return true;
 }
 function openConsentModal(){
   modalOpen('Registrar consentimiento',
-    '<div class="grid g2"><div class="field"><label>Tipo</label><select id="coKind"><option value="hc_compartida">Historia clínica compartida</option><option value="vitamina_c">Megadosis de Vitamina C</option></select></div>'+
-    '<div class="field"><label>Fecha de firma</label><input id="coDate" type="date"></div></div>'+
-    '<div class="field"><label>Adjuntar consentimiento firmado (PDF/imagen) — opcional</label><input id="coFile" type="file"></div>'+
-    '<div class="field"><label>Observación (opcional)</label><input id="coNotes"></div>','Guardar consentimiento', addConsent);
+    '<div class="grid g2"><div class="field"><label>Tipo</label><select id="coKind">'+Object.keys(CONSENT_KIND).map(k=>'<option value="'+k+'">'+CONSENT_KIND[k]+'</option>').join('')+'</select></div>'+
+    '<div class="field"><label>Fecha de firma</label><input id="coDate" type="date" value="'+todayLocal()+'" max="'+todayLocal()+'"></div></div>'+
+    fileCollectorHTML('consent','Consentimiento firmado — opcional')+
+    '<div class="field"><label>Observación (opcional)</label><input id="coNotes" placeholder="Si elegiste «Otro», aclaralo acá"></div>','Guardar consentimiento', addConsent);
 }
 async function addConsent(){
   const kind=$('coKind').value, prevC=FCALC.consBy&&FCALC.consBy[kind];
-  if(prevC && prevC.signed_at){
-    const KIND={hc_compartida:'historia clínica compartida', vitamina_c:'megadosis de vitamina C'};
-    const ch=await askChoice({where:'Al registrar un consentimiento', title:'Ya hay un consentimiento firmado de '+(KIND[kind]||kind), existing:'Firmado el '+fmt(prevC.signed_at), detail:prevC.storage_path?'Con el documento firmado adjunto':'Sin documento adjunto',
+  if(kind==='otro' && !($('coNotes').value||'').trim()){ toast('Aclará en la observación de qué es el consentimiento'); return false; }
+  if(prevC && prevC.signed_at && kind!=='otro'){
+    const ch=await askChoice({where:'Al registrar un consentimiento', title:'Ya hay un consentimiento firmado de '+(CONSENT_KIND[kind]||kind).toLowerCase(), existing:'Firmado el '+fmt(sigDate(prevC.signed_at)), detail:prevC.storage_path?'Con el documento firmado adjunto':'Sin documento adjunto',
       why:'Si es una versión nueva, se registra y pasa a ser la vigente; la anterior queda guardada.', primary:'No registrarlo', secondary:'Registrar la versión nueva'});
     if(ch!=='secondary') return false;
   }
-  let sp=null; const f=$('coFile').files[0];
-  if(f){ if(f.size>25*1024*1024){toast('Máximo 25 MB');return false;}
-    const clean=f.name.replace(/[^a-zA-Z0-9._-]/g,'_'); sp=CUR.id+'/consent_'+Date.now()+'_'+clean;
-    const {error:e1}=await SB.storage.from('estudios').upload(sp,f,{upsert:false}); if(e1){toast(e1.message);return false;} }
-  const rec={patient_id:CUR.id, kind:$('coKind').value, signed_at:$('coDate').value||null, storage_path:sp, notes:($('coNotes').value||null), created_by:ME.user_id};
-  const {error}=await DB().from('consents').insert(rec); if(error){toast(error.message);return false;}
-  toast('Consentimiento guardado'); afterChange(); return true;
+  let sp=null;
+  if(fcHas('consent')){ try{ sp=await uploadBuilt(await fcBuild('consent','consentimiento'),'consent_'); }catch(e){ toast(e.message); return false; } }
+  const d=$('coDate').value;
+  const rec={patient_id:CUR.id, kind, signed_at:d?noonISO(d):null, storage_path:sp, notes:($('coNotes').value||null), created_by:ME.user_id};
+  const {error}=await DB().from('consents').insert(rec); if(error){ dropUpload(sp); toast(error.message); return false; }
+  fcReset('consent'); toast('Consentimiento guardado'); afterChange(); return true;
 }
 async function verEstudio(path){
+  const w=window.open('','_blank');   // se abre ya (en el iPhone, abrir después de esperar el link queda bloqueado)
   const {data,error}=await SB.storage.from('estudios').createSignedUrl(path,120);
-  if(error){toast(error.message);return;}
-  window.open(data.signedUrl,'_blank');
+  if(error){ if(w) w.close(); toast(error.message); return; }
+  if(w) w.location.href=data.signedUrl;
+  else modalOpen('Archivo listo','<a class="btn primary" href="'+esc(data.signedUrl)+'" target="_blank" rel="noopener">Abrir el archivo</a>','Cerrar',()=>true);   // si el navegador bloqueó la ventana
 }
+
 
 /* ---------- Auditoría (solo dirección) ---------- */
 function auditDiff(a){
@@ -3193,7 +3370,7 @@ async function renderAudit(){
 
 /* ===================== ETIQUETAS AUDITORÍA ===================== */
 const TABLE_LABEL={patients:'Ficha del paciente',notes:'Evolución',vitals:'Signos vitales',medications:'Medicación',vitc_administrations:'Infusión',infusion_components:'Catálogo de componentes',infusion_templates:'Plantilla de protocolo',indication_components:'Componente indicado',infusion_components_given:'Componente administrado',indications:'Indicación',consents:'Consentimiento',attachments:'Estudio/adjunto',appointments:'Turno',labs:'Laboratorio',staff:'Usuario'};
-const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',treatment_response:'Evaluación de respuesta',response_date:'Fecha de evaluación',comentarios:'Comentarios',g6pd_status:'G6PD',referred_by:'Derivado por',ecog:'ECOG',karnofsky:'Karnofsky',weight_kg:'Peso (kg)',height_cm:'Talla (cm)',physical_exam:'Examen físico',problem_list:'Lista de problemas',cie10_code:'CIE-10',tnm_t:'TNM T',tnm_n:'TNM N',tnm_m:'TNM M',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma',active:'Vigente',detail:'Detalle',vitc_target_dose_g:'Dosis (g)',vitc_frequency:'Frecuencia',vitc_dilution_ml:'Dilución (ml)',vitc_rate_gtt_min:'Velocidad (gtt/min)',start_date:'Desde',end_date:'Hasta',sessions_planned:'Sesiones indicadas',suspended_at:'Suspendida',suspend_reason:'Motivo de suspensión',replaced_by:'Reemplazada por',indication_id:'Indicación',protocol_name:'Protocolo',vehicle:'Vehículo',name:'Nombre',unit:'Unidad',dose:'Dosis',usual_dose:'Dosis habitual',max_dose:'Dosis máxima',g6pd_alert:'Aviso G6PD',given:'Administrado',reason:'Motivo'};
+const FIELD_LABEL={first_name:'Nombre',last_name:'Apellido',full_name:'Nombre completo',doc_id:'Documento',doc_type:'Tipo doc',sex:'Sexo',birth_date:'Fecha nac.',phone:'Teléfono',email:'Email',address:'Domicilio',city:'Localidad',province:'Provincia',coverage:'Obra social',coverage_plan:'Plan',affiliate_number:'N° afiliado',nationality:'Nacionalidad',marital_status:'Estado civil',occupation:'Ocupación',personal_history:'Antec. personales',family_history:'Antec. familiares',toxic_habits:'Hábitos tóxicos',usual_medication:'Medicación habitual',allergies:'Alergias',base_diagnosis:'Diagnóstico',diagnosis_date:'Fecha diagnóstico',treating_oncologist:'Oncólogo',stage:'Estadificación',current_illness:'Enfermedad actual',biopsy_protocol:'Biopsia y protocolo',histology:'Histología',treatment:'Tratamiento',care_plan:'Plan',treatment_response:'Evaluación de respuesta',response_date:'Fecha de evaluación',comentarios:'Comentarios',g6pd_status:'G6PD',referred_by:'Derivado por',ecog:'ECOG',karnofsky:'Karnofsky',weight_kg:'Peso (kg)',height_cm:'Talla (cm)',physical_exam:'Examen físico',problem_list:'Lista de problemas',cie10_code:'CIE-10',tnm_t:'TNM T',tnm_n:'TNM N',tnm_m:'TNM M',content:'Texto',status:'Estado',absence_reason:'Motivo ausencia',starts_at:'Fecha/hora',title:'Título',notes:'Observación',dose_g:'Dosis',signed_at:'Fecha firma',active:'Vigente',detail:'Detalle',vitc_target_dose_g:'Dosis (g)',vitc_frequency:'Frecuencia',vitc_dilution_ml:'Dilución (ml)',vitc_rate_gtt_min:'Velocidad (gtt/min)',start_date:'Desde',end_date:'Hasta',sessions_planned:'Sesiones indicadas',suspended_at:'Suspendida',suspend_reason:'Motivo de suspensión',replaced_by:'Reemplazada por',indication_id:'Indicación',protocol_name:'Protocolo',vehicle:'Vehículo',name:'Nombre',unit:'Unidad',dose:'Dosis',usual_dose:'Dosis habitual',max_dose:'Dosis máxima',g6pd_alert:'Aviso G6PD',given:'Administrado',reason:'Motivo',study_date:'Fecha del estudio',measured_at:'Fecha del análisis',storage_path:'Archivo'};
 
 /* ===================== AGENDA ===================== */
 function fmtDTShort(d){ if(!d)return ''; const x=new Date(d); return x.toLocaleDateString('es-AR',{weekday:'short',day:'2-digit',month:'2-digit'})+' '+x.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
