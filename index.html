@@ -703,6 +703,21 @@ img,svg,video,canvas{max-width:100%}
   .page{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
   .gn-in{padding-bottom:calc(40px + env(safe-area-inset-bottom))}
 }
+
+/* ===== Legibilidad del hilo clínico ===== */
+.entry.tl-ev{padding:11px 15px;background:var(--panel-2);border-color:var(--div)}
+.entry.tl-ev .tl-t{font-size:13.5px;font-weight:600}
+.entry.tl-ev .bd,.entry.tl-ev .tl-b{font-size:12.5px;color:var(--muted);margin-top:4px}
+.entry.tl-ev .av.sm{width:22px;height:22px;font-size:10px;border-radius:7px}
+.entry.tl-ev .au{font-size:12.5px;font-weight:500;color:var(--muted)}
+.entry:not(.tl-ev) .bd{font-size:15px;line-height:1.65;color:var(--ink-2)}
+.tl-day{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:22px 2px 8px}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.scroll table{min-width:max-content}
+@media(max-width:760px){
+  #page{padding-bottom:96px}
+  .tabs,.tl-chips{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+}
 </style>
 <body>
 
@@ -1496,12 +1511,12 @@ async function renderFicha(){
        '<div class="line">'+line.join('')+'</div>'+
        '<div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap">'+tags.join('')+'</div></div>'+
      '<div class="acts">'+
-       '<button class="btn primary" onclick="openRegistrar()">'+PLUS+'Registrar</button>'+
+       '<button class="btn primary" onclick="openRegistrar()">'+PLUS+'Nueva nota</button>'+
        '<button class="btn" onclick="printPatient()">'+ICPRINT+'Exportar HC</button></div></div>'+
    '<div class="subnav-wrap"><div class="tabs" role="tablist" id="tabBar">'+
      tabs.map(([t,l])=>'<button class="'+(curTab===t?'on':'')+'" data-t="'+t+'" onclick="setTab(\''+t+'\')">'+l+'</button>').join('')+'</div></div>'+
    '<div class="fgrid"><div class="side-a" id="sideA"></div><div class="stack" id="paneHost"></div><div id="sideB"></div></div>'+
-   '<button class="fab" onclick="openRegistrar()">'+PLUS+'Registrar</button>';
+   '<button class="fab" onclick="openRegistrar()">'+PLUS+'Nueva nota</button>';
   renderSideA(); renderSideB();
   setTab(curTab);
 }
@@ -1528,7 +1543,7 @@ function renderSideA(){
     (CUR.diagnosis_date?'<div class="row"><span class="k">Fecha de diagnóstico</span><span class="v">'+fmt(CUR.diagnosis_date)+'</span></div>':'')+
     (CUR.treating_oncologist?'<div class="row"><span class="k">Oncólogo tratante</span><span class="v">'+esc(CUR.treating_oncologist)+'</span></div>':'');
   const com = CUR.comentarios
-    ? '<p class="note" style="margin:0">«'+esc(CUR.comentarios)+'»</p><div class="meta" style="margin-top:12px">Campo Comentarios de la ficha</div>'
+    ? '<p class="note" style="margin:0">«'+esc(CUR.comentarios)+'»</p>'
     : '<p class="meta" style="margin:0">Sin comentarios cargados.</p>';
   $('sideA').innerHTML='<div class="sheet">'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Datos críticos</span><span class="meta">De la ficha</span></div><div class="crit-list">'+crit+'</div></div>'+
@@ -1548,7 +1563,7 @@ function renderSideB(){
       '<div class="t">'+esc(DISC_LABEL[a.discipline]||a.title||'Turno')+'</div><div class="s">'+(prof?esc(prof.full_name):'—')+' · '+({programado:'programado',asistio:'asistió',ausente:'ausente'}[a.status]||a.status)+'</div></div></div>';
   }).join('') : '<div class="meta">Sin turnos futuros programados.</div>';
   const asistTxt = f.asist.tot? ('Asistencia: '+f.asist.as+' de '+f.asist.tot+' turnos en los últimos 90 días.') : 'Sin turnos en los últimos 90 días.';
-  const ppl = f.people.length? f.people.map(x=>'<div class="p"><span class="av">'+esc(initials(x.s.full_name))+'</span><div><div class="n">'+esc(x.s.full_name)+'</div><div class="r">'+(ROLE_LABEL[x.s.role]||'')+' · '+x.n+' registro'+(x.n===1?'':'s')+'</div></div></div>').join('') : '<div class="meta">Todavía nadie registró atención.</div>';
+  const ppl = f.people.length? f.people.map(x=>'<div class="p"><span class="av">'+esc(initials(x.s.full_name))+'</span><div><div class="n">'+esc(x.s.full_name)+'</div><div class="r">'+(ROLE_LABEL[x.s.role]||'')+'</div></div></div>').join('') : '<div class="meta">Todavía nadie registró atención.</div>';
   const consRow=(kind,label)=>{const c=f.consBy[kind];return '<div class="row"><span class="k">'+label+'</span><span class="v">'+(c?'<span class="st ok"><span class="d"></span>'+(c.signed_at?fmtDMShort(sigDate(c.signed_at)):fmtDMShort(c.created_at))+'</span>':'<span class="st warn"><span class="d"></span>Falta</span>')+'</span></div>';};
   let logHtml='';
   if(can.director()){
@@ -1560,7 +1575,7 @@ function renderSideB(){
   $('sideB').innerHTML='<div class="sheet">'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Próximos turnos</span><button class="btn sm" onclick="openApptModal(\''+CUR.id+'\')">Agendar</button></div>'+
       '<div class="tl">'+tl+'</div><div class="meta" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--div)">'+asistTxt+'</div></div>'+
-    '<div class="sec"><div class="sec-h"><span class="sec-t">Quiénes la atienden</span><span class="meta">Por sus registros</span></div><div class="people">'+ppl+'</div></div>'+
+    '<div class="sec"><div class="sec-h"><span class="sec-t">Quiénes la atienden</span></div><div class="people">'+ppl+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Consentimientos</span></div><div class="rows">'+consRow('vitamina_c','Megadosis de Vit. C')+(f.consBy.sueroterapia?consRow('sueroterapia','Sueroterapia'):'')+consRow('hc_compartida','Historia clínica compartida')+'</div></div>'+
     logHtml+'</div>';
 }
@@ -1652,9 +1667,9 @@ function renderResumen(){
   const vitcBlock = (vc.length||f.ind) ? '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Infusiones</span>'+vitcHead+'</div>'+
       '<div class="ring-row"><svg class="ring" viewBox="0 0 120 120" role="img" aria-label="'+vc.length+' administraciones"><circle cx="60" cy="60" r="48" fill="none" stroke="#E2E7DD" stroke-width="7" stroke-dasharray="1.6 6.4"/>'+
         (vc.length?'<circle cx="60" cy="60" r="48" fill="none" stroke="#0E9BB5" stroke-width="7" stroke-dasharray="1.6 6.4"/>':'')+
-        '<text class="lbl" x="60" y="60" text-anchor="middle">'+vc.length+'</text><text class="sub" x="60" y="76" text-anchor="middle">ADMINISTRACIONES</text></svg>'+
+        '<text class="lbl" x="60" y="60" text-anchor="middle">'+vc.length+'</text><text class="sub" x="60" y="76" text-anchor="middle">INFUSIONES</text></svg>'+
       '<div class="stats">'+
-        '<div><div class="k">Última administración</div><div class="v">'+(lastV?fmtDMShort(lastV.administered_at)+' · '+esc(adminCompsTxt(lastV)):'—')+'</div><div class="s">'+(lastV?((lastV.rate_g_min?lastV.rate_g_min+' gtt/min':'')+(lastV.dilution_ml?' en '+lastV.dilution_ml+' ml':''))||'—':'—')+'</div></div>'+
+        '<div><div class="k">Última administración</div><div class="v">'+(lastV?fmtDMShort(lastV.administered_at)+' · '+esc(adminCompsTxt(lastV)):'—')+'</div><div class="s">'+(lastV?((lastV.rate_g_min?lastV.rate_g_min+' '+(lastV.rate_unit||'gtt/min'):'')+(lastV.dilution_ml?' en '+lastV.dilution_ml+' ml':''))||'—':'—')+'</div></div>'+
         '<div><div class="k">Indicación vigente</div><div class="v">'+(f.ind?esc(indTitle(f.ind))+((f.inds||[]).length>1?' (+'+(f.inds.length-1)+')':''):'—')+'</div><div class="s">'+(f.ind?('Activa del '+fmtDMShort(f.ind.created_at)+(f.ind.vitc_frequency?' · '+(FREQ_LABEL[f.ind.vitc_frequency]||f.ind.vitc_frequency):'')):'Sin indicación activa')+'</div></div>'+
         '<div><div class="k">Eventos adversos</div><div class="v">'+(advCount?advCount:'Ninguno')+'</div><div class="s">En '+vc.length+' '+(vc.length===1?'administración':'administraciones')+'</div></div>'+
       '</div></div></div></section>' : '';
@@ -1672,9 +1687,7 @@ function renderResumen(){
     : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Última evolución</span></div><p class="meta" style="margin:0">Todavía no hay evoluciones cargadas.</p></div></section>';
 
   host.innerHTML=
-    '<div class="callout" style="border-color:rgba(222,242,196,.22);background:rgba(222,242,196,.045)"><span class="dot-live" style="margin-top:6px;flex:none"></span>'+
-      '<p style="color:var(--ink-2)">Esta pestaña no se carga: se arma sola con lo que ya está en la historia, los turnos, los laboratorios y las administraciones de megadosis.</p></div>'+
-    '<section class="card"><div class="sec" style="padding-bottom:0"><div class="sec-h" style="margin-bottom:4px"><span class="sec-t">Áreas del plan integrativo</span><span class="meta">Según la actividad registrada</span></div></div>'+
+    '<section class="card"><div class="sec" style="padding-bottom:0"><div class="sec-h" style="margin-bottom:4px"><span class="sec-t">Áreas del plan integrativo</span></div></div>'+
       '<div class="plan">'+areaCard('vitc')+areaCard('nutricion')+areaCard('psicooncologia')+areaCard('ejercicio')+'</div></section>'+
     vitcBlock + labBlock + evolBlock;
 }
@@ -1717,7 +1730,7 @@ function datosBaseReadHTML(){
   const trat = hcRow('Tratamiento',CUR.treatment)+hcRow('Plan',CUR.care_plan)+hcRow('Evaluación de respuesta',(CUR.treatment_response?(CUR.treatment_response+(CUR.response_date?' · '+fmt(CUR.response_date):'')):''));
   const segRow = '<div class="row"><span class="k">Screening G6PD</span><span class="v">'+esc(G6PD_LABEL[g].replace('G6PD ',''))+(g==='normal'?' · habilita megadosis':'')+'</span></div>';
   const com = CUR.comentarios ? '<div class="sec"><div class="sec-h"><span class="sec-t">Comentarios del equipo</span></div><p class="note" style="margin:0">«'+esc(CUR.comentarios)+'»</p></div>' : '';
-  const btn = can.editPatient() ? '<button class="btn sm" onclick="corregirDatos()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Corregir datos de base</button>' : '';
+  const btn = can.editPatient() ? '<button class="btn sm" onclick="corregirDatos()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Editar ficha</button>' : '';
   const note = can.editPatient() ? 'Cada corrección queda como entrada firmada en el registro.' : 'Solo lectura · para sumar información usá «Nueva nota», arriba.';
   return '<div class="corrbar">'+btn+'<span class="meta">'+note+'</span>'+(can.director()?'<button class="btn sm dg" style="margin-left:auto" onclick="archivePatient()">Archivar paciente</button>':'')+'</div><div class="sheet">'+
     hcSec('Filiatorios y cobertura',fili)+
@@ -1736,7 +1749,7 @@ function renderHC(){
   const host=$('paneHost');
   host.innerHTML='<div id="regHost"><div class="loading">Cargando el registro…</div></div>'+
     '<details class="base" id="hcBase"'+(HC_BASE_OPEN?' open':'')+' ontoggle="HC_BASE_OPEN=this.open"><summary><svg class="caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>'+
-      '<div><b>Datos de base (ficha)</b><div class="sub">Diagnóstico, antecedentes, G6PD, estadificación, cobertura… · tocá para ver o corregir</div></div></summary>'+
+      '<div><b>Ficha del paciente</b><div class="sub">Diagnóstico, antecedentes, G6PD, estadificación, cobertura… · tocá para ver o corregir</div></div></summary>'+
       '<div class="body">'+datosBaseReadHTML()+'</div></details>';
   renderRegistro();
 }
@@ -1746,13 +1759,14 @@ function corregirDatos(){ if(!can.editPatient()){toast('Tu rol no corrige los da
    documentos, consentimientos e indicaciones, todo junto y por día. Solo lectura: cada tipo se carga
    desde «Registrar» y queda guardado en su tabla de siempre. */
 let TL_FILTER='todo';
-const TL_TYPES=[['todo','Todo'],['notas','Notas'],['megadosis','Infusiones'],['signos','Signos vitales'],['labs','Laboratorio'],['medicacion','Medicación'],['docs','Documentos'],['indicaciones','Indicaciones']];
+const TL_TYPES=[['todo','Todo'],['notas','Consultas'],['megadosis','Infusiones'],['labs','Estudios'],['signos','Signos vitales'],['medicacion','Medicación'],['indicaciones','Indicaciones']];
 const LAB_COL={t:'#8A5212',bg:'#FBF1E1',bd:'#EBD6B6',d:'#D97706'}, DOC_COL={t:'#36423A',bg:'#EEF1EA',bd:'#E2E7DD',d:'#566055'};
+function esNotaAdmin(n){ const c=n.content||''; return c.indexOf(CORR_PREFIX)===0||c.indexOf(DATE_CORR)===0; }
 function setTlFilter(f){ TL_FILTER=f; renderRegistro(); }
 function tlTag(label,c){ return '<span class="tag disc" style="background:'+c.bg+';border-color:'+c.bd+';color:'+c.t+'"><span class="d" style="background:'+c.d+'"></span>'+esc(label)+'</span>'; }
 function tlEntry(o){
   const a=DIR[o.who];
-  return '<div class="entry"><div class="eh"><span class="av sm">'+esc(initials(a?a.full_name:''))+'</span><span class="au">'+esc(a?a.full_name:'Profesional')+'</span>'+o.tag+
+  return '<div class="entry tl-ev"><div class="eh"><span class="av sm">'+esc(initials(a?a.full_name:''))+'</span><span class="au">'+esc(a?a.full_name:'Profesional')+'</span>'+o.tag+
     '<span class="meta" style="margin-left:auto">'+fmtDMShort(o.at)+' · '+fmtHM(o.at)+'</span></div>'+
     '<div class="tl-t">'+o.title+'</div>'+((o.lines&&o.lines.length)?'<p class="bd tl-b">'+o.lines.join('<br>')+'</p>':'')+(o.foot?'<div class="ft">'+o.foot+'</div>':'')+'</div>';
 }
@@ -1762,7 +1776,7 @@ function tlVitc(v,gv,ind){
   const comps=(gv&&gv.length)
     ? gv.map(c=>c.given?esc(compTxt(c)):'<span class="vi-off">'+esc(c.name)+'</span> (no se dio'+(c.reason?': '+esc(c.reason):'')+')').join(' · ')
     : esc(v.dose_g)+' g de vitamina C';
-  const lines=[comps, [v.dilution_ml?esc(v.dilution_ml)+' ml':'', v.rate_g_min?esc(v.rate_g_min)+' gtt/min':''].filter(Boolean).join(' · '), pre?'Antes: '+pre:'', post?'Después: '+post:''].filter(Boolean);
+  const lines=[comps, [v.dilution_ml?esc(v.dilution_ml)+' ml':'', v.rate_g_min?esc(v.rate_g_min)+' '+(v.rate_unit||'gtt/min'):''].filter(Boolean).join(' · '), pre?'Antes: '+pre:'', post?'Después: '+post:''].filter(Boolean);
   const ev=(v.adverse_events&&v.adverse_events.trim())?'<span class="st warn"><span class="d"></span>Evento adverso: '+esc(v.adverse_events)+'</span>':'<span class="st ok"><span class="d"></span>Sin eventos adversos</span>';
   const title='Infusión'+(ind?' · '+esc(indTitle(Object.assign({},ind,{comps:gv||[]}))):((gv&&gv.length)?'':' de megadosis'));
   return tlEntry({who:v.administered_by, at:v.administered_at, tag:tlTag('Infusión',AREA_COL.enfermeria), title, lines, foot:ev});
@@ -1802,7 +1816,8 @@ function tlDay(d){
   const x=toDate(d), y=new Date(); y.setDate(y.getDate()-1);
   if(sameDay(x)) return 'Hoy';
   if(x.toDateString()===y.toDateString()) return 'Ayer';
-  return x.toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  const mismoAnio=x.getFullYear()===new Date().getFullYear();
+  return x.toLocaleDateString('es-AR',mismoAnio?{day:'numeric',month:'short'}:{day:'numeric',month:'short',year:'numeric'}).replace('.','');
 }
 async function renderRegistro(){
   const host=$('regHost'); if(!host)return;
@@ -1812,14 +1827,13 @@ async function renderRegistro(){
   if(!CUR||CUR.id!==pid||curTab!=='hc'||!$('regHost')) return;   // cambió de paciente o de pestaña mientras cargaba
   CUR_NOTES={};
   const items=[], push=(t,at,who,fn)=>{ if(at) items.push({t,at,who,fn}); };
-  (NT.data||[]).forEach(n=>push('notas',n.created_at,n.author_id,()=>entryNote(n)));
+  (NT.data||[]).filter(n=>!esNotaAdmin(n)).forEach(n=>push('notas',n.created_at,n.author_id,()=>entryNote(n)));
   const gvBy=groupBy(GV.data||[],'administration_id'), indBy={}; (IN.data||[]).forEach(i=>indBy[i.id]=i);
   (VC.data||[]).filter(v=>!v.deleted_at).forEach(v=>push('megadosis',v.administered_at,v.administered_by,()=>tlVitc(v,gvBy[v.id],indBy[v.indication_id])));
   (VS.data||[]).forEach(x=>push('signos',x.measured_at,x.recorded_by,()=>tlVital(x)));
   (LB.data||[]).forEach(x=>push('labs',x.measured_at,x.recorded_by,()=>tlLab(x)));
   (MD.data||[]).forEach(x=>push('medicacion',x.administered_at,x.administered_by,()=>tlMed(x)));
-  (AT.data||[]).forEach(x=>push('docs',x.created_at,x.uploaded_by,()=>tlDoc(x)));
-  (CO.data||[]).forEach(x=>push('docs',x.created_at,x.created_by,()=>tlConsent(x)));
+  // Documentos y consentimientos viven en la pestaña Documentos: no ensucian el hilo clínico.
   (IN.data||[]).filter(i=>!i.deleted_at).forEach(i=>push('indicaciones',i.created_at,i.prescribed_by,()=>tlInd(i)));
   items.sort((a,b)=>toDate(b.at)-toDate(a.at));
   const counts={}; items.forEach(i=>counts[i.t]=(counts[i.t]||0)+1);
@@ -1837,7 +1851,7 @@ async function renderRegistro(){
   list.forEach(i=>{ const d=tlDay(i.at); if(d!==day){ if(day!==null) html+='</section>'; html+='<div class="tl-day">'+esc(d)+'</div><section class="sheet">'; day=d; } html+=i.fn(); });
   if(day!==null) html+='</section>';
   host.innerHTML=
-    '<div class="sec-h" style="margin:2px 2px 4px"><span class="sec-t">Historia clínica · '+items.length+' registro'+(items.length===1?'':'s')+'</span><span class="meta" style="margin-left:auto">cada registro queda firmado por autor y área</span></div>'+
+    '<div class="sec-h" style="margin:2px 2px 4px"><span class="sec-t">Historia</span></div>'+
     '<div class="tl-bar">'+chips+profSel+'</div>'+
     (html||'<div class="empty"><p>'+(items.length?'No hay registros para este filtro.':'Todavía no hay registros. Tocá «Registrar» para sumar el primero.')+'</p></div>');
 }
@@ -1846,7 +1860,7 @@ function renderHCForm(){
   const host=$('paneHost');
   const a=anthro(CUR.weight_kg,CUR.height_cm);
   const g=CUR.g6pd_status||'no_evaluado';
-  host.innerHTML='<div class="callout" style="border-color:rgba(60,107,58,.35);background:rgba(60,107,58,.06)"><span class="demo" style="flex:none;color:var(--vital);border-color:rgba(60,107,58,.4);background:rgba(60,107,58,.08)">Corrección</span><p>Estás corrigiendo los <b>datos de base</b>. Cada cambio actualiza el valor vigente y queda como entrada firmada en el registro y en la auditoría (no se pisa nada: el valor anterior se conserva). <button class="btn sm" style="margin-left:6px" onclick="setTab(\'hc\')">Volver a la historia</button></p></div>'+
+  host.innerHTML='<div class="callout" style="border-color:rgba(60,107,58,.35);background:rgba(60,107,58,.06)"><span class="demo" style="flex:none;color:var(--vital);border-color:rgba(60,107,58,.4);background:rgba(60,107,58,.08)">Corrección</span><p>Estás editando la <b>ficha del paciente</b>. Los cambios quedan registrados y el valor anterior se conserva. <button class="btn sm" style="margin-left:6px" onclick="setTab(\'hc\')">Volver a la historia</button></p></div>'+
     '<section class="sheet">'+
     '<div class="formnav"><a href="#g1">Filiatorios</a><a href="#g2">Estado funcional</a><a href="#g3">Antecedentes</a><a href="#g4">Diagnóstico</a><a href="#g5">Examen físico</a><a href="#g6">Tratamiento</a><a href="#g7">Comentarios</a><a href="#g8">Seguridad</a></div>'+
     '<div class="sec" id="g1"><div class="sec-h"><span class="sec-t">Datos filiatorios</span></div><div class="ff">'+
@@ -1932,7 +1946,7 @@ function entryNote(n){
   const st=(n.structured&&n.structured.tpl)?n.structured:null;
   const foot = editable
     ? '<div class="ft"><span class="meta">editable por 24 h</span><button class="btn sm" onclick="'+(st?'gnEdit':'openEditNote')+'(\''+n.id+'\')">Editar</button></div>'
-    : '<div class="ft"><span class="meta">Firmada · bloqueada para edición'+((n.updated_at&&n.updated_at!==n.created_at)?' · editada':'')+'</span></div>';
+    : ((n.updated_at&&n.updated_at!==n.created_at)?'<div class="ft"><span class="meta">editada</span></div>':'');
   let wLine='';
   if(n.weight_kg!=null){ const h=parseFloat(CUR.height_cm); const imc=(h>0)?(' · IMC '+(n.weight_kg/Math.pow(h/100,2)).toFixed(1)):''; wLine='<div class="meta" style="margin-top:8px">Peso: '+esc(n.weight_kg)+' kg'+imc+'</div>'; }
   const ac=AREA_COL[n.discipline];
@@ -2469,7 +2483,7 @@ async function renderVitc(hostEl){
   const rows=(data||[]).map(v=>{
     const ev = (v.adverse_events&&v.adverse_events.trim())?'<span class="st warn"><span class="d"></span>'+esc(v.adverse_events.slice(0,24))+'</span>':'<span class="st ok"><span class="d"></span>Ninguno</span>';
     return '<tr><td style="white-space:nowrap">'+fmtDMShort(v.administered_at)+' · '+fmtHM(v.administered_at)+'</td><td>'+esc(adminCompsTxt(v))+'</td>'+
-      '<td class="quiet">'+(v.dilution_ml?v.dilution_ml+' ml':'—')+'</td><td class="quiet">'+(v.rate_g_min?v.rate_g_min+' gtt/min':'—')+'</td>'+
+      '<td class="quiet">'+(v.dilution_ml?v.dilution_ml+' ml':'—')+'</td><td class="quiet">'+(v.rate_g_min?v.rate_g_min+' '+(v.rate_unit||'gtt/min'):'—')+'</td>'+
       '<td class="quiet">'+(v.hr_pre??'—')+' · '+(v.bp_pre||'—')+' · '+(v.glucose_pre??'—')+'</td>'+
       '<td class="quiet">'+(v.hr_post??'—')+' · '+(v.bp_post||'—')+' · '+(v.glucose_post??'—')+'</td>'+
       '<td>'+ev+'</td><td class="quiet">'+esc(lastNameOf(whoName(v.administered_by)))+'</td></tr>';
@@ -2548,7 +2562,7 @@ async function addVitcProto(){
   const dil=num($('vDil').value);
   const rec=Object.assign({patient_id:CUR.id, indication_id:ind.id, administered_at:whenISO('vWhen'),
     dose_g:(vc&&vc.dose!=null)?vc.dose:0,   // dose_g = gramos de vitamina C (0 si no la incluye); el detalle va en infusion_components_given
-    dilution_ml:dil!=null?Math.round(dil):null, rate_g_min:num($('vRate').value) /* gtt/min */,
+    dilution_ml:dil!=null?Math.round(dil):null, rate_g_min:num($('vRate').value) /* gtt/min */, rate_unit:'gtt/min',
     administered_by:ME.user_id, created_by:ME.user_id}, signosRec());
   const {data,error}=await DB().from('vitc_administrations').insert(rec).select('id').single();
   if(error){ toast(error.message); return false; }
@@ -2571,7 +2585,7 @@ function openVitcLegacy(){
 }
 async function addVitc(){
   const dose=num($('vDose').value); if(!dose){toast('Ingresá la dosis');return false;}
-  const rec=Object.assign({patient_id:CUR.id, indication_id:null, administered_at:whenISO('vWhen'), dose_g:dose, dilution_ml:num($('vDil').value), rate_g_min:num($('vRate').value) /* columna histórica: ahora son gotas/min (gtt/min) */,
+  const rec=Object.assign({patient_id:CUR.id, indication_id:null, administered_at:whenISO('vWhen'), dose_g:dose, dilution_ml:num($('vDil').value), rate_g_min:num($('vRate').value) /* columna histórica: ahora son gotas/min (gtt/min) */, rate_unit:'gtt/min',
     administered_by:ME.user_id, created_by:ME.user_id}, signosRec());
   const {error}=await DB().from('vitc_administrations').insert(rec);
   if(error){toast(error.message);return false;}
