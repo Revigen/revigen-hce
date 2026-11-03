@@ -718,6 +718,35 @@ img,svg,video,canvas{max-width:100%}
   #page{padding-bottom:96px}
   .tabs,.tl-chips{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
 }
+
+/* ===== Una sola columna lateral: el contenido clínico se lleva el ancho ===== */
+@media (min-width:1241px){
+  .fgrid{grid-template-columns:minmax(0,1fr) 330px}
+  .fgrid>.side-a{grid-column:2;grid-row:1}
+  .fgrid>.stack,.fgrid>#paneHost{grid-column:1;grid-row:1 / span 2}
+  .fgrid>#sideB{grid-column:2;grid-row:2}
+}
+/* acciones administrativas dentro de un evento: presentes pero discretas */
+.entry.tl-ev .ft{margin-top:8px;padding-top:7px}
+.entry.tl-ev .ft .btn{padding:4px 9px;font-size:11.5px;background:transparent;border-color:transparent;color:var(--faint);text-decoration:underline}
+.entry.tl-ev .ft .btn:hover{color:var(--ink-2);background:var(--panel)}
+/* celular: encabezado del paciente más compacto, para ver contenido antes */
+@media(max-width:760px){
+  .pcard{padding:14px 16px}
+  .pcard .av.lg{width:42px;height:42px;font-size:15px;border-radius:11px}
+  .pcard h1{font-size:19px;line-height:1.25}
+  .pcard .line{font-size:12.5px;margin-top:3px}
+  .pcard .chips{margin-top:8px}
+  .pcard .tag,.pcard .chip{font-size:11.5px;padding:4px 9px}
+}
+
+/* celular: liberar la primera pantalla para que se vea contenido clínico */
+@media(max-width:600px){
+  .crumb{display:none}                     /* la barra inferior ya dice dónde estás */
+  .top .find input{height:40px;font-size:14px}
+  .pcard .acts{display:none}               /* "Exportar HC" es acción de escritorio; "Nueva nota" está en el botón flotante */
+  .pcard{padding-bottom:12px}
+}
 </style>
 <body>
 
@@ -1534,7 +1563,7 @@ function renderSideA(){
     '<div class="row"><span class="k">Peso</span><span class="v">'+(CUR.weight_kg?esc(CUR.weight_kg)+' kg':'—')+'</span></div>'+
     '<div class="row"><span class="k">Talla</span><span class="v">'+(CUR.height_cm?esc(CUR.height_cm)+' cm':'—')+'</span></div>'+
     '<div class="row"><span class="k">IMC · calculado</span><span class="v" style="color:var(--vital)">'+(a?a.imc.toFixed(1):'—')+'</span></div>'+
-    '<div class="row"><span class="k">Superficie · calculada</span><span class="v" style="color:var(--vital)">'+(a?a.bsa.toFixed(2)+' m²':'—')+'</span></div>';
+    '';
   const tnm=[CUR.tnm_t&&('T'+CUR.tnm_t),CUR.tnm_n&&('N'+CUR.tnm_n),CUR.tnm_m&&('M'+CUR.tnm_m)].filter(Boolean).join(' ');
   const dxRows=
     '<div class="row"><span class="k">Diagnóstico</span><span class="v">'+(CUR.base_diagnosis?esc(CUR.base_diagnosis):'—')+'</span></div>'+
@@ -1688,8 +1717,11 @@ function renderResumen(){
 
   host.innerHTML=
     '<section class="card"><div class="sec" style="padding-bottom:0"><div class="sec-h" style="margin-bottom:4px"><span class="sec-t">Áreas del plan integrativo</span></div></div>'+
-      '<div class="plan">'+areaCard('vitc')+areaCard('nutricion')+areaCard('psicooncologia')+areaCard('ejercicio')+'</div></section>'+
-    vitcBlock + labBlock + evolBlock;
+      (function(){const todas=['vitc','nutricion','psicooncologia','ejercicio'];
+        const activas=todas.filter(k=>FCALC.areas[k]!=='none'), vacias=todas.filter(k=>FCALC.areas[k]==='none');
+        return (activas.length?'<div class="plan">'+activas.map(k=>areaCard(k)).join('')+'</div>':'')+
+          (vacias.length?'<div class="sec" style="padding-top:'+(activas.length?'14px':'0')+'"><p class="meta" style="margin:0">Sin registros todavía en: '+vacias.map(k=>AREA_NAME[k]).join(' · ')+'</p></div>':'');})()+'</section>'+
+    vitcBlock + labBlock;
 }
 
 
@@ -2469,7 +2501,7 @@ async function renderVitc(hostEl){
   // El G6PD ya no bloquea el registro: si no es normal se muestra un aviso visible (la base tampoco bloquea).
   const g6pdWarn = g!=='normal';
   const gate = !g6pdWarn
-    ? '<div class="gate ok"><span class="ic"></span><p><b style="color:var(--ink)">G6PD normal.</b> Se puede registrar la administración.</p></div>'
+    ? ''
     : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">Atención: '+esc(G6PD_LABEL[g])+'.</b> La megadosis puede estar contraindicada (riesgo de hemólisis). Verificá antes de administrar.</p></div>';
   const consentNote = (!consentOk)
     ? '<div class="callout" style="border-color:rgba(224,164,88,.4);background:rgba(224,164,88,.07)"><span class="demo" style="flex:none">Recordatorio</span><p>No figura un consentimiento de megadosis firmado. No bloquea el registro, pero verificá que el consentimiento esté firmado. <button class="btn sm" style="margin-left:6px" onclick="goConsent()">Registrar consentimiento</button></p></div>'
@@ -2490,7 +2522,7 @@ async function renderVitc(hostEl){
   }).join('');
   const table = rows? '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Infusiones registradas</span>'+btn+'</div></div>'+
       '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th style="min-width:180px">Componentes</th><th>Volumen</th><th>Goteo</th><th style="min-width:140px">Pre</th><th style="min-width:140px">Post</th><th style="min-width:130px">Eventos</th><th>Administró</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-      '<div class="savebar">Pre y post muestran frecuencia cardíaca · tensión arterial · glucemia.</div></section>'
+      '</section>'
     : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Infusiones registradas</span>'+btn+'</div><p class="meta" style="margin:0">Sin administraciones registradas.</p></div></section>';
   const relevant=!!FCALC.ind||!!(data&&data.length);
   const anyG6=(FCALC.inds||[]).some(indG6pd)||(data||[]).some(v=>Number(v.dose_g)>0);   // G6PD y consentimiento: solo si hay vitamina C
