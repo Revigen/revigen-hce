@@ -744,9 +744,38 @@ img,svg,video,canvas{max-width:100%}
 @media(max-width:600px){
   .crumb{display:none}                     /* la barra inferior ya dice dónde estás */
   .top .find input{height:40px;font-size:14px}
-  .pcard .acts{display:none}               /* "Exportar HC" es acción de escritorio; "Nueva nota" está en el botón flotante */
+  /* "Nueva nota" vive en el botón flotante, pero el menú ⋯ queda: es donde se edita la ficha y se exporta */
+  .pcard .acts{position:absolute;top:12px;right:12px;width:auto;margin:0;z-index:2}
+  .pcard{position:relative}
   .pcard{padding-bottom:12px}
 }
+
+/* chips del encabezado que se pueden tocar para corregir el dato ahí mismo */
+.tag-btn{cursor:pointer;font:inherit;font-size:12.5px;appearance:none;transition:box-shadow .12s,transform .12s}
+.tag-btn:hover{box-shadow:0 0 0 2px rgba(60,107,58,.18)}
+.tag-btn:active{transform:scale(.98)}
+/* opciones tipo lista en los modales de edición rápida */
+/* filas para elegir una opción (G6PD, etc.). Van después de .modal label/input para ganarles. */
+.modal label.pickrow,label.pickrow{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;border:1px solid var(--line);border-radius:11px;margin:0 0 8px;cursor:pointer;background:var(--void);font-family:var(--f-ui);font-size:14px;color:var(--ink)}
+.modal label.pickrow:has(input:checked),label.pickrow:has(input:checked){border-color:var(--vital);background:#F0F6EE}
+.modal .pickrow input,.pickrow input{width:18px;height:18px;flex:none;margin:2px 0 0;padding:0;border-radius:50%;accent-color:var(--vital)}
+.pickrow span{display:block}
+.pickrow b{display:block;font-size:14.5px;font-weight:600;color:var(--ink)}
+.pickrow i{display:block;font-style:normal;font-size:12.5px;color:var(--muted);margin-top:2px}
+
+/* menú de acciones de la ficha */
+.menulist{display:flex;flex-direction:column;gap:8px}
+.menurow{display:flex;text-align:left;border:1px solid var(--line);background:var(--void);border-radius:11px;padding:12px 14px;cursor:pointer;font:inherit}
+.menurow:hover{background:var(--panel-2)}
+.menurow .nm{font-size:14.5px;font-weight:600;color:var(--ink)}
+.menurow .ds{font-size:12.5px;color:var(--muted);margin-top:2px}
+.menurow.dg .nm{color:#B4231A}
+/* cumpleaños de la semana */
+.cumple{display:flex;gap:10px;align-items:flex-start;background:#FBF1E1;border:1px solid #EBD6B6;border-radius:12px;padding:11px 14px;margin-bottom:16px;font-size:13.5px;color:#8A5212}
+.cumple .ic{font-size:16px;line-height:1.2}
+.cumple button{background:none;border:0;padding:0;font:inherit;font-weight:600;color:#8A5212;text-decoration:underline;cursor:pointer}
+.cumple i{font-style:normal;color:#9A6B33}
+.cumple .sep{margin:0 8px;opacity:.5}
 </style>
 <body>
 
@@ -820,7 +849,9 @@ const ROLE_LABEL = {admin:'Admin', director_medico:'Director médico', oncologo:
 const DISC_LABEL = {oncologia:'Oncología', megadosis:'Megadosis de Vitamina C', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
 const ROLE_TO_DISC = {admin:'oncologia', director_medico:'oncologia', oncologo:'oncologia', medico_funcional:'oncologia', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
 const DISC_TO_ROLE = {oncologia:'oncologo', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
-const G6PD_LABEL = {no_evaluado:'G6PD no evaluado', normal:'G6PD normal', deficiente:'G6PD deficiente'};
+const G6PD_LABEL_MAP = {no_evaluado:'G6PD no evaluado', normal:'G6PD normal', deficiente:'G6PD deficiente'};
+/* Si alguna ficha vieja guardó otro valor, no rompe la pantalla: muestra el valor tal cual. */
+const G6PD_LABEL = new Proxy(G6PD_LABEL_MAP,{get:(o,k)=> (typeof k==='string' && o[k]!=null) ? o[k] : (typeof k==='string'? 'G6PD '+k : o[k])});
 const EVOL_AREA = {oncologia:'Médica', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
 /* Color por área (tema claro). t=texto, bg=fondo, bd=borde, d=punto/acento. Nunca solo color: siempre acompañado de texto/ícono. */
 const AREA_COL = {
@@ -840,6 +871,11 @@ function isMegadosisAppt(a){ return a && (a.discipline==='megadosis' || /megados
 
 let ME=null, DIR={}, CUR=null, curTab='resumen', curView='inicio', authMode='login';
 let CACHE=null;          // datos agregados para listado / inicio
+/* Los datos calculados de la ficha SOLO se usan si pertenecen al paciente abierto.
+   Antes se leían sin verificar y, al cambiar de ficha, podían mostrarse los de otro paciente. */
+const FCAL_EMPTY={appts:[],labs:[],notes:[],vitc:[],vitals:[],meds:[],cons:[],ind:null,inds:[],given:{},
+  areas:{},areaMeta:{},people:[],futureAppts:[],asist:{as:0,ab:0,tot:0},consBy:{},audit:[],lastCreat:null};
+function FCAL(){ return (FCALC && CUR && FCALC.pid===CUR.id) ? FCALC : FCAL_EMPTY; }
 let FCALC=null;          // datos calculados de la ficha abierta
 let CUR_NOTES={}, NOTE_DISC=null, EDIT_NOTE_ID=null;
 
@@ -883,6 +919,7 @@ const IC={
   archivados:'<svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1zM10 12h4"/></svg>',
   catalogo:'<svg viewBox="0 0 24 24"><path d="M12 2.7 6.8 9.4a7 7 0 1 0 10.4 0z"/><path d="M9 14h6M12 11v6"/></svg>'
 };
+const IC_PEN='<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;opacity:.55;margin-left:5px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 const PLUS='<svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>';
 const ICPRINT='<svg viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>';
 
@@ -1261,6 +1298,25 @@ async function renderInicio(){
   p.innerHTML='<div class="loading">Cargando el panel del día…</div>';
   await loadCache();
   const pmap={}; CACHE.patients.forEach(x=>pmap[x.id]=x);
+  // Cumpleaños de los próximos 7 días (se calcula acá; no sale ningún dato fuera de la historia clínica)
+  const cumples=(function(){
+    const hoyD=new Date(), r=[];
+    CACHE.patients.forEach(x=>{
+      if(!x.birth_date) return;
+      const b=new Date(x.birth_date+'T12:00:00'); if(isNaN(b)) return;
+      for(let k=0;k<7;k++){
+        const d=new Date(hoyD.getFullYear(),hoyD.getMonth(),hoyD.getDate()+k);
+        if(b.getMonth()===d.getMonth()&&b.getDate()===d.getDate()){
+          const edadN=d.getFullYear()-b.getFullYear();
+          r.push({id:x.id,nombre:x.full_name,dia:k,edad:edadN}); break;
+        }
+      }
+    });
+    return r.sort((a,b)=>a.dia-b.dia);
+  })();
+  const cumpleHTML = cumples.length
+    ? '<div class="cumple"><span class="ic">🎂</span><div>'+cumples.map(c=>'<button onclick="openPatient(\''+c.id+'\')">'+esc(c.nombre)+'</button> <i>'+(c.dia===0?'hoy':(c.dia===1?'mañana':'en '+c.dia+' días'))+' · cumple '+c.edad+'</i>').join('<span class="sep">·</span>')+'</div></div>'
+    : '';
   const now=Date.now();
   // turnos de hoy
   const hoy=CACHE.appts.filter(a=>sameDay(a.starts_at)&&a.status!=='cancelado').sort((a,b)=>new Date(a.starts_at)-new Date(b.starts_at));
@@ -1314,7 +1370,8 @@ async function renderInicio(){
 
   p.innerHTML=
    '<div class="phead-page"><div><div class="eyebrow">Centro Revigen</div><h1>Hoy en Revigen</h1></div>'+
-     '<span class="meta" style="max-width:42ch;text-align:right;line-height:1.6">Todo lo de esta pantalla se calcula solo con lo que el equipo ya carga.<br>No hay nada nuevo para completar.</span></div>'+
+     '</div>'+
+   cumpleHTML+
    '<div class="kpis">'+
      '<div><div class="label">Pacientes activos</div><div class="n">'+esES(CACHE.counts.pacientes)+'</div><div class="sub">'+CACHE.counts.altasMes+' alta'+(CACHE.counts.altasMes===1?'':'s')+' este mes</div></div>'+
      '<div><div class="label">Turnos de hoy</div><div class="n">'+hoy.length+'</div><div class="sub">'+cumpl+' cumplidos · '+aus+' ausentes · '+prog+' por delante</div></div>'+
@@ -1449,7 +1506,7 @@ async function doCreatePatient(last,first,dtype,doc,birth,phone,cov){
 async function openPatient(id){
   const {data,error}=await DB().from('patients').select('*').eq('id',id).single();
   if(error){toast(error.message);return;}
-  CUR=data; curView='ficha'; curTab=(ME.role==='enfermeria'?'trat':'hc'); HC_BASE_OPEN=false; TL_FILTER='todo'; EVOL_PROF='all'; buildRail();
+  CUR=data; FCALC=null; curView='ficha'; curTab=(ME.role==='enfermeria'?'trat':'hc'); HC_BASE_OPEN=false; TL_FILTER='todo'; EVOL_PROF='all'; buildRail();
   await renderFicha();
   window.scrollTo(0,0);
 }
@@ -1510,7 +1567,7 @@ async function loadFichaCalc(){
   const as=ap90.filter(a=>a.status==='asistio').length, ab=ap90.filter(a=>a.status==='ausente').length;
   // consentimientos
   const consBy={}; cons.forEach(c=>{ if(!consBy[c.kind] || (!consBy[c.kind].signed_at && c.signed_at)) consBy[c.kind]=c; });   // prioriza el firmado
-  FCALC={appts,labs,notes,vitc,vitals,meds,cons,ind,inds,given,areas,areaMeta,people,futureAppts,
+  FCALC={pid,appts,labs,notes,vitc,vitals,meds,cons,ind,inds,given,areas,areaMeta,people,futureAppts,
     asist:{as,ab,tot:as+ab}, consBy, audit, lastCreat:labs.find(l=>l.creatinina!=null)||null};
   return FCALC;
 }
@@ -1528,8 +1585,13 @@ async function renderFicha(){
   if(CUR.coverage) line.push('<span>'+esc(CUR.coverage)+(CUR.affiliate_number?' · afiliado <b>'+esc(CUR.affiliate_number)+'</b>':'')+'</span>');
   if(CUR.created_at) line.push('<span>Ingreso <b>'+fmt(CUR.created_at)+'</b></span>');
   const tags=[];
-  if(CUR.allergies) tags.push('<span class="tag crit"><span class="d"></span>Alergia: '+esc(CUR.allergies.split(/[\.\n]/)[0].slice(0,40))+'</span>');
-  tags.push('<span class="tag '+(g==='normal'?'ok':'warn')+'"><span class="d"></span>'+esc(G6PD_LABEL[g])+'</span>');
+  const editable=can.editPatient();
+  const chipTag=(cls,txt,fn)=>editable
+    ? '<button type="button" class="tag '+cls+' tag-btn" onclick="'+fn+'" title="Tocá para modificar"><span class="d"></span>'+txt+IC_PEN+'</button>'
+    : '<span class="tag '+cls+'"><span class="d"></span>'+txt+'</span>';
+  if(CUR.allergies) tags.push(chipTag('crit','Alergia: '+esc(CUR.allergies.split(/[\.\n]/)[0].slice(0,40)),'openAlergiasModal()'));
+  else tags.push(chipTag('','Sin alergias registradas','openAlergiasModal()'));
+  tags.push(chipTag(g==='normal'?'ok':'warn', esc(G6PD_LABEL[g]), 'openG6pdModal()'));
   if(CUR.ecog||CUR.karnofsky!=null) tags.push('<span class="tag">'+(CUR.ecog?'ECOG '+CUR.ecog:'')+(CUR.ecog&&CUR.karnofsky!=null?' · ':'')+(CUR.karnofsky!=null?'Karnofsky '+CUR.karnofsky:'')+'</span>');
   const tabs=[['resumen','Resumen'],['hc','Historia'],['trat','Tratamientos'],['docs','Documentos']];
   if(can.director()) tabs.push(['audit','Auditoría']);
@@ -1541,7 +1603,7 @@ async function renderFicha(){
        '<div style="display:flex;gap:9px;margin-top:14px;flex-wrap:wrap">'+tags.join('')+'</div></div>'+
      '<div class="acts">'+
        '<button class="btn primary" onclick="openRegistrar()">'+PLUS+'Nueva nota</button>'+
-       '<button class="btn" onclick="printPatient()">'+ICPRINT+'Exportar HC</button></div></div>'+
+       '<button class="btn" onclick="openFichaMenu()" title="Más acciones" aria-label="Más acciones">⋯</button></div></div>'+
    '<div class="subnav-wrap"><div class="tabs" role="tablist" id="tabBar">'+
      tabs.map(([t,l])=>'<button class="'+(curTab===t?'on':'')+'" data-t="'+t+'" onclick="setTab(\''+t+'\')">'+l+'</button>').join('')+'</div></div>'+
    '<div class="fgrid"><div class="side-a" id="sideA"></div><div class="stack" id="paneHost"></div><div id="sideB"></div></div>'+
@@ -1552,7 +1614,7 @@ async function renderFicha(){
 function critItem(cls,k,v){ return '<div class="it'+(cls?' '+cls:'')+'"><span class="d"></span><div><div class="k">'+k+'</div><div class="v">'+v+'</div></div></div>'; }
 function renderSideA(){
   const a=anthro(CUR.weight_kg,CUR.height_cm), g=CUR.g6pd_status||'no_evaluado';
-  const lc=FCALC.lastCreat;
+  const lc=FCAL().lastCreat;
   const crit=
     critItem(CUR.allergies?'crit':'ok','Alergias',CUR.allergies?esc(CUR.allergies):'Sin alergias registradas')+
     critItem(lc?'warn':'','Creatinina · último lab',lc?esc(lc.creatinina)+' mg/dL · '+fmtDMShort(lc.measured_at):'Sin laboratorios')+
@@ -1584,7 +1646,7 @@ function renderSideA(){
     '</div>';
 }
 function renderSideB(){
-  const f=FCALC;
+  const f=FCAL();
   const tl = f.futureAppts.length ? f.futureAppts.slice(0,4).map((a,i)=>{
     const prof=DIR[a.professional_id];
     const w=(sameDay(a.starts_at)?'HOY':new Date(a.starts_at).toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'2-digit'}).toUpperCase())+' · '+fmtHM(a.starts_at);
@@ -1602,7 +1664,7 @@ function renderSideB(){
       '</div></div>';
   }
   $('sideB').innerHTML='<div class="sheet">'+
-    '<div class="sec"><div class="sec-h"><span class="sec-t">Próximos turnos</span><button class="btn sm" onclick="openApptModal(\''+CUR.id+'\')">Agendar</button></div>'+
+    '<div class="sec"><div class="sec-h"><span class="sec-t">Próximos turnos</span><button class="btn sm" onclick="openApptModal(\''+CUR.id+'\')">Turno</button></div>'+
       '<div class="tl">'+tl+'</div><div class="meta" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--div)">'+asistTxt+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Quiénes la atienden</span></div><div class="people">'+ppl+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Consentimientos</span></div><div class="rows">'+consRow('vitamina_c','Megadosis de Vit. C')+(f.consBy.sueroterapia?consRow('sueroterapia','Sueroterapia'):'')+consRow('hc_compartida','Historia clínica compartida')+'</div></div>'+
@@ -1631,7 +1693,7 @@ const ANALITOS=[['hemoglobina','Hemoglobina','g/dL'],['hematocrito','Hematocrito
 let CUR_ANALITO='hemoglobina';
 
 function areaCard(key){
-  const st=FCALC.areas[key], m=FCALC.areaMeta[key];
+  const st=FCAL().areas[key], m=FCAL().areaMeta[key];
   const stTag = st==='active'?'<span class="st ok" style="font-size:13px"><span class="d"></span>Activa</span>'
     : st==='stale'?'<span class="st warn" style="font-size:13px"><span class="d"></span>Sin movimiento</span>'
     : '<span class="st off" style="font-size:13px"><span class="d"></span>Sin registros</span>';
@@ -1650,7 +1712,7 @@ function areaCard(key){
     '<div class="v">'+val+'</div><div class="s">'+esc(sub)+'</div></div>';
 }
 function labChartSVG(analyte){
-  const rows=(FCALC.labs||[]).filter(l=>l[analyte]!=null).slice(0,6).reverse();
+  const rows=(FCAL().labs||[]).filter(l=>l[analyte]!=null).slice(0,6).reverse();
   if(rows.length<1) return '<div class="empty" style="padding:32px 12px"><p>Todavía no hay valores de este analito cargados.</p></div>';
   const W=480,H=208,L=44,R=464,T=24,B=176;
   const vals=rows.map(r=>Number(r[analyte]));
@@ -1686,7 +1748,7 @@ function updateLabChart(analyte){
   const h=$('labChartUnit'); if(h&&info) h.textContent=info[2];
 }
 function renderResumen(){
-  const host=$('paneHost'); const f=FCALC;
+  const host=$('paneHost'); const f=FCAL();
   const g=CUR.g6pd_status||'no_evaluado';
   // vitc block
   const vc=f.vitc, lastV=vc[0]||null;
@@ -1718,7 +1780,7 @@ function renderResumen(){
   host.innerHTML=
     '<section class="card"><div class="sec" style="padding-bottom:0"><div class="sec-h" style="margin-bottom:4px"><span class="sec-t">Áreas del plan integrativo</span></div></div>'+
       (function(){const todas=['vitc','nutricion','psicooncologia','ejercicio'];
-        const activas=todas.filter(k=>FCALC.areas[k]!=='none'), vacias=todas.filter(k=>FCALC.areas[k]==='none');
+        const activas=todas.filter(k=>FCAL().areas[k]!=='none'), vacias=todas.filter(k=>FCAL().areas[k]==='none');
         return (activas.length?'<div class="plan">'+activas.map(k=>areaCard(k)).join('')+'</div>':'')+
           (vacias.length?'<div class="sec" style="padding-top:'+(activas.length?'14px':'0')+'"><p class="meta" style="margin:0">Sin registros todavía en: '+vacias.map(k=>AREA_NAME[k]).join(' · ')+'</p></div>':'');})()+'</section>'+
     vitcBlock + labBlock;
@@ -1764,7 +1826,7 @@ function datosBaseReadHTML(){
   const com = CUR.comentarios ? '<div class="sec"><div class="sec-h"><span class="sec-t">Comentarios del equipo</span></div><p class="note" style="margin:0">«'+esc(CUR.comentarios)+'»</p></div>' : '';
   const btn = can.editPatient() ? '<button class="btn sm" onclick="corregirDatos()"><svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Editar ficha</button>' : '';
   const note = can.editPatient() ? 'Cada corrección queda como entrada firmada en el registro.' : 'Solo lectura · para sumar información usá «Nueva nota», arriba.';
-  return '<div class="corrbar">'+btn+'<span class="meta">'+note+'</span>'+(can.director()?'<button class="btn sm dg" style="margin-left:auto" onclick="archivePatient()">Archivar paciente</button>':'')+'</div><div class="sheet">'+
+  return '<div class="corrbar">'+btn+'<span class="meta">'+note+'</span>'+'</div><div class="sheet">'+
     hcSec('Filiatorios y cobertura',fili)+
     hcSec('Estado funcional y antropometría',func)+
     hcSec('Antecedentes y hábitos',ant)+
@@ -1801,6 +1863,10 @@ function tlEntry(o){
   return '<div class="entry tl-ev"><div class="eh"><span class="av sm">'+esc(initials(a?a.full_name:''))+'</span><span class="au">'+esc(a?a.full_name:'Profesional')+'</span>'+o.tag+
     '<span class="meta" style="margin-left:auto">'+fmtDMShort(o.at)+' · '+fmtHM(o.at)+'</span></div>'+
     '<div class="tl-t">'+o.title+'</div>'+((o.lines&&o.lines.length)?'<p class="bd tl-b">'+o.lines.join('<br>')+'</p>':'')+(o.foot?'<div class="ft">'+o.foot+'</div>':'')+'</div>';
+}
+function vsCell(ta,fc,glu){
+  const p=[ta?'TA '+esc(ta):'', fc!=null?'FC '+esc(fc):'', glu!=null?'Gluc '+esc(glu):''].filter(Boolean);
+  return p.length?p.join(' · '):'<span style="color:var(--faint)">sin datos</span>';
 }
 function vsTxt(ta,fc,glu){ return [ta?'TA '+esc(ta):'', fc!=null?'FC '+esc(fc):'', glu!=null?'glucemia '+esc(glu):''].filter(Boolean).join(' · '); }
 function tlVitc(v,gv,ind){
@@ -1969,6 +2035,72 @@ async function saveField(el){
   const n=$('saveNote'); if(n){n.innerHTML='<span class="ok">✓ Guardado</span>';setTimeout(()=>{const s=$('saveNote');if(s)s.textContent='Los cambios se guardan solos y quedan en la auditoría con tu nombre y la hora.';},1600);}
 }
 
+/* ---------- Edición rápida: el dato se corrige desde donde se muestra ---------- */
+async function saveQuick(key,value){
+  if(!CUR) return false;
+  const old=CUR[key], v=(value===''||value==null)?null:value;
+  const upd={updated_by:ME.user_id}; upd[key]=v;
+  const {data,error}=await DB().from('patients').update(upd).eq('id',CUR.id).select().single();
+  if(error){ toast('No se pudo guardar: '+error.message); return false; }
+  CUR=data;
+  const oldS=(old==null?'':(''+old)), newS=(v==null?'':(''+v));
+  if(oldS!==newS){
+    const L=FIELD_LABEL[key]||key;
+    const content=CORR_PREFIX+' · '+L+': «'+(oldS||'(vacío)')+'» → «'+(newS||'(vacío)')+'»';
+    try{ DB().from('notes').insert({patient_id:CUR.id, discipline:(ROLE_TO_DISC[ME.role]||'oncologia'), content:content, author_id:ME.user_id, created_by:ME.user_id}).then(()=>{},()=>{}); }catch(e){}
+  }
+  toast('Guardado'); await renderFicha(); return true;
+}
+function openFichaMenu(){
+  if(!CUR) return;
+  const fila=(onclick,nm,ds,peligro)=>'<button type="button" class="menurow'+(peligro?' dg':'')+'" onclick="modalClose();'+onclick+'"><div><div class="nm">'+nm+'</div><div class="ds">'+ds+'</div></div></button>';
+  modalOpen('Acciones · '+(CUR.full_name||'paciente'),
+    '<div class="menulist">'+
+      fila('printPatient()','Exportar HC','Imprimir o guardar la historia como PDF')+
+      (can.editPatient()?fila('setTab(\'hc\');setTimeout(corregirDatos,120)','Editar ficha','Diagnóstico, antecedentes, cobertura, G6PD…'):'')+
+      (can.director()?fila('archivePatient()','Archivar paciente','Sale del listado activo. Se puede recuperar desde Archivados.',true):'')+
+    '</div>','Cerrar', async()=>true);
+  // es un menú: alcanza con un botón para salir
+  $('mFoot').innerHTML='<button class="btn" onclick="modalClose()" style="margin-left:auto">Cerrar</button>';
+}
+function openG6pdModal(){
+  if(!CUR) return;
+  if(!can.editPatient()){ toast('Tu rol no edita la ficha'); return; }
+  const g=CUR.g6pd_status||'no_evaluado';
+  const op=(v,l,d)=>'<label class="pickrow"><input type="radio" name="g6" value="'+v+'" '+(g===v?'checked':'')+'><span><b>'+l+'</b><i>'+d+'</i></span></label>';
+  modalOpen('Screening de G6PD · '+(CUR.full_name||''),
+    op('normal','Normal','Habilita la megadosis sin advertencias')+
+    op('no_evaluado','No evaluado','Todavía no se hizo el estudio')+
+    op('deficiente','Deficiente','Puede estar contraindicada: riesgo de hemólisis')+
+    '<p class="meta" style="margin:10px 0 0">El cambio queda registrado con tu nombre y la hora.</p>',
+    'Guardar', async ()=>{
+      const sel=document.querySelector('input[name="g6"]:checked');
+      if(!sel) { toast('Elegí una opción'); return false; }
+      return await saveQuick('g6pd_status', sel.value);
+    });
+}
+function openAlergiasModal(){
+  if(!CUR) return;
+  if(!can.editPatient()){ toast('Tu rol no edita la ficha'); return; }
+  modalOpen('Alergias · '+(CUR.full_name||''),
+    '<div class="field"><label>Alergias (fármacos, alimentos y tipo de reacción)</label><textarea id="qAl" style="min-height:90px">'+esc(CUR.allergies||'')+'</textarea></div>'+
+    '<p class="meta" style="margin:0">Dejalo vacío si no tiene alergias conocidas. El cambio queda registrado.</p>',
+    'Guardar', async ()=>await saveQuick('allergies', ($('qAl').value||'').trim()));
+}
+function openPesoModal(){
+  if(!CUR) return;
+  if(!can.editPatient()){ toast('Tu rol no edita la ficha'); return; }
+  modalOpen('Peso y talla · '+(CUR.full_name||''),
+    '<div class="grid g2"><div class="field"><label>Peso (kg)</label><input id="qPe" type="number" step="0.1" inputmode="decimal" value="'+esc(CUR.weight_kg??'')+'"></div>'+
+    '<div class="field"><label>Talla (cm)</label><input id="qTa" type="number" step="0.1" inputmode="decimal" value="'+esc(CUR.height_cm??'')+'"></div></div>'+
+    '<p class="meta" style="margin:0">El IMC se recalcula solo.</p>',
+    'Guardar', async ()=>{
+      const okP=await saveQuick('weight_kg', num($('qPe').value));
+      const h=num($('qTa').value); if(h!==CUR.height_cm) await saveQuick('height_cm', h);
+      return okP!==false;
+    });
+}
+
 /* ---------- Evolución ---------- */
 function noteEditable(n){ return n.author_id===ME.user_id && (Date.now()-new Date(n.created_at).getTime() < 24*3600*1000); }
 function entryNote(n){
@@ -1993,32 +2125,8 @@ function entryNote(n){
 let EVOL_FILTER='all', EVOL_PROF='all';
 function setEvolArea(a){ EVOL_FILTER=a; renderRegistro(); }
 function setEvolProf(u){ EVOL_PROF=u; renderRegistro(); }
-async function renderEvol(){
-  const host=$('paneHost'); host.innerHTML='<div class="loading">Cargando evoluciones…</div>';
-  const {data,error}=await DB().from('notes').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false});
-  if(error){host.innerHTML='<div class="callout"><p>'+esc(error.message)+'</p></div>';return;}
-  CUR_NOTES={};
-  const all=data||[];
-  const counts={}; all.forEach(n=>counts[n.discipline]=(counts[n.discipline]||0)+1);
-  const areasPresent=Object.keys(EVOL_AREA).filter(a=>counts[a]);
-  const profs={}; all.forEach(n=>{ if(n.author_id&&DIR[n.author_id]) profs[n.author_id]=DIR[n.author_id].full_name; });
-  if(EVOL_FILTER!=='all' && !counts[EVOL_FILTER]) EVOL_FILTER='all';
-  let list=all;
-  if(EVOL_FILTER!=='all') list=list.filter(n=>n.discipline===EVOL_FILTER);
-  if(EVOL_PROF!=='all') list=list.filter(n=>n.author_id===EVOL_PROF);
-  const chips='<div class="subpills"><button class="'+(EVOL_FILTER==='all'?'on':'')+'" onclick="setEvolArea(\'all\')">Todas · '+all.length+'</button>'+
-    areasPresent.map(a=>'<button class="'+(EVOL_FILTER===a?'on':'')+'" onclick="setEvolArea(\''+a+'\')">'+EVOL_AREA[a]+' · '+counts[a]+'</button>').join('')+'</div>';
-  const profSel = Object.keys(profs).length>1
-    ? '<select onchange="setEvolProf(this.value)" style="background:var(--void);border:1px solid var(--line);border-radius:9px;padding:8px 11px;color:var(--ink);font-family:var(--f-ui);font-size:13px">'+
-      '<option value="all">Todos los profesionales</option>'+Object.entries(profs).map(([uid,nm])=>'<option value="'+uid+'" '+(EVOL_PROF===uid?'selected':'')+'>'+esc(nm)+'</option>').join('')+'</select>'
-    : '';
-  const entries=list.map(entryNote).join('');
-  host.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">'+
-      '<span class="meta">'+all.length+' evolución'+(all.length===1?'':'es')+' · se editan hasta 24 h · cada una queda firmada con autor y área</span>'+
-      '<button class="btn primary" onclick="openNoteModal()">'+PLUS+'Nueva evolución</button></div>'+
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0">'+chips+profSel+'</div>'+
-    (entries?'<section class="sheet">'+entries+'</section>':'<div class="empty"><p>'+(all.length?'No hay evoluciones para este filtro.':'Todavía no hay evoluciones registradas.')+'</p></div>');
-}
+/* La pantalla 'Evolución' se eliminó: el hilo quedó unificado en Historia. */
+
 function openNoteModal(){
   NOTE_DISC=ROLE_TO_DISC[ME.role]||'oncologia'; EDIT_NOTE_ID=null;   // el área sale del rol: no se elige
   modalOpen('Evolución libre',
@@ -2154,7 +2262,7 @@ let GN=null, GN_NO_STRUCT=false, GN_REC=null, GN_REC_KEY=null;
 function tplFields(tpl){ const o=[]; tpl.secs.forEach(s=>s.f.forEach(f=>o.push(f))); return o; }
 function tplSuggested(id){
   const t=NOTE_TPL[id]; if(!t||t.kind==='nota') return false;
-  const has=((FCALC&&FCALC.notes)||[]).some(n=>n.discipline===t.disc);
+  const has=((FCAL().notes)||[]).some(n=>n.discipline===t.disc);
   return t.kind==='inicial' ? !has : has;
 }
 function tplAllowed(id){ return NOTE_TPL[id].disc!=='psicooncologia' || can.confidential(); }
@@ -2176,16 +2284,17 @@ function openRegistrar(){
   const others=Object.keys(NOTE_TPL).filter(id=>!mine.includes(id) && tplAllowed(id));
   const item=(onclick,icon,name,ds,sug)=>'<button onclick="modalClose();'+onclick+'"><span class="ic">'+icon+'</span><div><div class="nm">'+name+(sug?' <span class="sug">sugerida</span>':'')+'</div>'+(ds?'<div class="ds">'+ds+'</div>':'')+'</div></button>';
   const tpl=id=>item('gnOpen(\''+id+'\')', GN_IC[NOTE_TPL[id].kind], esc(NOTE_TPL[id].label), esc(NOTE_TPL[id].desc), mine.includes(id)&&tplSuggested(id));
-  const inds=(FCALC&&FCALC.inds)||[];
+  const inds=(FCAL().inds)||[];
   const D=[];
-  if(can.vitc()) D.push(item('openVitcModal()', GN_IC.nota, 'Registrar infusión', inds.length?esc(inds.map(indTitle).join(' · '))+' · signos antes y después':'Megadosis de vitamina C · signos antes y después'));
+  if(can.vitc()) D.push(item('openVitcModal()', GN_IC.nota, 'Administrar infusión', inds.length?esc(inds.map(indTitle).join(' · '))+' · signos antes y después':'Megadosis de vitamina C · signos antes y después'));
   D.push(item('openVitalModal()', IC_REG.signos, 'Signos vitales', 'Control fuera de la infusión'));
   D.push(item('openMedModal()', IC_REG.med, 'Medicación administrada', ''));
   D.push(item('openLabModal()', IC_REG.lab, 'Laboratorio', 'Cargar los valores o leerlos del PDF'));
   D.push(item('openUploadModal()', FILE_ICO, 'Documento o estudio', 'PDF o imagen'));
   D.push(item('openLinkModal()', LINK_ICO, 'Link a un estudio', 'Visor online, carpeta compartida…'));
+  if(can.indicate()) D.push(item('openRecetaModal()', FILE_ICO, 'Receta', 'Medicación indicada · foto o PDF'));
   D.push(item('openConsentModal()', IC_REG.firma, 'Consentimiento', ''));
-  if(can.indicate()) D.push(item('openInfusionModal()', GN_IC.inicial, 'Indicar infusión', 'Componentes del catálogo, vehículo, goteo y frecuencia'));
+  if(can.indicate()) D.push(item('openInfusionModal()', GN_IC.inicial, 'Indicar tratamiento', 'Componentes del catálogo, vehículo, goteo y frecuencia'));
   if(can.indicate()) D.push(item('openIndicModal()', GN_IC.inicial, 'Indicación general', ''));
   D.push(item('openApptModal(\''+CUR.id+'\')', IC.agenda, 'Turno', ''));
   const area=EVOL_AREA[ROLE_TO_DISC[ME.role]]||'';
@@ -2211,7 +2320,7 @@ function habitsCompile(sec,data){
 function gnOpen(tplId, note, force){
   const tpl=NOTE_TPL[tplId]; if(!tpl) return;
   if(!note && !force){   // ¿ya empezó hoy una nota con esta plantilla? → ofrecer continuarla
-    const mine=((FCALC&&FCALC.notes)||[]).find(n=>n.author_id===ME.user_id && n.structured && n.structured.tpl===tplId && sameDay(n.created_at) && noteEditable(n));
+    const mine=((FCAL().notes)||[]).find(n=>n.author_id===ME.user_id && n.structured && n.structured.tpl===tplId && sameDay(n.created_at) && noteEditable(n));
     if(mine){
       askChoice({where:'Al abrir una nota guiada', title:'Ya empezaste una nota de '+tpl.label.toLowerCase()+' hoy', existing:tpl.label+' · hoy '+fmtHM(mine.created_at),
         detail:'Guardada · la podés editar hasta 24 h después de creada', why:'Así la consulta queda en una sola nota y no en dos partes.', primary:'Continuar esa nota', secondary:'Empezar otra nota'})
@@ -2258,7 +2367,7 @@ function gnFieldHTML(f,sec){
 function gnSecHTML(s){
   const kindSeg=GN.tpl.kind==='seguimiento', hasText=s.f.some(f=>f.t==='text');
   const prev=(kindSeg&&hasText)?'<button type="button" class="gprev" data-prev="'+s.k+'">'+GN_IC.seguimiento+esc(s.prevLabel||'Traer de la visita anterior')+'</button>':'';
-  const indBtn=(s.k==='plan'&&GN.tpl.disc==='oncologia'&&can.indicate())?'<button type="button" class="gprev" data-ind="1">'+GN_IC.nota+((FCALC&&FCALC.inds&&FCALC.inds.length===1)?'Cambiar la infusión indicada':'Indicar infusión')+'</button>':'';
+  const indBtn=(s.k==='plan'&&GN.tpl.disc==='oncologia'&&can.indicate())?'<button type="button" class="gprev" data-ind="1">'+GN_IC.nota+((FCAL().inds&&FCAL().inds.length===1)?'Cambiar la infusión indicada':'Indicar tratamiento')+'</button>':'';
   const byK={}; s.f.forEach(f=>byK[f.k]=f);
   let body='', done=new Set();
   s.f.forEach(f=>{
@@ -2408,7 +2517,7 @@ function gnAfterFieldDone(k){
 function gnPrevValue(f){
   if(f.map && CUR[f.map]!=null && (''+CUR[f.map]).trim()!=='') return ''+CUR[f.map];   // el valor vigente de la ficha
   const keys=[f.k].concat(f.src||[]);
-  const notes=(FCALC&&FCALC.notes)||[];
+  const notes=(FCAL().notes)||[];
   for(const n of notes){
     if(n.id===GN.noteId || n.discipline!==GN.tpl.disc || !n.structured || !n.structured.data) continue;
     for(const key of keys){ const v=gnStr(n.structured.data[key]); if(v) return v; }
@@ -2483,7 +2592,7 @@ async function gnClose(){
       box.querySelectorAll('.gch').forEach(b=>b.classList.toggle('on', sel.includes(b.dataset.v)));
       gnSchedule(); gnAfterFieldDone(k); return;
     }
-    const ib=e.target.closest('[data-ind]'); if(ib){ openInfusionModal((FCALC&&FCALC.inds&&FCALC.inds.length===1)?FCALC.inds[0].id:null, true); return; }
+    const ib=e.target.closest('[data-ind]'); if(ib){ openInfusionModal((FCAL().inds&&FCAL().inds.length===1)?FCAL().inds[0].id:null, true); return; }
     const pv=e.target.closest('[data-prev]'); if(pv){ gnPrev(pv.dataset.prev); return; }
     const mc=e.target.closest('[data-mic]'); if(mc){ gnMic(mc.dataset.mic); return; }
     const go=e.target.closest('[data-go]'); if(go){ const t=$('gs_'+go.dataset.go); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); return; }
@@ -2497,35 +2606,38 @@ async function renderVitc(hostEl){
   const host=hostEl||$('paneHost'); host.innerHTML='<div class="loading">Cargando…</div>';
   const {data}=await DB().from('vitc_administrations').select('*').eq('patient_id',CUR.id).order('administered_at',{ascending:false});
   const g=CUR.g6pd_status||'no_evaluado';
-  const consentOk = !!(FCALC.consBy && FCALC.consBy['vitamina_c'] && FCALC.consBy['vitamina_c'].signed_at);
+  const consentOk = !!(FCAL().consBy && FCAL().consBy['vitamina_c'] && FCAL().consBy['vitamina_c'].signed_at);
   // El G6PD ya no bloquea el registro: si no es normal se muestra un aviso visible (la base tampoco bloquea).
-  const g6pdWarn = g!=='normal';
+  // si la tarjeta de la indicación ya muestra el aviso arriba, no lo repetimos acá
+  const yaAvisadoArriba = (FCAL().inds||[]).some(i=>indG6pd(i));
+  const g6pdWarn = g!=='normal' && !yaAvisadoArriba;
   const gate = !g6pdWarn
     ? ''
-    : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">Atención: '+esc(G6PD_LABEL[g])+'.</b> La megadosis puede estar contraindicada (riesgo de hemólisis). Verificá antes de administrar.</p></div>';
+    : '<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">Atención: '+esc(G6PD_LABEL[g])+'.</b> La megadosis puede estar contraindicada (riesgo de hemólisis). Verificá antes de administrar.'+
+      (can.editPatient()?' <button class="btn sm" style="margin-left:6px" onclick="openG6pdModal()">Cargar G6PD</button>':'')+'</p></div>';
   const consentNote = (!consentOk)
     ? '<div class="callout" style="border-color:rgba(224,164,88,.4);background:rgba(224,164,88,.07)"><span class="demo" style="flex:none">Recordatorio</span><p>No figura un consentimiento de megadosis firmado. No bloquea el registro, pero verificá que el consentimiento esté firmado. <button class="btn sm" style="margin-left:6px" onclick="goConsent()">Registrar consentimiento</button></p></div>'
     : '';
-  const lastLab=(FCALC.labs&&FCALC.labs[0])?FCALC.labs[0].measured_at:null;
+  const lastLab=(FCAL().labs&&FCAL().labs[0])?FCAL().labs[0].measured_at:null;
   const labWarn=((lastLab==null||daysSince(lastLab)>DIAS_LAB_VIGENTE))
     ? '<div class="callout" style="border-color:rgba(224,164,88,.4);background:rgba(224,164,88,.07)"><span class="demo" style="flex:none">Atención</span><p>'+(lastLab==null?'No hay laboratorios cargados.':'El último laboratorio es del '+fmtDMShort(lastLab)+' (más de '+DIAS_LAB_VIGENTE+' días).')+' Verificá si corresponde pedir un control antes de la infusión.</p></div>'
     : '';
   const canReg=can.vitc();
-  const btn = canReg? '<button class="btn primary sm" onclick="openVitcModal()">'+PLUS+'Registrar infusión</button>' : '';
+  const btn = canReg? '<button class="btn primary sm" onclick="openVitcModal()">'+PLUS+'Administrar infusión</button>' : '';
   const rows=(data||[]).map(v=>{
     const ev = (v.adverse_events&&v.adverse_events.trim())?'<span class="st warn"><span class="d"></span>'+esc(v.adverse_events.slice(0,24))+'</span>':'<span class="st ok"><span class="d"></span>Ninguno</span>';
     return '<tr><td style="white-space:nowrap">'+fmtDMShort(v.administered_at)+' · '+fmtHM(v.administered_at)+'</td><td>'+esc(adminCompsTxt(v))+'</td>'+
       '<td class="quiet">'+(v.dilution_ml?v.dilution_ml+' ml':'—')+'</td><td class="quiet">'+(v.rate_g_min?v.rate_g_min+' '+(v.rate_unit||'gtt/min'):'—')+'</td>'+
-      '<td class="quiet">'+(v.hr_pre??'—')+' · '+(v.bp_pre||'—')+' · '+(v.glucose_pre??'—')+'</td>'+
-      '<td class="quiet">'+(v.hr_post??'—')+' · '+(v.bp_post||'—')+' · '+(v.glucose_post??'—')+'</td>'+
+      '<td class="quiet">'+vsCell(v.bp_pre,v.hr_pre,v.glucose_pre)+'</td>'+
+      '<td class="quiet">'+vsCell(v.bp_post,v.hr_post,v.glucose_post)+'</td>'+
       '<td>'+ev+'</td><td class="quiet">'+esc(lastNameOf(whoName(v.administered_by)))+'</td></tr>';
   }).join('');
   const table = rows? '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Infusiones registradas</span>'+btn+'</div></div>'+
-      '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th style="min-width:180px">Componentes</th><th>Volumen</th><th>Goteo</th><th style="min-width:140px">Pre</th><th style="min-width:140px">Post</th><th style="min-width:130px">Eventos</th><th>Administró</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th style="min-width:180px">Componentes</th><th>Volumen</th><th>Goteo</th><th style="min-width:170px">Antes de la infusión</th><th style="min-width:170px">Después de la infusión</th><th style="min-width:130px">Eventos</th><th>Administró</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '</section>'
     : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Infusiones registradas</span>'+btn+'</div><p class="meta" style="margin:0">Sin administraciones registradas.</p></div></section>';
-  const relevant=!!FCALC.ind||!!(data&&data.length);
-  const anyG6=(FCALC.inds||[]).some(indG6pd)||(data||[]).some(v=>Number(v.dose_g)>0);   // G6PD y consentimiento: solo si hay vitamina C
+  const relevant=!!FCAL().ind||!!(data&&data.length);
+  const anyG6=(FCAL().inds||[]).some(indG6pd)||(data||[]).some(v=>Number(v.dose_g)>0);   // G6PD y consentimiento: solo si hay vitamina C
   host.innerHTML=(anyG6?gate+consentNote:'')+(relevant?labWarn:'')+table+(canReg?'':'<div class="callout"><p>Las infusiones de megadosis las registran enfermería, el médico funcional y la dirección médica.</p></div>');
 }
 function goConsent(){ DOC_TAB='consent'; setTab('docs'); }
@@ -2557,17 +2669,17 @@ function dupInfusionHTML(list){
 }
 function openVitcModal(indId){
   if(!can.vitc()){ toast('Las infusiones las registran enfermería, el médico funcional y la dirección médica'); return; }
-  const inds=FCALC.inds||[];
+  const inds=FCAL().inds||[];
   if(!inds.length) return openVitcLegacy();
   VI={indId:(indId&&inds.some(i=>i.id===indId))?indId:inds[0].id};
-  modalOpen('Registrar infusión','<div id="viForm"></div>','Registrar infusión', addVitcProto);
+  modalOpen('Administrar infusión','<div id="viForm"></div>','Administrar infusión', addVitcProto);
   renderViForm();
 }
 function viPick(id){ VI.indId=id; renderViForm(); }
 function viToggle(k,on){ const r=$('viR'+k), n=$('viN'+k); if(r) r.classList.toggle('hidden',on); if(n) n.classList.toggle('vi-off',!on); }
 function renderViForm(){
   const el=$('viForm'); if(!el||!VI) return;
-  const inds=FCALC.inds||[], ind=inds.find(i=>i.id===VI.indId); if(!ind) return;
+  const inds=FCAL().inds||[], ind=inds.find(i=>i.id===VI.indId); if(!ind) return;
   const g=CUR.g6pd_status||'no_evaluado';
   const head=inds.length>1
     ? '<div class="reg-h">Protocolo</div><div class="vi-chips">'+inds.map(i=>'<button type="button" class="'+(i.id===VI.indId?'on':'')+'" onclick="viPick(\''+i.id+'\')">'+esc(indTitle(i))+'</button>').join('')+'</div>'
@@ -2584,7 +2696,7 @@ function renderViForm(){
     signosHTML();
 }
 async function addVitcProto(){
-  const ind=(FCALC.inds||[]).find(i=>i.id===(VI&&VI.indId)); if(!ind) return false;
+  const ind=(FCAL().inds||[]).find(i=>i.id===(VI&&VI.indId)); if(!ind) return false;
   const comps=indComps(ind).map((c,k)=>({component_id:c.component_id||null, name:c.name, unit:c.unit,
     dose:num(($('viD'+k).value||'').replace(',','.').trim()), given:$('viG'+k).checked, reason:($('viR'+k).value||'').trim()||null}));
   if(comps.some(c=>c.dose!=null&&isNaN(c.dose))){ toast('Revisá las dosis: solo números'); return false; }
@@ -2607,13 +2719,13 @@ function openVitcLegacy(){
   VI=null;
   modalOpen('Infusión de megadosis de vitamina C',
     '<p class="meta" style="margin:0">No hay una infusión vigente indicada: se registra como megadosis de vitamina C.</p>'+
-    dupInfusionHTML(FCALC.vitc||[])+
+    dupInfusionHTML(FCAL().vitc||[])+
     '<div class="field"><label>Fecha y hora</label><input id="vWhen" type="datetime-local" value="'+nowLocalInput()+'"></div>'+
     '<div class="grid g3">'+
       '<div class="field"><label>Dosis (g)</label><input id="vDose" type="number" step="0.1" inputmode="decimal"></div>'+
       '<div class="field"><label>Dilución (ml)</label><input id="vDil" type="number" inputmode="numeric"></div>'+
       '<div class="field"><label>Velocidad (gtt/min)</label><input id="vRate" type="number" step="1" inputmode="numeric"></div>'+ // se guarda en rate_g_min, que ahora representa gotas/min
-    '</div>'+signosHTML(),'Registrar infusión', addVitc);
+    '</div>'+signosHTML(),'Administrar infusión', addVitc);
 }
 async function addVitc(){
   const dose=num($('vDose').value); if(!dose){toast('Ingresá la dosis');return false;}
@@ -2625,7 +2737,7 @@ async function addVitc(){
 }
 /* completar los signos de después de una infusión ya registrada (en lugar de cargarlos como un control aparte) */
 function openPostVitals(id){
-  const v=(FCALC.vitc||[]).find(x=>x.id===id); if(!v) return;
+  const v=(FCAL().vitc||[]).find(x=>x.id===id); if(!v) return;
   modalOpen('Signos después de la infusión de las '+fmtHM(v.administered_at),
     '<div class="grid g3"><div class="field"><label>TA</label><input id="pvBp" placeholder="120/80"></div>'+
     '<div class="field"><label>FC</label><input id="pvHr" type="number" inputmode="numeric"></div>'+
@@ -2651,14 +2763,14 @@ async function renderEnf(hostEl){
   const mrows=med.map(x=>'<tr><td style="white-space:nowrap">'+fmtDMShort(x.administered_at)+' · '+fmtHM(x.administered_at)+'</td><td>'+esc(x.medicamento)+'</td><td>'+(x.dosis?esc(x.dosis):'—')+'</td><td class="quiet">'+(x.dilucion_via?esc(x.dilucion_via):'—')+'</td><td>'+(x.tiempo_infusion?esc(x.tiempo_infusion):'—')+'</td><td class="quiet">'+(x.obs?esc(x.obs):'—')+'</td><td class="quiet">'+esc(lastNameOf(whoName(x.administered_by)))+'</td></tr>').join('');
   const alergia = CUR.allergies?'<div class="savebar">Recordá: la paciente tiene alergia registrada — '+esc(CUR.allergies.split(/[\.\n]/)[0])+'.</div>':'';
   host.innerHTML=
-    '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Control de signos vitales</span><button class="btn primary sm" onclick="openVitalModal()">'+PLUS+'Cargar control</button></div></div>'+
+    '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Control de signos vitales</span><button class="btn primary sm" onclick="openVitalModal()">'+PLUS+'Signos vitales</button></div></div>'+
       (vrows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th>T.A.</th><th>F.C.</th><th>F.R.</th><th>Temp.</th><th>Sat. O₂</th><th>HGT</th><th style="min-width:150px">Observación</th><th>Registró</th></tr></thead><tbody>'+vrows+'</tbody></table></div>':'<div class="sec" style="padding-top:0"><p class="meta" style="margin:0">Sin registros de signos vitales.</p></div>')+'</section>'+
     '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Medicación administrada</span><button class="btn primary sm" onclick="openMedModal()">'+PLUS+'Registrar</button></div></div>'+
       (mrows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th style="min-width:150px">Medicamento</th><th>Dosis</th><th style="min-width:150px">Dilución / vía</th><th>Tiempo</th><th style="min-width:150px">Observaciones</th><th>Administró</th></tr></thead><tbody>'+mrows+'</tbody></table></div>':'<div class="sec" style="padding-top:0"><p class="meta" style="margin:0">Sin medicación registrada.</p></div>')+alergia+'</section>';
 }
 async function openVitalModal(){
   const now=Date.now();
-  const recent=(FCALC.vitc||[]).find(v=>{ const dt=now-new Date(v.administered_at).getTime(); return !v.deleted_at && dt>=0 && dt<3*3600*1000 && !v.bp_post && v.hr_post==null && v.glucose_post==null; });
+  const recent=(FCAL().vitc||[]).find(v=>{ const dt=now-new Date(v.administered_at).getTime(); return !v.deleted_at && dt>=0 && dt<3*3600*1000 && !v.bp_post && v.hr_post==null && v.glucose_post==null; });
   if(recent && can.vitc()){
     const ch=await askChoice({where:'Al cargar signos vitales', title:'Hay una infusión registrada a las '+fmtHM(recent.administered_at), existing:'Infusión · '+fmtHM(recent.administered_at)+' · '+whoName(recent.administered_by),
       detail:'Le faltan los signos de después.', why:'Si son los signos de esa infusión, conviene completarlos ahí para no cargarlos dos veces.', primary:'Completarlos en la infusión', secondary:'Es un control aparte'});
@@ -2698,7 +2810,7 @@ function openMedModal(){
 }
 async function addMed(){
   const name=($('mdName').value||'').trim(); if(!name){toast('Ingresá el medicamento');return false;}
-  const nm=normTxt(name), hit=(FCALC.inds||[]).find(i=>indComps(i).some(c=>{ const a=normTxt(c.name); return a&&nm&&(a.includes(nm)||nm.includes(a)); }));
+  const nm=normTxt(name), hit=(FCAL().inds||[]).find(i=>indComps(i).some(c=>{ const a=normTxt(c.name); return a&&nm&&(a.includes(nm)||nm.includes(a)); }));
   if(hit){
     const ch=await askChoice({where:'Al registrar medicación', title:name+' es parte de una infusión vigente', existing:'Protocolo «'+indTitle(hit)+'»', detail:'Se registra marcándolo en la lista de componentes de la infusión.',
       why:'Cargarlo también como medicación lo contaría dos veces.', primary:can.vitc()?'Ir a registrar la infusión':'No registrarlo', secondary:'Es una dosis aparte'});
@@ -2866,7 +2978,7 @@ async function addLab(){
   const hasFile=fcHas('lab');
   if(!hasFile && !['lbHb','lbHto','lbGb','lbPlaq','lbGluc','lbCreat','lbUrea','lbOtros'].some(id=>g(id)!=null)){ toast('Cargá al menos un valor o adjuntá el archivo'); return false; }
   const day=$('lbDate').value||todayLocal();
-  const sameLab=(FCALC.labs||[]).find(l=>ymd(new Date(l.measured_at))===day);
+  const sameLab=(FCAL().labs||[]).find(l=>ymd(new Date(l.measured_at))===day);
   if(sameLab){
     const vals=ANALITOS.filter(a=>sameLab[a[0]]!=null).map(a=>a[1]+' '+sameLab[a[0]]).join(' · ');
     const ch=await askChoice({where:'Al cargar un laboratorio', title:'Ya hay un laboratorio del '+fmt(day), existing:'Laboratorio · '+fmt(sameLab.measured_at), detail:(vals||'Sin valores cargados')+(sameLab.storage_path?' · con archivo adjunto':''),
@@ -2970,10 +3082,10 @@ function infDuration(vol,rate){
 }
 function adminsOf(i){   // infusiones registradas de un protocolo (las viejas sin protocolo cuentan para la megadosis vigente desde su inicio)
   const from=toDate(i.start_date||i.created_at).getTime();
-  return (FCALC.vitc||[]).filter(v=>!v.deleted_at && (v.indication_id===i.id || (i.kind==='vitamina_c' && !v.indication_id && new Date(v.administered_at).getTime()>=from)));
+  return (FCAL().vitc||[]).filter(v=>!v.deleted_at && (v.indication_id===i.id || (i.kind==='vitamina_c' && !v.indication_id && new Date(v.administered_at).getTime()>=from)));
 }
 function adminCompsTxt(v){
-  const gv=(FCALC&&FCALC.given&&FCALC.given[v.id])||null;
+  const gv=(FCAL().given&&FCAL().given[v.id])||null;
   return (gv&&gv.length) ? gv.filter(c=>c.given).map(compTxt).join(' + ') : (v.dose_g+' g de vitamina C');
 }
 function indStatus(i){
@@ -2984,8 +3096,8 @@ function indStatus(i){
 }
 function renderIndCard(host){
   if(!host) return;
-  const inds=FCALC.inds||[], ci=can.indicate(), g=CUR.g6pd_status||'no_evaluado';
-  const head='<div class="sec-h" style="margin:0 2px 10px"><span class="sec-t">Infusiones vigentes · '+inds.length+'</span>'+(ci?'<button class="btn primary sm" onclick="openInfusionModal()">'+PLUS+'Indicar infusión</button>':'')+'</div>';
+  const inds=FCAL().inds||[], ci=can.indicate(), g=CUR.g6pd_status||'no_evaluado';
+  const head='<div class="sec-h" style="margin:0 2px 10px"><span class="sec-t">Infusiones vigentes · '+inds.length+'</span>'+(ci?'<button class="btn primary sm" onclick="openInfusionModal()">'+PLUS+'Indicar tratamiento</button>':'')+'</div>';
   if(!inds.length){
     host.innerHTML=head+'<section class="card"><div class="sec"><p class="meta" style="margin:0">'+(ci?'No hay infusiones indicadas. Elegí los componentes del catálogo, el vehículo, el goteo y la frecuencia: enfermería los ve precargados en cada infusión.':'No hay infusiones indicadas. Las indican la dirección médica, oncología y el médico funcional.')+'</p></div></section>';
     return;
@@ -2997,7 +3109,8 @@ function indCardHTML(ind,ci,g){
   let prox=''; if(ind.vitc_frequency&&last){ const iv=FREQ_DAYS[ind.vitc_frequency]||7; prox=fmtDMShort(new Date(new Date(last.administered_at).getTime()+iv*86400000).toISOString()); }
   const sessDone=ind.sessions_planned && done>=ind.sessions_planned, dateDone=ind.end_date && daysSince(ind.end_date)>=1;
   const warnEnd=(sessDone||dateDone)?'<div class="gate" style="margin-top:12px"><span class="ic"></span><p><b style="color:var(--ink)">'+(sessDone?'Se completaron las '+ind.sessions_planned+' sesiones indicadas.':'La indicación terminó el '+fmt(ind.end_date)+'.')+'</b> Revisá si se renueva, se modifica o se suspende.</p></div>':'';
-  const g6=(indG6pd(ind)&&g!=='normal')?'<div class="gate" style="margin-top:12px"><span class="ic"></span><p><b style="color:var(--ink)">'+esc(G6PD_LABEL[g])+'.</b> Este protocolo tiene un componente con aviso de G6PD (riesgo de hemólisis): verificá antes de administrar.</p></div>':'';
+  const g6=(indG6pd(ind)&&g!=='normal')?'<div class="gate" style="margin-top:12px"><span class="ic"></span><p><b style="color:var(--ink)">'+esc(G6PD_LABEL[g])+'.</b> Este protocolo tiene un componente con aviso de G6PD (riesgo de hemólisis): verificá antes de administrar.'+
+    (can.editPatient()?' <button class="btn sm" style="margin-left:6px" onclick="openG6pdModal()">Cargar G6PD</button>':'')+'</p></div>':'';
   const comps=indComps(ind).map(c=>'<div class="ic-row"><span class="d"></span><span class="n">'+esc(c.name)+'</span><span class="v">'+((c.dose!=null&&c.dose!=='')?esc(c.dose)+' '+esc(c.unit):'—')+'</span></div>').join('');
   const veh=[ind.vitc_dilution_ml?(esc(ind.vitc_dilution_ml)+' ml'+(ind.vehicle?' de '+esc(ind.vehicle):'')):(ind.vehicle?esc(ind.vehicle):''), ind.vitc_rate_gtt_min?esc(ind.vitc_rate_gtt_min)+' gtt/min':''].filter(Boolean).join(' · ');
   const dur=infDuration(ind.vitc_dilution_ml, ind.vitc_rate_gtt_min);
@@ -3013,7 +3126,7 @@ function indCardHTML(ind,ci,g){
       row('Indicó',esc(lastNameOf(whoName(ind.prescribed_by)))+' · desde el '+fmtDMShort(ind.start_date||ind.created_at))+'</div>'+
     (ind.detail?'<p class="bd" style="margin-top:12px">'+esc(ind.detail)+'</p>':'')+g6+warnEnd+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">'+
-      (can.vitc()?'<button class="btn sm btn-inf" onclick="openVitcModal(\''+ind.id+'\')">Registrar infusión</button>':'')+
+      (can.vitc()?'<button class="btn sm btn-inf" onclick="openVitcModal(\''+ind.id+'\')">Administrar infusión</button>':'')+
       (ci?'<button class="btn sm" onclick="openInfusionModal(\''+ind.id+'\')">Modificar</button><button class="btn sm dg" onclick="openSuspendInd(\''+ind.id+'\')">Suspender</button>':'')+
     '</div></div></section>';
 }
@@ -3052,7 +3165,7 @@ async function addIndic(){
 async function openInfusionModal(prevId, fromNote){
   if(!can.indicate()){ toast('Las infusiones las indican la dirección médica, oncología y el médico funcional'); return; }
   await loadCatalog();
-  const prev=prevId?(FCALC.inds||[]).find(i=>i.id===prevId)||null:null;
+  const prev=prevId?(FCAL().inds||[]).find(i=>i.id===prevId)||null:null;
   const cat=(CATALOG||[]).filter(c=>c.active);
   const rowsFrom=i=>indComps(i).map(c=>{
     const k=c.component_id?catOf(c.component_id):cat.find(x=>normTxt(x.name)===normTxt(c.name));
@@ -3062,7 +3175,7 @@ async function openInfusionModal(prevId, fromNote){
     rows:prev?rowsFrom(prev):(catVitC()?[{component_id:catVitC().id, dose:catVitC().usual_dose!=null?String(catVitC().usual_dose):''}]:[{component_id:'',dose:''}]),
     vehicle:prev?(prev.vehicle||''):'Solución fisiológica 0,9 %', vol:prev&&prev.vitc_dilution_ml!=null?String(prev.vitc_dilution_ml):'', rate:prev&&prev.vitc_rate_gtt_min!=null?String(prev.vitc_rate_gtt_min):'',
     freq:prev?(prev.vitc_frequency||''):'', start:todayLocal(), sess:prev&&prev.sessions_planned!=null?String(prev.sessions_planned):'', end:prev?(prev.end_date||''):'', detail:prev?(prev.detail||''):'', saveTpl:false};
-  modalOpen(prev?'Modificar infusión':'Indicar infusión','<div id="infForm"></div>','Guardar indicación', saveInfusion);
+  modalOpen(prev?'Modificar infusión':'Indicar tratamiento','<div id="infForm"></div>','Guardar indicación', saveInfusion);
   renderInfForm();
 }
 function infSet(k,i,v){ if(!INF) return; if(i==null) INF[k]=v; else INF.rows[i][k]=v; }
@@ -3110,7 +3223,7 @@ function renderInfForm(){
   if(hits.length) alerts.push('<div class="gate crit"><span class="ic"></span><p><b style="color:var(--ink)">Coincide con las alergias de la ficha:</b> '+esc(hits.map(c=>c.name).join(', '))+' (alergias: '+esc(CUR.allergies)+').</p></div>');
   else if(al&&chosen.length) alerts.push('<p class="meta inf-ok">✓ Ningún componente coincide con las alergias de la ficha.</p>');
   const key=chosen.map(c=>c.component_id||normTxt(c.name)).sort().join('|');
-  const same=chosen.length?(FCALC.inds||[]).find(i=>i.id!==INF.prevId && indComps(i).map(c=>c.component_id||normTxt(c.name)).sort().join('|')===key):null;
+  const same=chosen.length?(FCAL().inds||[]).find(i=>i.id!==INF.prevId && indComps(i).map(c=>c.component_id||normTxt(c.name)).sort().join('|')===key):null;
   if(same) alerts.push('<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">Ya hay un protocolo vigente con estos mismos componentes</b> («'+esc(indTitle(same))+'»). Si cambia algo, conviene modificar ese en lugar de indicar otro.</p></div>');
   const freqOpts=[['','Elegí la frecuencia'],['mensual','1 vez por mes'],['semanal','1 vez por semana'],['2x_semana','2 veces por semana'],['3x_semana','3 veces por semana']]
     .map(([k,l])=>'<option value="'+k+'" '+(INF.freq===k?'selected':'')+'>'+l+'</option>').join('');
@@ -3145,7 +3258,7 @@ async function saveInfusion(){
   if(sinDosis.length){ toast('Completá la dosis de: '+sinDosis.map(r=>r.name).join(', ')); return false; }
   if(!INF.freq){ toast('Elegí la frecuencia'); return false; }
   const key=rows.map(c=>c.component_id||normTxt(c.name)).sort().join('|');
-  const same=(FCALC.inds||[]).find(i=>i.id!==INF.prevId && indComps(i).map(c=>c.component_id||normTxt(c.name)).sort().join('|')===key);
+  const same=(FCAL().inds||[]).find(i=>i.id!==INF.prevId && indComps(i).map(c=>c.component_id||normTxt(c.name)).sort().join('|')===key);
   if(same){
     const ch=await askChoice({where:'Al indicar una infusión', title:'Ya hay un protocolo vigente con estos componentes', existing:indTitle(same), detail:indSummary(same), why:'Si cambia algo, conviene modificar ese en lugar de tener dos vigentes.', primary:'Volver y revisar', secondary:'Indicar otro igual'});
     if(ch!=='secondary') return false;
@@ -3175,7 +3288,7 @@ async function saveInfusion(){
   INF=null; afterChange(); return true;
 }
 function openSuspendInd(id){
-  const ind=(FCALC.inds||[]).find(i=>i.id===id); if(!ind||!can.indicate()) return;
+  const ind=(FCAL().inds||[]).find(i=>i.id===id); if(!ind||!can.indicate()) return;
   modalOpen('Suspender infusión',
     '<p class="meta" style="margin:0">'+esc(indTitle(ind))+': '+esc(indSummary(ind))+'. Queda en el historial como suspendida, con tu nombre, la fecha y el motivo.</p>'+
     '<div class="field"><label>Motivo *</label><textarea id="isReason" placeholder="Ej: fin del tratamiento, intolerancia, decisión de la paciente…"></textarea></div>',
@@ -3208,7 +3321,9 @@ function askChoice(o){
     el.hidden=false;
     const done=v=>{ el.hidden=true; el.innerHTML=''; el.onclick=null; res(v); };
     $('askP').onclick=()=>done('primary'); $('askS').onclick=()=>done('secondary');
-    el.onclick=e=>{ if(e.target===el) done(null); };
+    let abajo=false;
+    el.onpointerdown=e=>{ abajo=(e.target===el); };
+    el.onclick=e=>{ if(e.target===el && abajo) done(null); abajo=false; };
     $('askP').focus();
   });
 }
@@ -3298,34 +3413,66 @@ async function renderDocs(){
     DB().from('consents').select('*').eq('patient_id',CUR.id).order('created_at',{ascending:false}),
     DB().from('labs').select('*').eq('patient_id',CUR.id).order('measured_at',{ascending:false})
   ]);
-  const atts=AT.data||[], cons=CO.data||[], labs=LB.data||[];
+  const todosAtt=AT.data||[], cons=CO.data||[], labs=LB.data||[];
+  const recetas=todosAtt.filter(a=>a.kind==='receta'), atts=todosAtt.filter(a=>a.kind!=='receta');
   const t=DOC_TAB;
   const pills='<div class="subpills">'+
     '<button class="'+(t==='todos'?'on':'')+'" onclick="setDoc(\'todos\')">Todos</button>'+
     '<button class="'+(t==='estudios'?'on':'')+'" onclick="setDoc(\'estudios\')">Estudios · '+atts.length+'</button>'+
     '<button class="'+(t==='labs'?'on':'')+'" onclick="setDoc(\'labs\')">Laboratorios · '+labs.length+'</button>'+
+    '<button class="'+(t==='recetas'?'on':'')+'" onclick="setDoc(\'recetas\')">Recetas · '+recetas.length+'</button>'+
     '<button class="'+(t==='consent'?'on':'')+'" onclick="setDoc(\'consent\')">Consentimientos · '+cons.length+'</button></div>';
   let acts='';
-  if(t==='estudios'||t==='todos') acts+='<button class="btn sm" onclick="openUploadModal()">Subir estudio</button><button class="btn sm" onclick="openLinkModal()">Agregar link</button>';
-  if(t==='labs'||t==='todos') acts+='<button class="btn primary sm" onclick="openLabModal()">Cargar laboratorio</button>';
-  if(t==='consent'||t==='todos') acts+='<button class="btn sm" onclick="openConsentModal()">Registrar consentimiento</button>';
+  if(t==='estudios'||t==='todos') acts+='<button class="btn sm" onclick="openUploadModal()">Documento o estudio</button><button class="btn sm" onclick="openLinkModal()">Link a un estudio</button>';
+  if(t==='labs'||t==='todos') acts+='<button class="btn primary sm" onclick="openLabModal()">Laboratorio</button>';
+  if(t==='recetas'||t==='todos') acts+='<button class="btn sm" onclick="openRecetaModal()">Receta</button>';
+  if(t==='consent'||t==='todos') acts+='<button class="btn sm" onclick="openConsentModal()">Consentimiento</button>';
   const actRow='<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">'+acts+'</div>';
   const estudiosBlock = atts.length?'<section class="sheet"><div class="sec"><div class="files">'+estudiosFiles(atts)+'</div></div></section>':'<div class="empty" style="padding:28px 12px"><p>Sin estudios cargados.</p></div>';
   const labsBlock = '<section class="card"><div class="sec">'+labTable(labs)+'</div></section>';
   const consentBlock = cons.length?'<section class="sheet">'+consentCards(cons)+'</section>':'<div class="empty" style="padding:28px 12px"><p>Sin consentimientos registrados.</p></div>';
+  const recetasBlock = recetas.length?'<section class="sheet">'+recetaCards(recetas)+'</section>':'<div class="empty" style="padding:28px 12px"><p>Sin recetas cargadas.</p></div>';
   let body='';
   if(t==='estudios') body=estudiosBlock;
   else if(t==='labs') body=labsBlock;
+  else if(t==='recetas') body=recetasBlock;
   else if(t==='consent') body=consentBlock;
-  else body=docSection('Estudios y adjuntos',estudiosBlock)+docSection('Laboratorios',labsBlock)+docSection('Consentimientos',consentBlock);
+  else body=docSection('Estudios y adjuntos',estudiosBlock)+docSection('Laboratorios',labsBlock)+docSection('Recetas',recetasBlock)+docSection('Consentimientos',consentBlock);
   host.innerHTML=pills+actRow+body;
 }
 function setDoc(t){ DOC_TAB=t; renderDocs(); }
+function openRecetaModal(){
+  modalOpen('Cargar receta',
+    '<div class="field"><label>Medicación o indicación *</label><input id="rcTitle" placeholder="Ej: Amoxicilina 875 mg cada 12 h"></div>'+
+    '<div class="grid g2"><div class="field"><label>Fecha de la receta</label><input id="rcDate" type="date" value="'+todayLocal()+'" max="'+todayLocal()+'"></div>'+
+    '<div class="field"><label>Quién la prescribió</label><input id="rcDr" placeholder="Dr./Dra. …"></div></div>'+
+    '<div class="field"><label>Duración / observaciones</label><input id="rcObs" placeholder="Ej: por 7 días · hasta el 20/11"></div>'+
+    fileCollectorHTML('doc','Foto o PDF de la receta (opcional)'),'Guardar receta', guardarReceta);
+}
+async function guardarReceta(){
+  const ttl=($('rcTitle').value||'').trim(); if(!ttl){ toast('Escribí la medicación o indicación'); return false; }
+  let sp=null;
+  if(fcHas('doc')){ try{ sp=await uploadBuilt(await fcBuild('doc','receta_'+ttl.slice(0,30)), 'rec_'); }catch(e){ toast(e.message); return false; } }
+  const det=[($('rcDr').value||'').trim()?'Prescribió: '+($('rcDr').value||'').trim():'', ($('rcObs').value||'').trim()].filter(Boolean).join(' · ');
+  const {error}=await DB().from('attachments').insert({patient_id:CUR.id, title:ttl, study_date:$('rcDate').value||null,
+    detail:det||null, discipline:ROLE_TO_DISC[ME.role], storage_path:sp, kind:'receta', uploaded_by:ME.user_id});
+  if(error){ dropUpload(sp); toast(error.message); return false; }
+  fcReset('doc'); toast('Receta guardada'); DOC_TAB='recetas'; afterChange(); return true;
+}
+function recetaCards(list){
+  return list.map(r=>{
+    const ver=r.storage_path?'<button class="btn sm" onclick="verEstudio(\''+r.storage_path.replace(/'/g,'')+'\')">Ver receta</button>':'';
+    return '<div class="sec"><div class="sec-h" style="margin-bottom:4px"><span class="sec-t">'+esc(r.title)+'</span>'+
+      '<span class="meta" style="margin-left:auto">'+(r.study_date?fmt(r.study_date):fmtDMShort(r.created_at))+'</span></div>'+
+      (r.detail?'<p class="meta" style="margin:0 0 8px">'+esc(r.detail)+'</p>':'')+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+ver+'</div></div>';
+  }).join('');
+}
 function openUploadModal(){
-  modalOpen('Subir estudio',
+  modalOpen('Documento o estudio',
     '<div class="field"><label>Título / descripción *</label><input id="atTitle" placeholder="Ej: Biopsia de mama, TAC de tórax…"></div>'+
     '<div class="field"><label>Fecha del estudio</label><input id="atDate" type="date" max="'+todayLocal()+'"></div>'+
-    fileCollectorHTML('doc','Archivo'),'Subir estudio', uploadEstudio);
+    fileCollectorHTML('doc','Archivo'),'Guardar', uploadEstudio);
 }
 async function uploadEstudio(){
   if(!fcHas('doc')){ toast('Elegí el PDF o las fotos'); return false; }
@@ -3363,7 +3510,7 @@ function openConsentModal(){
     '<div class="field"><label>Observación (opcional)</label><input id="coNotes" placeholder="Si elegiste «Otro», aclaralo acá"></div>','Guardar consentimiento', addConsent);
 }
 async function addConsent(){
-  const kind=$('coKind').value, prevC=FCALC.consBy&&FCALC.consBy[kind];
+  const kind=$('coKind').value, prevC=FCAL().consBy&&FCAL().consBy[kind];
   if(kind==='otro' && !($('coNotes').value||'').trim()){ toast('Aclará en la observación de qué es el consentimiento'); return false; }
   if(prevC && prevC.signed_at && kind!=='otro'){
     const ch=await askChoice({where:'Al registrar un consentimiento', title:'Ya hay un consentimiento firmado de '+(CONSENT_KIND[kind]||kind).toLowerCase(), existing:'Firmado el '+fmt(sigDate(prevC.signed_at)), detail:prevC.storage_path?'Con el documento firmado adjunto':'Sin documento adjunto',
@@ -3561,7 +3708,7 @@ async function printPatient(){
     DB().from('indications').select('*').eq('patient_id',CUR.id).eq('kind','vitamina_c').eq('active',true).order('created_at',{ascending:false})
   ]);
   const indA=(inds||[])[0]||null;
-  const indLine=(FCALC.inds||[]).length?('<p style="margin:0 0 8px"><b>Infusiones vigentes:</b><br>'+FCALC.inds.map(i=>esc(indTitle(i))+': '+esc(indSummary(i))).join('<br>')+'</p>'):'';
+  const indLine=(FCAL().inds||[]).length?('<p style="margin:0 0 8px"><b>Infusiones vigentes:</b><br>'+FCAL().inds.map(i=>esc(indTitle(i))+': '+esc(indSummary(i))).join('<br>')+'</p>'):'';
   const row=(l,v)=> (v||v===0)?'<tr><td class="k">'+esc(l)+'</td><td>'+esc(v)+'</td></tr>':'';
   const sec=(t,rows)=> rows?'<h3>'+t+'</h3><table>'+rows+'</table>':'';
   const a=anthro(CUR.weight_kg,CUR.height_cm); const anth=a?('IMC '+a.imc.toFixed(1)+' kg/m² · BSA '+a.bsa.toFixed(2)+' m²'):'';
@@ -3611,7 +3758,15 @@ async function printPatient(){
     q.addEventListener('input',()=>{ if(curView!=='pacientes'){ navigate('pacientes'); } else { applyList(); } });
     q.addEventListener('keydown',e=>{ if(e.key==='Enter'&&curView!=='pacientes') navigate('pacientes'); });
   }
-  const modalBg=$('modal'); if(modalBg) modalBg.addEventListener('click',e=>{ if(e.target===modalBg) modalClose(); });
+  const modalBg=$('modal');
+  if(modalBg){
+    // Solo cierra si el gesto EMPIEZA y TERMINA sobre el fondo. Antes, apretar dentro de un
+    // campo y soltar afuera contaba como click en el fondo y cerraba perdiendo lo escrito.
+    let abajoEnFondo=false;
+    modalBg.addEventListener('pointerdown',e=>{ abajoEnFondo=(e.target===modalBg); });
+    modalBg.addEventListener('click',e=>{ if(e.target===modalBg && abajoEnFondo) modalClose(); abajoEnFondo=false; });
+  }
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('modal')&&$('modal').classList.contains('show')) modalClose(); });
   setAuthMode('login');
   // PWA: registra el service worker (si falla, la app funciona igual)
   if('serviceWorker' in navigator){ window.addEventListener('load',()=>{ try{ navigator.serviceWorker.register('/sw.js').catch(e=>console.warn('SW no registrado',e)); }catch(e){} }); }
