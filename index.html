@@ -784,6 +784,33 @@ img,svg,video,canvas{max-width:100%}
 .boot-bar span{display:block;width:40%;height:100%;border-radius:2px;background:var(--vital);animation:bootslide 1.15s ease-in-out infinite}
 @keyframes bootslide{0%{transform:translateX(-110%)}100%{transform:translateX(330%)}}
 .boot-slow{font-family:var(--f-ui);font-size:13px;line-height:1.6;color:var(--muted);margin:0;max-width:30ch}
+
+/* cuestionario de calidad de vida */
+.qq-intro{font-family:var(--f-ui);font-size:13px;line-height:1.65;color:var(--muted);margin:0;background:var(--void);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+.qq-h{font-family:var(--f-ui);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:14px 2px 2px}
+.qq{border:1px solid var(--line);border-radius:11px;padding:12px 13px;background:var(--panel)}
+.qq.sin{border-style:dashed}
+.qq-t{font-size:14.5px;line-height:1.5;color:var(--ink);margin-bottom:10px}
+.qq-t b{font-weight:600;color:var(--muted);margin-right:4px}
+.qq-op{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.qq-b,.qq-n{border:1px solid var(--line);background:var(--void);border-radius:9px;padding:9px 6px;font:inherit;font-family:var(--f-ui);font-size:13px;color:var(--ink-2);cursor:pointer;text-align:center;min-height:42px}
+.qq-b:hover,.qq-n:hover{border-color:var(--sage)}
+.qq-b.on,.qq-n.on{background:var(--vital);border-color:var(--vital);color:#fff;font-weight:600}
+.qq-sc{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.qq-n{padding:9px 0}
+.qq-anc{display:flex;justify-content:space-between;font-family:var(--f-ui);font-size:11.5px;color:var(--faint);margin-top:6px}
+.qq-falta{font-family:var(--f-ui);font-size:13px;color:var(--muted);text-align:center;padding:4px 0 0}
+.qq-legal{font-family:var(--f-ui);font-size:11.5px;line-height:1.6;color:var(--faint);margin:0}
+.qq-par{font-style:normal;font-size:11px;color:#8A5212;background:#FBF1E1;border:1px solid #EBD6B6;border-radius:5px;padding:1px 5px;margin-left:6px}
+.qq-chip{display:inline-block;margin-left:8px;font-family:var(--f-ui);font-size:11px;color:#1C5B63;background:#E7F1F2;border:1px solid #CDE2E4;border-radius:999px;padding:2px 8px;vertical-align:middle}
+.qq-band{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#E7F1F2;border:1px solid #CDE2E4;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-family:var(--f-ui);font-size:13.5px;line-height:1.6;color:#1C5B63}
+.qq-band>div{flex:1 1 260px;min-width:0}
+.qq-band b{color:#12464C}
+/* la pregunta es larga: tiene que envolver y dejar la respuesta a la derecha */
+.qq-rows .row{align-items:flex-start;gap:14px}
+.qq-rows .row .k{flex:1 1 auto;line-height:1.5}
+.qq-rows .row .v{flex:none;white-space:nowrap;font-weight:600}
+@media(max-width:600px){ .qq-op{grid-template-columns:repeat(2,1fr)} .qq-sc{grid-template-columns:repeat(4,1fr)} }
 </style>
 <body>
 
@@ -891,7 +918,8 @@ let CACHE=null;          // datos agregados para listado / inicio
 /* Los datos calculados de la ficha SOLO se usan si pertenecen al paciente abierto.
    Antes se leían sin verificar y, al cambiar de ficha, podían mostrarse los de otro paciente. */
 const FCAL_EMPTY={appts:[],labs:[],notes:[],vitc:[],vitals:[],meds:[],cons:[],ind:null,inds:[],given:{},
-  areas:{},areaMeta:{},people:[],futureAppts:[],asist:{as:0,ab:0,tot:0},consBy:{},audit:[],lastCreat:null};
+  areas:{},areaMeta:{},people:[],futureAppts:[],asist:{as:0,ab:0,tot:0},consBy:{},audit:[],lastCreat:null,
+  qlq:{tomas:[],total:0,ultima:null,dias:null,nunca:true,toca:false,empeoro:[]}};
 function FCAL(){ return (FCALC && CUR && FCALC.pid===CUR.id) ? FCALC : FCAL_EMPTY; }
 let FCALC=null;          // datos calculados de la ficha abierta
 let CUR_NOTES={}, NOTE_DISC=null, EDIT_NOTE_ID=null;
@@ -1195,7 +1223,7 @@ function isFuture(d){return d && new Date(d).getTime()>=Date.now();}
 function whoName(uid){const s=DIR[uid];return s?s.full_name:'—';}
 
 async function loadCache(){
-  const [P,AP,IND,CON,LB,NT,VC,VS,AT,ICP] = await Promise.all([
+  const [P,AP,IND,CON,LB,NT,VC,VS,AT,ICP,QQ] = await Promise.all([
     DB().from('patients').select('id,hc_number,full_name,doc_id,doc_type,birth_date,sex,base_diagnosis,stage,g6pd_status,created_at,coverage,affiliate_number,allergies').is('deleted_at',null),
     DB().from('appointments').select('patient_id,starts_at,discipline,professional_id,status,title'),
     DB().from('indications').select('id,patient_id,kind,active,vitc_target_dose_g').in('kind',['vitamina_c','infusion']).eq('active',true),
@@ -1206,6 +1234,7 @@ async function loadCache(){
     DB().from('vitals').select('patient_id,measured_at,recorded_by').order('measured_at',{ascending:false}),
     DB().from('attachments').select('patient_id,created_at,uploaded_by').order('created_at',{ascending:false}),
     DB().from('indication_components').select('indication_id,component_id,name'),
+    DB().from('questionnaires').select('patient_id,administered_at,scores').order('administered_at',{ascending:false}),
     loadCatalog()
   ]);
   const patients=P.data||[], appts=AP.data||[];
@@ -1220,6 +1249,8 @@ async function loadCache(){
   const vitcByPat=groupBy(VC.data,'patient_id');
   const vitalsByPat=groupBy(VS.data,'patient_id');
   const attByPat=groupBy(AT.data,'patient_id');
+  const qqByPat=groupBy(QQ.data||[],'patient_id');
+  const qqListo=!QQ.error;   // si la tabla todavía no existe, la función queda apagada en vez de marcar a todos como vencidos
 
   const calc={};
   patients.forEach(p=>{
@@ -1284,7 +1315,20 @@ async function loadCache(){
     else if(anyHistory) sit={label:'En seguimiento',cls:''};
     else sit={label:'Sin registros aún',cls:'off'};
 
-    calc[pid]={areas,areasActivas,pend,proximo:futureAppts[0]||null,ultimo,sit,hoyAppt,hasVitcInd,vitcCount,vitcTarget:indByPat[pid]?indByPat[pid].vitc_target_dose_g:null,lastCreat:(labs.find(l=>l.creatinina!=null)||null)};
+    /* ---- calidad de vida: toca cada 15 días, solo en tratamiento activo ---- */
+    const qqs=(qqByPat[pid]||[]);                       // ya vienen de la más nueva a la más vieja
+    const turnoReciente = pa.some(a=>daysSince(a.starts_at)<=60);   // incluye los turnos futuros
+    const enTratamiento = hasVitcInd || turnoReciente;
+    const qqUlt=qqs[0]||null;
+    const qqDias=qqUlt?Math.floor(daysSince(qqUlt.administered_at)):null;
+    const qlq={
+      total:qqs.length, ultima:qqUlt?qqUlt.administered_at:null, dias:qqDias,
+      toca: qqListo && enTratamiento && (qqUlt==null || qqDias>=QLQ_DIAS),
+      nunca: qqUlt==null,
+      empeoro: (qqs[1]&&qqUlt) ? qlqCambios(qqUlt.scores,qqs[1].scores).filter(c=>!c.mejoro) : []
+    };
+
+    calc[pid]={areas,areasActivas,pend,proximo:futureAppts[0]||null,ultimo,sit,hoyAppt,hasVitcInd,vitcCount,qlq,vitcTarget:indByPat[pid]?indByPat[pid].vitc_target_dose_g:null,lastCreat:(labs.find(l=>l.creatinina!=null)||null)};
   });
 
   CACHE={patients,appts,calc,indByPat,
@@ -1368,12 +1412,37 @@ async function renderInicio(){
     const right = i===nowIdx
       ? '<button class="btn sm" onclick="openPatient(\''+a.patient_id+'\')">Abrir</button>'
       : '<span class="st '+stCls+'"><span class="d"></span>'+stTxt+'</span>';
+    // si hoy está acá y le toca el cuestionario, es el momento de tomarlo
+    const qTocaHoy=((CACHE.calc[pt.id]||{}).qlq||{}).toca;
     return '<div class="sl'+(i===nowIdx?' now':'')+'"><span class="hh">'+fmtHM(a.starts_at)+'</span>'+
-      '<div><div class="nm">'+esc(pt.full_name||'Paciente')+'</div>'+
+      '<div><div class="nm">'+esc(pt.full_name||'Paciente')+(qTocaHoy?'<span class="qq-chip">toca calidad de vida</span>':'')+'</div>'+
       '<div class="ds">'+esc(DISC_LABEL[a.discipline]||a.title||'Turno')+(prof?' · '+esc(prof.full_name):'')+(i===nowIdx?' · en curso':'')+'</div></div>'+right+'</div>';
   }).join('')||'<div class="meta" style="padding:8px 0">No hay turnos para hoy.</div>';
 
   const profCount=new Set(hoy.map(a=>a.professional_id).filter(Boolean)).size;
+
+  /* ---- calidad de vida: a quiénes les toca y a quiénes se les movió algo ---- */
+  const qlqToca=[], qlqPeor=[];
+  CACHE.patients.forEach(pt=>{
+    const q=(CACHE.calc[pt.id]||{}).qlq; if(!q) return;
+    if(q.toca) qlqToca.push({pt,q});
+    if(q.empeoro && q.empeoro.length) qlqPeor.push({pt,q});
+  });
+  qlqToca.sort((a,b)=>(b.q.dias==null?1e9:b.q.dias)-(a.q.dias==null?1e9:a.q.dias));
+  const qlqFila=({pt,q})=>{
+    const cuando = q.nunca ? 'Nunca se le tomó' : 'Último hace '+q.dias+' día'+(q.dias===1?'':'s');
+    return '<div class="it warn"><span class="d"></span><div class="b">'+
+      '<div class="t">'+esc(pt.full_name)+'</div><div class="s">'+cuando+' · se hace cada '+QLQ_DIAS+' días.</div></div>'+
+      '<button class="btn sm a" onclick="openPatient(\''+pt.id+'\')">Abrir</button></div>';
+  };
+  const qlqPeorFila=({pt,q})=>'<div class="it crit"><span class="d"></span><div class="b">'+
+      '<div class="t">'+esc(pt.full_name)+' · empeoró</div><div class="s">'+
+      esc(q.empeoro.slice(0,3).map(c=>c.nom.toLowerCase()+' '+(c.d>0?'+':'')+c.d).join(' · '))+
+      ' contra la toma anterior. Diez puntos o más ya es un cambio que se nota.</div></div>'+
+      '<button class="btn sm a" onclick="openPatient(\''+pt.id+'\')">Abrir</button></div>';
+  const qlqRows = (qlqPeor.map(qlqPeorFila).join('')+qlqToca.map(qlqFila).join('')) ||
+    '<div class="it"><span class="d" style="background:var(--vital)"></span><div class="b">'+
+    '<div class="t">Todos al día</div><div class="s">Nadie en tratamiento activo pasó los '+QLQ_DIAS+' días sin cuestionario.</div></div></div>';
 
   const pendRows=pendItems.length? pendItems.map(({pt,pd,prox})=>{
     let s='';
@@ -1401,6 +1470,7 @@ async function renderInicio(){
        '<div class="day">'+dayRows+'</div></div></section>'+
      '<div class="stack">'+
        '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Pendientes del equipo</span><span class="meta">Calculado</span></div><div class="todo">'+pendRows+'</div></div></section>'+
+       '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Calidad de vida</span><span class="meta">'+(qlqToca.length||'ninguno')+' por tomar</span></div><div class="todo">'+qlqRows+'</div></div></section>'+
        '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Lo que se registró hoy</span></div><div class="rows">'+
          '<div class="row"><span class="k">Administraciones de megadosis</span><span class="v">'+vitcHoy+'</span></div>'+
          '<div class="row"><span class="k">Evoluciones firmadas</span><span class="v">'+notesHoy+'</span></div>'+
@@ -1543,9 +1613,10 @@ async function loadFichaCalc(){
     DB().from('indications').select('*').eq('patient_id',pid).in('kind',['vitamina_c','infusion']).eq('active',true).order('created_at',{ascending:false}),
     DB().from('indication_components').select('*').eq('patient_id',pid),
     DB().from('infusion_components_given').select('*').eq('patient_id',pid),
+    DB().from('questionnaires').select('*').eq('patient_id',pid).order('administered_at',{ascending:false}),
     loadCatalog()
   ];
-  const [AP,LB,NT,VC,VS,MD,CO,IND,ICP,GIV]=await Promise.all(q);
+  const [AP,LB,NT,VC,VS,MD,CO,IND,ICP,GIV,QQ]=await Promise.all(q);
   let audit=[];
   if(can.director()){ const a=await DB().from('audit_log').select('*').eq('patient_id',pid).order('at',{ascending:false}).limit(6); audit=a.data||[]; }
   const icomp=groupBy(ICP.data||[],'indication_id');
@@ -1584,7 +1655,16 @@ async function loadFichaCalc(){
   const as=ap90.filter(a=>a.status==='asistio').length, ab=ap90.filter(a=>a.status==='ausente').length;
   // consentimientos
   const consBy={}; cons.forEach(c=>{ if(!consBy[c.kind] || (!consBy[c.kind].signed_at && c.signed_at)) consBy[c.kind]=c; });   // prioriza el firmado
-  FCALC={pid,appts,labs,notes,vitc,vitals,meds,cons,ind,inds,given,areas,areaMeta,people,futureAppts,
+  // calidad de vida: mismo criterio que en Inicio
+  const qqs=(QQ.data||[]).filter(x=>!x.deleted_at);
+  const qqListo=!QQ.error;
+  const qqUlt=qqs[0]||null, qqDias=qqUlt?Math.floor(daysSince(qqUlt.administered_at)):null;
+  const enTratamiento = !!ind || appts.some(a=>daysSince(a.starts_at)<=60);
+  const qlq={ tomas:qqs, total:qqs.length, ultima:qqUlt?qqUlt.administered_at:null, dias:qqDias,
+    nunca:qqUlt==null, toca: qqListo && enTratamiento && (qqUlt==null || qqDias>=QLQ_DIAS),
+    empeoro:(qqs[1]&&qqUlt)?qlqCambios(qqUlt.scores,qqs[1].scores).filter(c=>!c.mejoro):[] };
+
+  FCALC={pid,appts,labs,notes,vitc,vitals,meds,cons,ind,inds,given,areas,areaMeta,people,futureAppts,qlq,
     asist:{as,ab,tot:as+ab}, consBy, audit, lastCreat:labs.find(l=>l.creatinina!=null)||null};
   return FCALC;
 }
@@ -1858,7 +1938,14 @@ let HC_BASE_OPEN=false;
 function renderHC(){
   HC_EDIT=false;
   const host=$('paneHost');
-  host.innerHTML='<div id="regHost"><div class="loading">Cargando el registro…</div></div>'+
+  const q=(FCAL().qlq)||{};
+  const banda = q.toca
+    ? '<div class="qq-band"><div><b>Toca el cuestionario de calidad de vida.</b> '+
+        (q.nunca?'Todavía no se le tomó ninguno.':'El último fue hace '+q.dias+' día'+(q.dias===1?'':'s')+'.')+
+        ' Son 16 preguntas, se las leés y marcás lo que conteste.</div>'+
+        '<button class="btn primary sm" onclick="openQlqModal()">Completar</button></div>'
+    : '';
+  host.innerHTML=banda+'<div id="regHost"><div class="loading">Cargando el registro…</div></div>'+
     '<details class="base" id="hcBase"'+(HC_BASE_OPEN?' open':'')+' ontoggle="HC_BASE_OPEN=this.open"><summary><svg class="caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>'+
       '<div><b>Ficha del paciente</b><div class="sub">Diagnóstico, antecedentes, G6PD, estadificación, cobertura… · tocá para ver o corregir</div></div></summary>'+
       '<div class="body">'+datosBaseReadHTML()+'</div></details>';
@@ -1870,7 +1957,8 @@ function corregirDatos(){ if(!can.editPatient()){toast('Tu rol no corrige los da
    documentos, consentimientos e indicaciones, todo junto y por día. Solo lectura: cada tipo se carga
    desde «Registrar» y queda guardado en su tabla de siempre. */
 let TL_FILTER='todo';
-const TL_TYPES=[['todo','Todo'],['notas','Consultas'],['megadosis','Infusiones'],['labs','Estudios'],['signos','Signos vitales'],['medicacion','Medicación'],['indicaciones','Indicaciones']];
+const TL_TYPES=[['todo','Todo'],['notas','Consultas'],['megadosis','Infusiones'],['labs','Estudios'],['signos','Signos vitales'],['medicacion','Medicación'],['indicaciones','Indicaciones'],['calidad','Calidad de vida']];
+const QLQ_COL={t:'#1C5B63',bg:'#E7F1F2',bd:'#CDE2E4',d:'#1C8290'};
 const LAB_COL={t:'#8A5212',bg:'#FBF1E1',bd:'#EBD6B6',d:'#D97706'}, DOC_COL={t:'#36423A',bg:'#EEF1EA',bd:'#E2E7DD',d:'#566055'};
 function esNotaAdmin(n){ const c=n.content||''; return c.indexOf(CORR_PREFIX)===0||c.indexOf(DATE_CORR)===0; }
 function setTlFilter(f){ TL_FILTER=f; renderRegistro(); }
@@ -1937,7 +2025,7 @@ function tlDay(d){
 async function renderRegistro(){
   const host=$('regHost'); if(!host)return;
   const pid=CUR.id, q=t=>DB().from(t).select('*').eq('patient_id',pid);
-  const [NT,VC,VS,LB,MD,AT,CO,IN,GV]=await Promise.all([q('notes'),q('vitc_administrations'),q('vitals'),q('labs'),q('medications'),q('attachments'),q('consents'),q('indications'),q('infusion_components_given')]);
+  const [NT,VC,VS,LB,MD,AT,CO,IN,GV,QQ]=await Promise.all([q('notes'),q('vitc_administrations'),q('vitals'),q('labs'),q('medications'),q('attachments'),q('consents'),q('indications'),q('infusion_components_given'),q('questionnaires')]);
   if(NT.error){host.innerHTML='<div class="callout"><p>'+esc(NT.error.message)+'</p></div>';return;}
   if(!CUR||CUR.id!==pid||curTab!=='hc'||!$('regHost')) return;   // cambió de paciente o de pestaña mientras cargaba
   CUR_NOTES={};
@@ -1950,6 +2038,9 @@ async function renderRegistro(){
   (MD.data||[]).forEach(x=>push('medicacion',x.administered_at,x.administered_by,()=>tlMed(x)));
   // Documentos y consentimientos viven en la pestaña Documentos: no ensucian el hilo clínico.
   (IN.data||[]).filter(i=>!i.deleted_at).forEach(i=>push('indicaciones',i.created_at,i.prescribed_by,()=>tlInd(i)));
+  // cada cuestionario se compara con el anterior del mismo paciente, por eso van ordenados
+  const qqs=(QQ.data||[]).filter(x=>!x.deleted_at).sort((a,b)=>toDate(a.administered_at)-toDate(b.administered_at));
+  qqs.forEach((x,i)=>push('calidad',x.administered_at,x.taken_by,()=>tlQlq(x,qqs[i-1]||null)));
   items.sort((a,b)=>toDate(b.at)-toDate(a.at));
   const counts={}; items.forEach(i=>counts[i.t]=(counts[i.t]||0)+1);
   if(TL_FILTER!=='todo'&&!counts[TL_FILTER]) TL_FILTER='todo';
@@ -2309,6 +2400,7 @@ function openRegistrar(){
   D.push(item('openLabModal()', IC_REG.lab, 'Laboratorio', 'Cargar los valores o leerlos del PDF'));
   D.push(item('openUploadModal()', FILE_ICO, 'Documento o estudio', 'PDF o imagen'));
   D.push(item('openLinkModal()', LINK_ICO, 'Link a un estudio', 'Visor online, carpeta compartida…'));
+  D.push(item('openQlqModal()', IC_REG.firma, 'Calidad de vida', 'Cuestionario de 16 preguntas · se lo leés al paciente'));
   if(can.indicate()) D.push(item('openRecetaModal()', FILE_ICO, 'Receta', 'Medicación indicada · foto o PDF'));
   D.push(item('openConsentModal()', IC_REG.firma, 'Consentimiento', ''));
   if(can.indicate()) D.push(item('openInfusionModal()', GN_IC.inicial, 'Indicar tratamiento', 'Componentes del catálogo, vehículo, goteo y frecuencia'));
@@ -2617,6 +2709,236 @@ async function gnClose(){
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && GN) gnFlush(); });
   window.addEventListener('beforeunload',e=>{ if(GN && (GN.dirty || GN.st==='saving' || GN.st==='retry')){ gnFlush(); e.preventDefault(); e.returnValue=''; } });
 })();
+
+
+/* ====================== Calidad de vida · EORTC QLQ-C30 ======================
+   Subconjunto de 16 ítems elegido por el equipo de Revigen.
+   La redacción y el orden de los ítems NO se pueden modificar: son parte del
+   instrumento validado. El cuestionario es propiedad del EORTC Quality of Life
+   Group y su uso, incluido el uso electrónico, requiere permiso.           */
+const QLQ_DIAS=15;                       // cada cuánto vuelve a tocar
+const QLQ_MIC=10;                        // 10 puntos = cambio clínicamente relevante
+const QLQ_OPC=[[1,'En absoluto'],[2,'Un poco'],[3,'Bastante'],[4,'Mucho']];
+const QLQ_ITEMS=[
+  {n:1, b:'gen', t:'¿Tiene alguna dificultad para hacer actividades que requieran un esfuerzo importante, como llevar una bolsa de compra pesada o una maleta?'},
+  {n:4, b:'gen', t:'¿Tiene que permanecer en la cama o sentado/a en una silla durante el día?'},
+  {n:6, b:'sem', t:'¿Ha tenido algún impedimento para hacer su trabajo u otras actividades cotidianas?'},
+  {n:8, b:'sem', t:'¿Tuvo sensación de "falta de aire" o dificultad para respirar?'},
+  {n:9, b:'sem', t:'¿Ha tenido dolor?'},
+  {n:11,b:'sem', t:'¿Ha tenido dificultades para dormir?'},
+  {n:12,b:'sem', t:'¿Se ha sentido débil?'},
+  {n:13,b:'sem', t:'¿Le ha faltado el apetito?'},
+  {n:14,b:'sem', t:'¿Ha tenido náuseas?'},
+  {n:15,b:'sem', t:'¿Ha vomitado?'},
+  {n:22,b:'sem', t:'¿Se sintió preocupado/a?'},
+  {n:23,b:'sem', t:'¿Se sintió irritable?'},
+  {n:24,b:'sem', t:'¿Se sintió deprimido/a?'},
+  {n:27,b:'sem', t:'¿Ha interferido su estado físico o el tratamiento médico en sus actividades sociales?'},
+  {n:29,b:'esc', t:'¿Cómo valoraría su salud general durante la semana pasada?'},
+  {n:30,b:'esc', t:'¿Cómo valoraría su calidad de vida en general durante la semana pasada?'}
+];
+/* "items" son TODOS los ítems que la escala tiene en el cuestionario completo.
+   Con el subconjunto de 16 algunas quedan incompletas: el manual permite calcular
+   una escala si se contestó al menos la mitad de sus ítems, y por debajo de eso no
+   se calcula. Las incompletas se marcan como parciales: sirven para seguir al mismo
+   paciente en el tiempo, no para comparar con los valores de referencia publicados. */
+const QLQ_ESCALAS=[
+  {k:'QL2',nom:'Calidad de vida global',   tipo:'global',items:[29,30],      rango:6},
+  {k:'PF2',nom:'Función física',           tipo:'func',  items:[1,2,3,4,5],  rango:3},
+  {k:'RF2',nom:'Función de rol',           tipo:'func',  items:[6,7],        rango:3},
+  {k:'EF', nom:'Función emocional',        tipo:'func',  items:[21,22,23,24],rango:3},
+  {k:'CF', nom:'Función cognitiva',        tipo:'func',  items:[20,25],      rango:3},
+  {k:'SF', nom:'Función social',           tipo:'func',  items:[26,27],      rango:3},
+  {k:'FA', nom:'Fatiga',                   tipo:'sint',  items:[10,12,18],   rango:3},
+  {k:'NV', nom:'Náuseas y vómitos',        tipo:'sint',  items:[14,15],      rango:3},
+  {k:'PA', nom:'Dolor',                    tipo:'sint',  items:[9,19],       rango:3},
+  {k:'DY', nom:'Disnea',                   tipo:'sint',  items:[8],          rango:3},
+  {k:'SL', nom:'Insomnio',                 tipo:'sint',  items:[11],         rango:3},
+  {k:'AP', nom:'Falta de apetito',         tipo:'sint',  items:[13],         rango:3},
+  {k:'CO', nom:'Constipación',             tipo:'sint',  items:[16],         rango:3},
+  {k:'DI', nom:'Diarrea',                  tipo:'sint',  items:[17],         rango:3},
+  {k:'FI', nom:'Dificultades económicas',  tipo:'sint',  items:[28],         rango:3}
+];
+const QLQ_PEDIDOS=QLQ_ITEMS.map(i=>i.n);
+function qlqEsc(k){ return QLQ_ESCALAS.find(e=>e.k===k); }
+/* 0 a 100. En las funcionales y en la global, más alto es mejor.
+   En las de síntomas, más alto es peor. */
+function qlqPuntajes(ans){
+  const out={};
+  QLQ_ESCALAS.forEach(e=>{
+    const hay=e.items.filter(i=>ans['q'+i]!=null&&ans['q'+i]!=='').map(i=>Number(ans['q'+i]));
+    if(!hay.length || hay.length*2 < e.items.length) return;      // menos de la mitad: no se calcula
+    const rs=hay.reduce((a,b)=>a+b,0)/hay.length;
+    const v=(e.tipo==='func') ? (1-(rs-1)/e.rango)*100 : ((rs-1)/e.rango)*100;
+    out[e.k]={v:Math.round(v*10)/10, n:hay.length, de:e.items.length, parcial:hay.length<e.items.length};
+  });
+  return out;
+}
+function qlqMejorAlto(k){ const e=qlqEsc(k); return !e || e.tipo!=='sint'; }
+/* Compara dos tomas y devuelve lo que se movió 10 puntos o más, para peor o para mejor. */
+function qlqCambios(ahora,antes){
+  const r=[];
+  if(!ahora||!antes) return r;
+  Object.keys(ahora).forEach(k=>{
+    if(!antes[k]) return;
+    const d=Math.round((ahora[k].v-antes[k].v)*10)/10;
+    if(Math.abs(d)<QLQ_MIC) return;
+    const mejoro = qlqMejorAlto(k) ? d>0 : d<0;
+    r.push({k,nom:(qlqEsc(k)||{}).nom||k,d,mejoro,parcial:ahora[k].parcial||antes[k].parcial});
+  });
+  return r.sort((a,b)=>(a.mejoro===b.mejoro?Math.abs(b.d)-Math.abs(a.d):(a.mejoro?1:-1)));
+}
+function qlqResumen(sc){
+  if(!sc) return '';
+  const g=sc.QL2;
+  const sint=QLQ_ESCALAS.filter(e=>e.tipo==='sint'&&sc[e.k]&&sc[e.k].v>=33)
+    .sort((a,b)=>sc[b.k].v-sc[a.k].v).slice(0,3).map(e=>e.nom.toLowerCase());
+  return (g?'Calidad de vida global '+g.v+'/100':'')+(sint.length?' · pesa más: '+sint.join(', '):'');
+}
+
+/* ---------- el formulario ---------- */
+let QLQ=null;
+function qlqBorrKey(pid){ return 'revigen_qlq_'+pid; }
+function qlqLeerBorr(pid){
+  try{ const r=localStorage.getItem(qlqBorrKey(pid)); if(!r) return null;
+       const o=JSON.parse(r); return (o&&o.ans&&daysSince(o.ts)<2)?o:null; }catch(e){ return null; }
+}
+function qlqGuardarBorr(){
+  if(!QLQ) return;
+  try{ localStorage.setItem(qlqBorrKey(QLQ.pid),JSON.stringify({ans:QLQ.ans,fecha:QLQ.fecha,ts:new Date().toISOString()})); }catch(e){}
+}
+function qlqTirarBorr(pid){ try{ localStorage.removeItem(qlqBorrKey(pid)); }catch(e){} }
+
+function openQlqModal(){
+  if(!CUR) return;
+  const borr=qlqLeerBorr(CUR.id);
+  QLQ={pid:CUR.id, ans:(borr?borr.ans:{}), fecha:(borr&&borr.fecha)||nowLocalInput(), modo:'leido_por_profesional'};
+  const fil=CUR.full_name||'el paciente';
+  modalOpen('Calidad de vida · '+fil,
+    '<p class="qq-intro">Leéle las preguntas al paciente tal como están escritas y marcá lo que te conteste. '+
+      'Las primeras dos son sobre su situación de ahora; de la tercera en adelante, sobre la <b>semana pasada</b>.'+
+      (borr?'<br><b>Retomamos el cuestionario que habías dejado por la mitad.</b>':'')+'</p>'+
+    '<div class="grid g2">'+
+      '<div class="field"><label>Fecha y hora</label><input id="qqWhen" type="datetime-local" value="'+esc(QLQ.fecha)+'" onchange="QLQ.fecha=this.value;qlqGuardarBorr()"></div>'+
+      '<div class="field"><label>Cómo se tomó</label><select id="qqModo" onchange="QLQ.modo=this.value">'+
+        '<option value="leido_por_profesional">Se lo leí yo</option>'+
+        '<option value="paciente">Lo completó el paciente</option></select></div>'+
+    '</div>'+
+    '<div id="qqBody">'+qlqCuerpo()+'</div>'+
+    '<div class="field"><label>Observaciones (opcional)</label><textarea id="qqNotes" placeholder="Algo que haya dicho y no entre en las preguntas"></textarea></div>'+
+    '<p class="qq-legal">© QLQ-C30 Copyright 1995 EORTC Quality of Life Group. Reservados todos los derechos. Versión 3.0 · se usan 16 de los 30 ítems.</p>',
+    'Guardar', qlqGuardar);
+  setTimeout(qlqPintar,0);
+}
+function qlqCuerpo(){
+  let h='', b=null;
+  QLQ_ITEMS.forEach(it=>{
+    if(it.b!==b){
+      b=it.b;
+      if(b==='sem') h+='<div class="qq-h">Durante la semana pasada:</div>';
+      if(b==='esc') h+='<div class="qq-h">Del 1 al 7, ¿cuál se aplica mejor?</div>';
+    }
+    h+=qlqFila(it);
+  });
+  return h+'<div class="qq-falta" id="qqFalta"></div>';
+}
+function qlqFila(it){
+  const cab='<div class="qq-t"><b>'+it.n+'.</b> '+esc(it.t)+'</div>';
+  if(it.b==='esc'){
+    let b='';
+    for(let k=1;k<=7;k++) b+='<button type="button" class="qq-n" id="qb'+it.n+'_'+k+'" onclick="qlqSet('+it.n+','+k+')">'+k+'</button>';
+    return '<div class="qq" id="qq'+it.n+'">'+cab+'<div class="qq-sc">'+b+'</div>'+
+      '<div class="qq-anc"><span>1 · Pésima</span><span>7 · Excelente</span></div></div>';
+  }
+  return '<div class="qq" id="qq'+it.n+'">'+cab+'<div class="qq-op">'+
+    QLQ_OPC.map(o=>'<button type="button" class="qq-b" id="qb'+it.n+'_'+o[0]+'" onclick="qlqSet('+it.n+','+o[0]+')">'+o[1]+'</button>').join('')+
+    '</div></div>';
+}
+function qlqSet(n,v){
+  if(!QLQ) return;
+  QLQ.ans['q'+n]=v; qlqGuardarBorr(); qlqPintar();
+}
+function qlqPintar(){
+  if(!QLQ) return;
+  QLQ_ITEMS.forEach(it=>{
+    const max=it.b==='esc'?7:4, el=$('qq'+it.n), val=QLQ.ans['q'+it.n];
+    for(let k=1;k<=max;k++){ const b=$('qb'+it.n+'_'+k); if(b) b.classList.toggle('on',val===k); }
+    if(el) el.classList.toggle('sin',val==null);
+  });
+  const faltan=QLQ_ITEMS.filter(it=>QLQ.ans['q'+it.n]==null).length;
+  const f=$('qqFalta');
+  if(f) f.innerHTML = faltan
+    ? 'Falta'+(faltan===1?'':'n')+' <b>'+faltan+'</b> de '+QLQ_ITEMS.length+'.'
+    : '<span style="color:var(--vital)">Están las '+QLQ_ITEMS.length+' respuestas.</span>';
+}
+async function qlqGuardar(){
+  if(!QLQ) return false;
+  const faltan=QLQ_ITEMS.filter(it=>QLQ.ans['q'+it.n]==null);
+  if(faltan.length){
+    const ch=await askChoice({where:'Al guardar el cuestionario', title:'Falta'+(faltan.length===1?'':'n')+' '+faltan.length+' respuesta'+(faltan.length===1?'':'s'),
+      existing:'Sin contestar: '+faltan.map(f=>f.n).join(', '),
+      detail:'Las que falten quedan en blanco.',
+      why:'Si falta más de la mitad de una escala, esa escala no se puede puntuar.',
+      primary:'Volver y completarlas', secondary:'Guardar así'});
+    if(ch!=='secondary'){
+      const pr=faltan[0]&&$('qq'+faltan[0].n); if(pr) pr.scrollIntoView({block:'center'});
+      return false;
+    }
+  }
+  const sc=qlqPuntajes(QLQ.ans);
+  const nt=$('qqNotes'), md=$('qqModo'), wh=$('qqWhen');
+  const {error}=await DB().from('questionnaires').insert({
+    patient_id:QLQ.pid, kind:'qlq_c30_16',
+    administered_at:(wh&&wh.value)?new Date(wh.value).toISOString():new Date().toISOString(),
+    mode:(md&&md.value)||'leido_por_profesional',
+    answers:QLQ.ans, scores:sc, notes:(nt&&nt.value.trim())||null,
+    taken_by:ME.user_id, created_by:ME.user_id});
+  if(error){ toast(error.message); return false; }
+  qlqTirarBorr(QLQ.pid); QLQ=null;
+  toast('Cuestionario guardado'); TL_FILTER='calidad'; afterChange(); return true;
+}
+
+function tlQlq(x,prev){
+  const sc=x.scores||{}, g=sc.QL2;
+  const lineas=[];
+  lineas.push(qlqResumen(sc)||'Sin puntajes calculables.');
+  const camb=qlqCambios(sc,(prev&&prev.scores)||null);
+  if(camb.length){
+    lineas.push('Contra la toma anterior: '+camb.slice(0,4).map(c=>
+      esc(c.nom)+' '+(c.d>0?'+':'')+c.d+(c.mejoro?' (mejor)':' (peor)')).join(' · '));
+  }else if(prev){
+    lineas.push('Sin cambios de 10 puntos o más contra la toma anterior.');
+  }
+  if(x.notes) lineas.push(esc(x.notes));
+  const foot='<button class="btn sm" onclick="qlqVer(\'' + "'+x.id+'" + '\')">Ver respuestas</button>';
+  REC['qlq'+x.id]=x;
+  return tlEntry({who:x.taken_by, at:x.administered_at, tag:tlTag('Calidad de vida',QLQ_COL),
+    title:'Cuestionario de calidad de vida'+(g?' · '+g.v+'/100':''), lines:lineas, foot});
+}
+function qlqVer(id){
+  const x=REC['qlq'+id]; if(!x) return;
+  const a=x.answers||{}, sc=x.scores||{};
+  const filas=QLQ_ITEMS.map(it=>{
+    const v=a['q'+it.n];
+    const txt = v==null ? '—' : (it.b==='esc' ? v+' de 7' : (QLQ_OPC.find(o=>o[0]===v)||[0,'—'])[1]);
+    return '<div class="row"><span class="k">'+it.n+'. '+esc(it.t)+'</span><span class="v">'+esc(txt)+'</span></div>';
+  }).join('');
+  const esc2=QLQ_ESCALAS.filter(e=>sc[e.k]).map(e=>{
+    const d=sc[e.k];
+    const sent=e.tipo==='sint'?'más alto, peor':'más alto, mejor';
+    return '<div class="row"><span class="k">'+esc(e.nom)+(d.parcial?' <i class="qq-par">parcial '+d.n+'/'+d.de+'</i>':'')+
+      '</span><span class="v">'+d.v+'<span class="meta" style="margin-left:6px">'+sent+'</span></span></div>';
+  }).join('');
+  const parciales=QLQ_ESCALAS.filter(e=>sc[e.k]&&sc[e.k].parcial).length;
+  const faltantes=QLQ_ESCALAS.filter(e=>!sc[e.k]).map(e=>e.nom.toLowerCase());
+  modalOpen('Cuestionario del '+fmt(x.administered_at),
+    '<div class="sec"><div class="sec-h"><span class="sec-t">Puntajes</span></div><div class="rows">'+(esc2||'<p class="meta">Sin puntajes.</p>')+'</div></div>'+
+    (parciales?'<p class="qq-legal">Las marcadas como <b>parciales</b> se calcularon con menos ítems de los que tiene la escala: sirven para seguir a este paciente en el tiempo, no para comparar con valores de referencia.</p>':'')+
+    (faltantes.length?'<p class="qq-legal">No se puede calcular: '+esc(faltantes.join(', '))+'. Las preguntas que las componen no están en el formulario de 16.</p>':'')+
+    '<div class="sec"><div class="sec-h"><span class="sec-t">Respuestas</span></div><div class="rows qq-rows">'+filas+'</div></div>',
+    'Cerrar', async()=>true);
+  $('mFoot').innerHTML='<button class="btn" onclick="modalClose()" style="margin-left:auto">Cerrar</button>';
+}
 
 /* ---------- Vitamina C ---------- */
 async function renderVitc(hostEl){
