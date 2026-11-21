@@ -149,6 +149,11 @@ svg{stroke-linecap:round;stroke-linejoin:round}
 .who .id{font-family:var(--f-ui);font-size:12px;color:var(--faint);display:block;margin-top:1px;white-space:nowrap}
 .scroll{overflow-x:auto}
 .filters{display:flex;gap:8px;flex-wrap:wrap}
+/* «?» al lado del título de una columna */
+.hhint{margin-left:7px;width:16px;height:16px;border-radius:50%;border:1px solid var(--line);background:var(--void);
+  color:var(--muted);font-family:var(--f-ui);font-size:10.5px;font-weight:600;line-height:1;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;padding:0;text-transform:none;letter-spacing:0}
+.hhint:hover{border-color:var(--sage);color:var(--ink-2)}
 .filters button{padding:6px 13px;border-radius:999px;border:1px solid transparent;font-size:13.5px;color:var(--muted)}
 .filters button:hover{color:var(--ink-2);background:var(--panel-2)}
 .filters button.on{color:var(--ink);border-color:var(--line);background:var(--panel-2)}
@@ -738,6 +743,10 @@ img,svg,video,canvas{max-width:100%}
   .pcard .line{font-size:12.5px;margin-top:3px}
   .pcard .chips{margin-top:8px}
   .pcard .tag,.pcard .chip{font-size:11.5px;padding:4px 9px}
+  /* los filtros en una sola línea que se desliza, en vez de cuatro renglones apilados */
+  .filters{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:-2px -4px;padding:2px 4px}
+  .filters::-webkit-scrollbar{display:none}
+  .filters button{flex:none;white-space:nowrap}
 }
 
 /* celular: liberar la primera pantalla para que se vea contenido clínico */
@@ -806,6 +815,64 @@ img,svg,video,canvas{max-width:100%}
 .qq-band{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#E7F1F2;border:1px solid #CDE2E4;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-family:var(--f-ui);font-size:13.5px;line-height:1.6;color:#1C5B63}
 .qq-band>div{flex:1 1 260px;min-width:0}
 .qq-band b{color:#12464C}
+
+/* ---------- tablero de negocio ---------- */
+.tcbox{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:8px 12px;font-family:var(--f-ui);align-self:center}
+.tcbox label{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.tcbox input{width:80px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;font-size:14px;
+  font-variant-numeric:tabular-nums;color:var(--ink);padding:1px 0;text-align:right}
+.tcbox input:focus{outline:none;border-bottom-color:var(--vital)}
+.neg-per{margin:0 0 4px}
+.neg-rango{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 14px}
+.neg-rango input{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 9px;
+  font:inherit;font-family:var(--f-ui);font-size:13px;color:var(--ink)}
+.kpis .kpi-hero{background:#F2F7F0}
+.kpis .kpi-hero .n{color:var(--vital);font-weight:500}
+.neg-cols{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+.negpl{font-family:var(--f-ui);font-size:13.5px}
+.negpl .r{display:flex;justify-content:space-between;gap:14px;padding:7px 0}
+.negpl .r .k{color:var(--muted)}
+.negpl .r .v{font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink-2)}
+.negpl .r.sub{padding-left:13px}
+.negpl .r.sub .k,.negpl .r.sub .v{color:var(--faint);font-size:12.5px}
+.negpl .r.tot{border-top:1px solid var(--div);margin-top:3px;padding-top:9px}
+.negpl .r.tot .k,.negpl .r.tot .v{color:var(--ink);font-weight:600}
+.negpl .hero{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);display:flex;
+  justify-content:space-between;align-items:baseline;gap:12px}
+.negpl .hero .k{font-family:var(--f-sans);font-size:15px}
+.negpl .hero .v{font-family:var(--f-sans);font-size:25px;font-weight:600;color:var(--vital);letter-spacing:-.02em}
+.negpl .hero .v.neg{color:var(--crit)}
+.neg-t th{padding:0 10px 10px;letter-spacing:.07em}
+.neg-t td{padding:12px 10px}
+.neg-t th:first-child,.neg-t td:first-child{padding-left:0}
+.neg-t th:last-child,.neg-t td:last-child{padding-right:0}
+.neg-t tbody tr:hover td:first-child{box-shadow:none}
+.neg-t td.nm{min-width:148px;line-height:1.35}
+.neg-t td.nm .s{font-size:11.5px;color:var(--faint);margin-top:3px}
+.neg-t td.n,.neg-t th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.neg-t .mg{font-weight:600;color:var(--ink)}
+.neg-t .mg.low{color:var(--alert)}
+.neg-t .mg.neg{color:var(--crit)}
+.neg-t tfoot td{border-top:1px solid var(--line);font-weight:600}
+.neg-t .tag{display:inline-block;font-family:var(--f-ui);font-size:11px;padding:2px 9px;border-radius:999px;
+  border:1px solid var(--line);color:var(--muted);background:var(--void);white-space:nowrap}
+.neg-t .linkbtn{font-size:14px;color:var(--ink);text-align:left}
+.dosis{display:inline-flex;align-items:flex-end;gap:3px;height:22px;vertical-align:middle}
+.dosis i{width:7px;background:#AECBD2;border-radius:2px;display:block;min-height:3px}
+.dosis i:last-child{background:#0E9BB5}
+.trend{font-family:var(--f-ui);font-size:11.5px;color:var(--faint);margin-left:8px;white-space:nowrap}
+.trend.up{color:var(--vital)}
+.negav{font-family:var(--f-ui);font-size:12.5px;line-height:1.6;color:var(--ink-2);
+  padding:11px 0;border-top:1px solid var(--div);display:flex;gap:10px}
+.negav:first-child{border-top:0;padding-top:0}
+.negav .d{width:6px;height:6px;border-radius:50%;flex:none;margin-top:6px;background:var(--alert)}
+.negav b{color:var(--ink);font-weight:600}
+/* abajo de esto, la tabla necesita todo el ancho: el resultado pasa debajo */
+@media(max-width:1300px){ .neg-cols{grid-template-columns:1fr} }
+@media(max-width:760px){ .kpis{grid-template-columns:1fr 1fr} .kpis > div + div{border-left:0}
+  .kpis > div:nth-child(n+3){border-top:1px solid var(--div)}
+  .kpis > div:nth-child(even){border-left:1px solid var(--div)} }
 /* la pregunta es larga: tiene que envolver y dejar la respuesta a la derecha */
 .qq-rows .row{align-items:flex-start;gap:14px}
 .qq-rows .row .k{flex:1 1 auto;line-height:1.5}
@@ -951,7 +1018,8 @@ const can = {
   confidential: ()=>['admin','psicooncologia','director_medico'].includes(ME.role),
   director:     ()=>['admin','director_medico'].includes(ME.role),
   catalog:      ()=>['admin','director_medico'].includes(ME.role),                         // infcomp_write / inftpl_write
-  manageUsers:  ()=>ME.role==='admin'
+  manageUsers:  ()=>ME.role==='admin',
+  negocio:      ()=>ME.role==='admin'      // el tablero comercial lo ven solo los administradores
 };
 
 /* ---------- iconos ---------- */
@@ -962,11 +1030,362 @@ const IC={
   agenda:'<svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9h18M8 3v3M16 3v3"/></svg>',
   equipo:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   archivados:'<svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1zM10 12h4"/></svg>',
-  catalogo:'<svg viewBox="0 0 24 24"><path d="M12 2.7 6.8 9.4a7 7 0 1 0 10.4 0z"/><path d="M9 14h6M12 11v6"/></svg>'
+  catalogo:'<svg viewBox="0 0 24 24"><path d="M12 2.7 6.8 9.4a7 7 0 1 0 10.4 0z"/><path d="M9 14h6M12 11v6"/></svg>',
+  negocio:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>'
 };
 const IC_PEN='<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;opacity:.55;margin-left:5px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 const PLUS='<svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>';
 const ICPRINT='<svg viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>';
+
+
+/* ===================== Negocio (solo administradores) =====================
+   Todo lo clínico se lee de lo que el equipo ya carga: sesiones, dosis, vehículo,
+   componentes y consultas. Lo comercial sale de dos lugares: el plan de cada
+   paciente y los supuestos, que se guardan con fecha para no reescribir meses
+   ya cerrados.                                                                */
+const PLAN_TIPOS={
+  meg8:  {n:'Megadosis · 8 por mes', usd:1000, inc:8},
+  meg4:  {n:'Megadosis · 4 por mes', usd:550,  inc:4},
+  nut2:  {n:'Nutrición · 2 por mes', ars:160000, inc:0},
+  suelto:{n:'Consultas sueltas', inc:0}
+};
+const SUP_DEF={tc:1580, enf_hora:20000, horas_sesion:3, nutricion:40000, psico:40000, ejercicio:30000,
+  consulta_precio:85000, consulta_costo:60000, eche_pct:.07, cobro_pct:0,
+  iva:.21, iibb:.03, banco:.006, ganancias:.25, banco_computable:.33,
+  vitc_g:237.67, magnesio_ml:692.2, procaina_ml:122, dmso_ml:181,
+  agua500:7600, agua1000:10900, fis500:3800, fis1000:6200, descartables:3365.56,
+  prorrateo:'mes_completo', extras:'incluidas', extra_precio_usd:0};
+let SUP=Object.assign({},SUP_DEF), SUP_ID=null, NEG_DATA=null;
+let NEG_PER='mes', NEG_D1=null, NEG_D2=null;
+
+function negRango(){
+  const hoy=new Date(), y=hoy.getFullYear(), m=hoy.getMonth();
+  const f=d=>ymd(d);
+  if(NEG_PER==='mes')  return {t:mesNombre(y,m), d1:f(new Date(y,m,1)),   d2:f(new Date(y,m+1,0))};
+  if(NEG_PER==='prev') return {t:mesNombre(y,m-1), d1:f(new Date(y,m-1,1)), d2:f(new Date(y,m,0))};
+  if(NEG_PER==='t3')   return {t:'Últimos 3 meses', d1:f(new Date(y,m-2,1)), d2:f(new Date(y,m+1,0))};
+  if(NEG_PER==='anio') return {t:String(y), d1:y+'-01-01', d2:y+'-12-31'};
+  return {t:'Período elegido', d1:NEG_D1||f(new Date(y,m,1)), d2:NEG_D2||f(new Date(y,m+1,0))};
+}
+function mesNombre(y,m){ const d=new Date(y,m,1);
+  const s=d.toLocaleDateString('es-AR',{month:'long',year:'numeric'}); return s.charAt(0).toUpperCase()+s.slice(1); }
+
+/* vehículo de la indicación → clave de precio */
+function vehKey(nombre,ml){
+  const v=(nombre||'').toLowerCase(), mil=(Number(ml)||500)>700;
+  if(v.indexOf('fisio')>-1) return mil?'fis1000':'fis500';
+  return mil?'agua1000':'agua500';   // agua destilada estéril es el vehículo por defecto
+}
+/* costo de insumos de UNA sesión, con lo que quedó registrado */
+function negInsumos(ses){
+  const g=Number(ses.dose_g)||0;
+  let conIva = g*SUP.vitc_g + SUP[ses.vehKey];
+  (ses.comps||[]).forEach(c=>{
+    const n=(c.name||'').toLowerCase(), d=Number(c.dose)||0;
+    if(n.indexOf('magnesio')>-1 && (c.unit||'')==='mg') conIva += (d/200)*SUP.magnesio_ml;   // 20 % = 200 mg/ml
+    else if(n.indexOf('procaína')>-1||n.indexOf('procaina')>-1) conIva += (d/10)*SUP.procaina_ml; // 1 % = 10 mg/ml
+    else if(n.indexOf('dmso')>-1) conIva += d*SUP.dmso_ml;                                    // se carga en gramos ≈ ml
+  });
+  return conIva/1.21 + SUP.descartables;   // los descartables ya vienen sin IVA
+}
+function planDe(pid,hasta){
+  const ps=(NEG_DATA.planes||[]).filter(x=>x.patient_id===pid && x.starts_on<=hasta)
+    .sort((a,b)=>b.starts_on.localeCompare(a.starts_on));
+  return ps[0]||null;
+}
+function planPrecio(pl){
+  if(!pl) return 0;
+  const t=PLAN_TIPOS[pl.kind]||{};
+  let base = pl.price_ars!=null ? Number(pl.price_ars)
+           : pl.price_usd!=null ? Number(pl.price_usd)*SUP.tc
+           : (t.usd!=null ? t.usd*SUP.tc : (t.ars||0));
+  const d=Number(pl.discount_pct)||0;
+  return base*(1-d/100);
+}
+function planNom(pl){
+  if(!pl) return 'Sin plan cargado';
+  const t=PLAN_TIPOS[pl.kind]||{};
+  const nom=pl.label||t.n||pl.kind;
+  if(pl.kind==='suelto') return nom;
+  const pre = pl.price_ars!=null ? '$ '+esES(Math.round(pl.price_ars))
+            : 'USD '+(pl.price_usd!=null?pl.price_usd:(t.usd||0));
+  return nom+' · '+pre+((Number(pl.discount_pct)||0)?' −'+pl.discount_pct+' %':'');
+}
+
+async function negCargar(){
+  const [SET,PL,VC,GV,IND,NT,PA] = await Promise.all([
+    DB().from('business_settings').select('*').order('effective_from',{ascending:false}).limit(1),
+    DB().from('patient_plans').select('*'),
+    DB().from('vitc_administrations').select('id,patient_id,indication_id,dose_g,administered_at').is('deleted_at',null),
+    DB().from('infusion_components_given').select('administration_id,name,unit,dose,given'),
+    DB().from('indications').select('id,vehicle,vitc_dilution_ml'),
+    DB().from('notes').select('patient_id,discipline,created_at').is('deleted_at',null),
+    DB().from('patients').select('id,full_name,created_at').is('deleted_at',null)
+  ]);
+  const st=(SET.data||[])[0];
+  SUP=Object.assign({},SUP_DEF,(st&&st.data)||{}); SUP_ID=st?st.id:null;
+  const indBy={}; (IND.data||[]).forEach(i=>indBy[i.id]=i);
+  const compBy=groupBy((GV.data||[]).filter(c=>c.given!==false),'administration_id');
+  const ses=(VC.data||[]).map(v=>{
+    const i=indBy[v.indication_id]||{};
+    return {pid:v.patient_id, d:String(v.administered_at).slice(0,10), dose_g:v.dose_g,
+            vehKey:vehKey(i.vehicle,i.vitc_dilution_ml), comps:compBy[v.id]||[]};
+  });
+  NEG_DATA={planes:PL.data||[], ses, notas:NT.data||[], pacientes:PA.data||[]};
+  return NEG_DATA;
+}
+
+function negCalcular(){
+  const {d1,d2}=negRango(), dentro=x=>x>=d1&&x<=d2;
+  const porDia={}; NEG_DATA.ses.forEach(x=>porDia[x.d]=(porDia[x.d]||0)+1);
+  const pmap={}; NEG_DATA.pacientes.forEach(p=>pmap[p.id]=p);
+  const R={};
+  const nuevo=pid=>R[pid]||(R[pid]={pid, n:(pmap[pid]||{}).full_name||'Paciente', ses:0, cons:0,
+    insumos:0, enf:0, prof:0, ingreso:0, meses:{}, dosis:[], gramos:0});
+
+  NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>{
+    const r=nuevo(x.pid); r.ses++; r.meses[x.d.slice(0,7)]=1;
+    const g=Number(x.dose_g)||0; r.dosis.push(g); r.gramos+=g;
+    r.insumos += negInsumos(x);
+    r.enf     += SUP.enf_hora*SUP.horas_sesion/porDia[x.d];
+  });
+  NEG_DATA.notas.filter(n=>dentro(String(n.created_at).slice(0,10))).forEach(n=>{
+    const disc=n.discipline;
+    if(disc==='enfermeria') return;                 // enfermería ya entra por la sesión
+    const r=nuevo(n.patient_id); r.cons++; r.meses[String(n.created_at).slice(0,7)]=1;
+    r.prof += disc==='nutricion'?SUP.nutricion : disc==='psicooncologia'?SUP.psico
+            : disc==='ejercicio'?SUP.ejercicio : SUP.consulta_costo;
+  });
+
+  const filas=Object.values(R).map(r=>{
+    const pl=planDe(r.pid,d2);
+    const t=PLAN_TIPOS[(pl||{}).kind]||{};
+    const meses=Object.keys(r.meses).length||1;
+    const inc=(pl&&pl.sessions_included)||t.inc||0;
+    if(pl && pl.kind!=='suelto'){
+      let mensual=planPrecio(pl);
+      if(SUP.prorrateo==='por_sesion' && inc) mensual = mensual/inc*Math.min(r.ses,inc);
+      r.ingreso += mensual*meses;
+      if(SUP.extras==='se_cobran' && inc && r.ses>inc*meses)
+        r.ingreso += (r.ses-inc*meses)*(Number(SUP.extra_precio_usd)||0)*SUP.tc;
+    }else if(pl && pl.kind==='suelto'){
+      r.ingreso += r.cons*SUP.consulta_precio;
+    }
+    const fact = !pl || pl.cobro!=='efectivo';
+    const bruto=r.ingreso;
+    const neto  = fact ? bruto/(1+SUP.iva) : bruto;
+    const iibb  = fact ? neto*SUP.iibb : 0;
+    const ingNeto = neto - iibb;
+    const directos = r.insumos + r.enf + r.prof;
+    const eche = ingNeto*SUP.eche_pct;
+    const cobroC = bruto*SUP.cobro_pct;
+    const banco = fact ? (bruto + directos + eche + cobroC)*SUP.banco : 0;
+    const antes = ingNeto - directos - eche - cobroC - banco;
+    const gan = fact ? Math.max(Math.max(antes,0)*SUP.ganancias - banco*SUP.banco_computable, 0) : 0;
+    const margen = antes - gan;
+    return Object.assign(r,{pl,fact,inc:inc*meses,meses,bruto,iva:bruto-neto,iibb,ingNeto,
+      insumosT:r.insumos,directos,eche,cobroC,banco,gan,margen,pct:bruto?margen/bruto:0});
+  }).filter(r=>r.ses||r.cons).sort((a,b)=>b.margen-a.margen);
+
+  const T=k=>filas.reduce((a,f)=>a+(f[k]||0),0);
+  const dias={}; NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>dias[x.d]=(dias[x.d]||0)+1);
+  const altas=NEG_DATA.pacientes.filter(p=>dentro(String(p.created_at).slice(0,10))).length;
+  return {filas,dias,altas,d1,d2,
+    tot:{bruto:T('bruto'),iva:T('iva'),iibb:T('iibb'),ingNeto:T('ingNeto'),insumos:T('insumos'),
+      enf:T('enf'),prof:T('prof'),directos:T('directos'),eche:T('eche'),cobroC:T('cobroC'),
+      banco:T('banco'),gan:T('gan'),margen:T('margen'),ses:T('ses'),gramos:T('gramos')}};
+}
+
+
+/* ---------- la pantalla ---------- */
+function negARS(n){ return '$ '+esES(Math.round(n||0)); }
+function negNeg(n){ return '− $ '+esES(Math.round(Math.abs(n||0))); }
+function negMill(n){ return Math.abs(n)>=1e6 ? '$ '+(n/1e6).toFixed(2).replace('.',',')+' M' : negARS(n); }
+function negPct(n){ return (n*100).toFixed(1).replace('.',',')+' %'; }
+function negG(n){ return n.toFixed(1).replace('.',',')+' g'; }
+
+async function renderNegocio(){
+  const p=$('page');
+  p.innerHTML='<div class="loading">Calculando…</div>';
+  try{ await negCargar(); }
+  catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
+  if(curView!=='negocio') return;
+  p.innerHTML=
+   '<div class="phead-page"><div><h1>Negocio</h1><p class="sub" id="negSub"></p></div>'+
+     '<div class="tcbox"><label for="negTc">Tipo de cambio</label>'+
+     '<input id="negTc" type="text" inputmode="decimal" value="'+esES(SUP.tc)+'" onchange="negSetTc(this.value)" oninput="negSetTc(this.value)"></div></div>'+
+   '<div class="subpills neg-per" id="negPer">'+
+     [['mes','Este mes'],['prev','Mes pasado'],['t3','Últimos 3 meses'],['anio','Este año'],['custom','Personalizado']]
+       .map(([k,l])=>'<button class="'+(NEG_PER===k?'on':'')+'" onclick="negSetPer(\''+k+'\')">'+l+'</button>').join('')+'</div>'+
+   '<div class="neg-rango" id="negRango"'+(NEG_PER==='custom'?'':' hidden')+'>'+
+     '<span class="meta">Del</span><input type="date" id="negD1" onchange="negSetFecha()">'+
+     '<span class="meta">al</span><input type="date" id="negD2" onchange="negSetFecha()"></div>'+
+   '<div class="kpis" id="negKpis"></div>'+
+   '<div class="neg-cols">'+
+     '<div class="stack">'+
+       '<section class="card"><div class="sec">'+
+         '<div class="sec-h"><span class="sec-t">Rentabilidad por paciente</span><span class="meta">ordenado por margen</span></div>'+
+         '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Paciente</th><th>Cobro</th>'+
+           '<th class="n">Sesiones</th><th class="n">Ingreso</th><th class="n">Costo</th>'+
+           '<th class="n">Margen</th><th class="n">%</th></tr></thead>'+
+           '<tbody id="negRp"></tbody><tfoot id="negRpF"></tfoot></table></div>'+
+       '</div></section>'+
+       '<section class="card"><div class="sec">'+
+         '<div class="sec-h"><span class="sec-t">Consumo por paciente</span><span class="meta">vitamina C administrada, sesión por sesión</span></div>'+
+         '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Paciente</th><th class="n">Sesiones</th>'+
+           '<th class="n">Vitamina C</th><th class="n">Promedio</th><th>Evolución de la dosis</th>'+
+           '<th class="n">Insumos</th></tr></thead><tbody id="negCp"></tbody><tfoot id="negCpF"></tfoot></table></div>'+
+       '</div></section>'+
+     '</div>'+
+     '<div class="stack">'+
+       '<section class="card"><div class="sec">'+
+         '<div class="sec-h"><span class="sec-t">Resultado del período</span></div><div class="negpl" id="negPl"></div>'+
+       '</div></section>'+
+       '<section class="card"><div class="sec">'+
+         '<div class="sec-h"><span class="sec-t">Para mirar</span></div><div id="negAv"></div>'+
+       '</div></section>'+
+     '</div>'+
+   '</div>'+
+   '<details class="base" id="negSup"><summary><svg class="caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>'+
+     '<div><b>Supuestos del cálculo</b><div class="sub">Tipo de cambio, honorarios, insumos e impuestos · se guardan con fecha</div></div></summary>'+
+     '<div class="body" id="negSupBody"></div></details>';
+  const r=negRango();
+  if($('negD1')){ $('negD1').value=NEG_D1||r.d1; $('negD2').value=NEG_D2||r.d2; }
+  negPintar();
+}
+function negSetPer(k){
+  NEG_PER=k;
+  document.querySelectorAll('#negPer button').forEach((b,i)=>b.classList.toggle('on',
+    ['mes','prev','t3','anio','custom'][i]===k));
+  const el=$('negRango'); if(el) el.hidden = k!=='custom';
+  if(k==='custom' && !NEG_D1){ const r=negRango(); NEG_D1=r.d1; NEG_D2=r.d2; $('negD1').value=r.d1; $('negD2').value=r.d2; }
+  negPintar();
+}
+function negSetFecha(){ NEG_D1=$('negD1').value; NEG_D2=$('negD2').value; negPintar(); }
+function negSetTc(v){
+  const n=parseFloat(String(v).replace(/\./g,'').replace(',','.'));
+  if(n>0){ SUP.tc=n; negPintar(); }
+}
+function negPintar(){
+  if(!NEG_DATA) return;
+  const {filas,tot,dias,altas}=negCalcular(), r=negRango();
+  const sub=$('negSub'); if(sub) sub.textContent=r.t+' · '+filas.length+' paciente'+(filas.length===1?'':'s')+' con actividad';
+
+  $('negKpis').innerHTML=
+    negKpi('Pacientes con actividad',filas.length,altas+' alta'+(altas===1?'':'s')+' en el período')+
+    negKpi('Sesiones de megadosis',tot.ses,esES(Math.round(tot.gramos))+' g de vitamina C')+
+    negKpi('Ingresos',negMill(tot.bruto),'USD '+esES(Math.round(tot.bruto/(SUP.tc||1))))+
+    negKpi('Margen',negMill(tot.margen),negPct(tot.margen/(tot.bruto||1))+' de lo cobrado','hero');
+
+  const cls=x=>x<0?'neg':x<.2?'low':'';
+  $('negRp').innerHTML=filas.map(f=>
+    '<tr><td class="nm"><button class="linkbtn" onclick="openPatient(\''+f.pid+'\')">'+esc(f.n)+'</button>'+
+      '<div class="s">'+esc(planNom(f.pl))+'</div></td>'+
+    '<td><span class="tag">'+(f.fact?'Facturado':'Efectivo')+'</span></td>'+
+    '<td class="n">'+(f.ses? f.ses+(f.cons?'<span class="meta"> +'+f.cons+'</span>':'')
+                           : (f.cons?'<span class="meta">'+f.cons+' cons.</span>':'—'))+'</td>'+
+    '<td class="n">'+negARS(f.bruto)+'</td><td class="n">'+negARS(f.bruto-f.margen)+'</td>'+
+    '<td class="n mg '+cls(f.pct)+'">'+negARS(f.margen)+'</td>'+
+    '<td class="n mg '+cls(f.pct)+'">'+negPct(f.pct)+'</td></tr>').join('')
+    || '<tr><td colspan="7" class="meta" style="padding:18px 0">No hay actividad en este período.</td></tr>';
+  $('negRpF').innerHTML = filas.length? '<tr><td colspan="2">Total</td><td class="n">'+tot.ses+'</td>'+
+    '<td class="n">'+negARS(tot.bruto)+'</td><td class="n">'+negARS(tot.bruto-tot.margen)+'</td>'+
+    '<td class="n">'+negARS(tot.margen)+'</td><td class="n">'+negPct(tot.margen/(tot.bruto||1))+'</td></tr>':'';
+
+  const cs=filas.filter(f=>f.ses).sort((a,b)=>b.gramos-a.gramos);
+  $('negCp').innerHTML=cs.map(f=>{
+    const mx=Math.max.apply(null,f.dosis)||1;
+    const barras='<span class="dosis">'+f.dosis.map(d=>'<i style="height:'+Math.max(3,Math.round(d/mx*22))+'px" title="'+d+' g"></i>').join('')+'</span>';
+    const d0=f.dosis[0], dn=f.dosis[f.dosis.length-1];
+    const t=f.dosis.length>1?'<span class="trend'+(dn>d0?' up':'')+'">'+d0+' → '+dn+' g</span>':'';
+    return '<tr><td class="nm">'+esc(f.n)+'</td><td class="n">'+f.ses+'</td><td class="n">'+esES(f.gramos)+' g</td>'+
+      '<td class="n">'+negG(f.gramos/f.ses)+'</td><td>'+barras+t+'</td><td class="n">'+negARS(f.insumos)+'</td></tr>';
+  }).join('') || '<tr><td colspan="6" class="meta" style="padding:18px 0">Sin infusiones en este período.</td></tr>';
+  $('negCpF').innerHTML = cs.length? '<tr><td>Total</td><td class="n">'+tot.ses+'</td><td class="n">'+esES(Math.round(tot.gramos))+
+    ' g</td><td class="n">'+negG(tot.gramos/(tot.ses||1))+'</td><td></td><td class="n">'+negARS(tot.insumos)+'</td></tr>':'';
+
+  const row=(k,v,c)=>'<div class="r'+(c||'')+'"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';
+  $('negPl').innerHTML=
+    row('Cobrado',negARS(tot.bruto))+
+    (tot.iva? row('IVA',negNeg(tot.iva),' sub'):'')+
+    (tot.iibb? row('Ingresos Brutos',negNeg(tot.iibb),' sub'):'')+
+    (tot.iva? row('Ingreso neto',negARS(tot.ingNeto),' tot'):'')+
+    row('Insumos',negNeg(tot.insumos),' sub')+
+    row('Enfermería',negNeg(tot.enf),' sub')+
+    row('Profesionales',negNeg(tot.prof),' sub')+
+    row('Costos directos',negNeg(tot.directos),' tot')+
+    row('Comisión Eche',negNeg(tot.eche),' sub')+
+    (tot.cobroC? row('Comisión del medio de cobro',negNeg(tot.cobroC),' sub'):'')+
+    (tot.banco? row('Impuesto al cheque',negNeg(tot.banco),' sub'):'')+
+    (tot.gan? row('Ganancias',negNeg(tot.gan),' sub'):'')+
+    '<div class="hero"><span class="k">Margen</span><span class="v'+(tot.margen<0?' neg':'')+'">'+negARS(tot.margen)+'</span></div>';
+
+  const solos=Object.keys(dias).filter(d=>dias[d]===1);
+  const av=[];
+  const sinPlan=filas.filter(f=>!f.pl);
+  if(sinPlan.length) av.push('<b>'+sinPlan.length+' paciente'+(sinPlan.length>1?'s':'')+' sin plan cargado.</b> '+
+    'Suman costo pero no ingreso, así que el margen de arriba está por debajo del real. '+
+    'Se carga desde la ficha, en el menú «⋯».');
+  if(solos.length) av.push('<b>'+solos.length+' turno'+(solos.length>1?'s':'')+' con un solo paciente.</b> '+
+    'La enfermería de ese día ('+negARS(SUP.enf_hora*SUP.horas_sesion)+') cae entera sobre esa persona. Con dos, baja a la mitad.');
+  filas.forEach(f=>{ if(f.inc && f.ses < f.inc*0.7)
+    av.push('<b>'+esc(f.n.split(',')[0])+' hizo '+f.ses+' de '+f.inc+' sesiones.</b> '+
+      'El plan se cobra igual, así que el margen sube justo cuando el paciente deja de venir.'); });
+  filas.filter(f=>f.pl && f.pct<.2).forEach(f=>{
+    av.push('<b>'+esc(f.n.split(',')[0])+' deja '+negPct(f.pct)+'.</b> '+
+      (f.pl.kind==='suelto'
+        ? 'Una consulta suelta facturada a '+negARS(SUP.consulta_precio)+' con honorarios de '+negARS(SUP.consulta_costo)+' casi no deja nada.'
+        : 'Conviene mirar el plan contra lo que consume.')); });
+  $('negAv').innerHTML = av.length
+    ? av.map(a=>'<div class="negav"><span class="d"></span><div>'+a+'</div></div>').join('')
+    : '<p class="meta" style="margin:0">Nada que requiera una decisión en este período.</p>';
+
+  negSupuestos();
+}
+function negKpi(l,n,d,c){
+  return '<div class="'+(c==='hero'?'kpi-hero':'')+'"><div class="label">'+l+'</div><div class="n">'+n+'</div><div class="sub">'+d+'</div></div>';
+}
+const NEG_CAMPOS=[
+  ['tc','Tipo de cambio'],['enf_hora','Enfermería por hora'],['horas_sesion','Horas por sesión'],
+  ['nutricion','Nutrición por consulta'],['psico','Psico-oncología por consulta'],['ejercicio','Educación física por clase'],
+  ['consulta_precio','Consulta médica · se cobra'],['consulta_costo','Consulta médica · se paga'],
+  ['vitc_g','Vitamina C por gramo'],['magnesio_ml','Cloruro de magnesio por ml'],
+  ['agua500','Agua destilada 500 cc'],['fis500','Solución fisiológica 500 cc'],
+  ['descartables','Descartables por sesión']
+];
+const NEG_PCT=[['eche_pct','Comisión Eche'],['cobro_pct','Comisión del medio de cobro'],
+  ['iva','IVA'],['iibb','Ingresos Brutos'],['banco','Impuesto al cheque'],['ganancias','Ganancias']];
+function negSupuestos(){
+  const h=$('negSupBody'); if(!h || h.dataset.listo) return;
+  h.dataset.listo='1';
+  h.innerHTML='<div class="grid g3">'+
+    NEG_CAMPOS.map(([k,l])=>'<div class="field"><label>'+l+'</label>'+
+      '<input id="sup_'+k+'" value="'+SUP[k]+'" inputmode="decimal" onchange="negSupSet(\''+k+'\',this.value,1)"></div>').join('')+
+    NEG_PCT.map(([k,l])=>'<div class="field"><label>'+l+' (%)</label>'+
+      '<input id="sup_'+k+'" value="'+(SUP[k]*100).toFixed(2).replace(/\.?0+$/,'')+'" inputmode="decimal" onchange="negSupSet(\''+k+'\',this.value,100)"></div>').join('')+
+    '<div class="field"><label>Si empieza a mitad de mes</label><select id="sup_prorrateo" onchange="SUP.prorrateo=this.value;negPintar()">'+
+      '<option value="mes_completo"'+(SUP.prorrateo==='mes_completo'?' selected':'')+'>Cobra el mes completo</option>'+
+      '<option value="por_sesion"'+(SUP.prorrateo==='por_sesion'?' selected':'')+'>Proporcional a las sesiones</option></select></div>'+
+    '<div class="field"><label>Sesiones de más</label><select id="sup_extras" onchange="SUP.extras=this.value;negPintar()">'+
+      '<option value="incluidas"'+(SUP.extras==='incluidas'?' selected':'')+'>Entran en el plan</option>'+
+      '<option value="se_cobran"'+(SUP.extras==='se_cobran'?' selected':'')+'>Se cobran aparte</option></select></div>'+
+    '<div class="field"><label>Sesión extra (USD)</label><input id="sup_extra_precio_usd" value="'+SUP.extra_precio_usd+'" inputmode="decimal" onchange="negSupSet(\'extra_precio_usd\',this.value,1)"></div>'+
+    '</div>'+
+    '<div class="savebar" style="margin-top:14px"><button class="btn primary sm" onclick="negGuardarSup()">Guardar supuestos</button>'+
+      '<span class="meta">Se guardan con la fecha de hoy: los meses ya cerrados siguen con los valores que tenían.</span></div>';
+}
+function negSupSet(k,v,div){
+  const n=parseFloat(String(v).replace(/\./g,'').replace(',','.'));
+  if(isNaN(n)) return;
+  SUP[k]= div===100 ? n/100 : n;
+  if(k==='tc' && $('negTc')) $('negTc').value=esES(n);
+  negPintar();
+}
+async function negGuardarSup(){
+  const {error}=await DB().from('business_settings').insert({effective_from:todayLocal(), data:SUP, created_by:ME.user_id});
+  if(error){ toast(error.message); return; }
+  toast('Supuestos guardados');
+}
 
 /* ---------- pantallas ---------- */
 function screen(s){ $('booting').hidden=true; ['s-acceso','s-app'].forEach(x=>$(x).hidden=(x!=='s-'+s)); }
@@ -994,7 +1413,8 @@ function buildRail(){
     gest='<div class="grp">Gestión</div><nav>'+
       (can.manageUsers()?railBtn('equipo','Equipo'):'')+
       (can.director()?railBtn('archivados','Archivados'):'')+
-      (can.catalog()?railBtn('catalogo','Catálogo'):'')+'</nav>';
+      (can.catalog()?railBtn('catalogo','Catálogo'):'')+
+      (can.negocio()?railBtn('negocio','Negocio'):'')+'</nav>';
   }
   $('rail').innerHTML=
     '<img class="lockup" src="'+LOGO+'" alt="Revigen · Oncología Integrativa">'+
@@ -1014,6 +1434,7 @@ function buildBottomNav(){
   if(CUR) items+='<button class="'+(curView==='ficha'?'on':'')+'" onclick="navigate(\'ficha\')">'+IC.ficha+'<span>Ficha</span></button>';
   if(can.manageUsers()) items+=bnavBtn('equipo','Equipo');
   else if(can.director()) items+=bnavBtn('archivados','Archivados');
+  if(can.negocio()) items+=bnavBtn('negocio','Negocio');
   el.innerHTML=items;
 }
 function updateTop(){
@@ -1035,6 +1456,7 @@ function navigate(view){
   else if(view==='equipo'){ if(can.manageUsers()) renderEquipo(); else navigate('inicio'); }
   else if(view==='archivados'){ if(can.director()) renderArchivados(); else navigate('inicio'); }
   else if(view==='catalogo'){ if(can.catalog()) renderCatalogo(); else navigate('inicio'); }
+  else if(view==='negocio'){ if(can.negocio()) renderNegocio(); else navigate('inicio'); }
   window.scrollTo(0,0);
 }
 
@@ -1509,16 +1931,33 @@ async function renderPacientes(){
          '<button data-f="pend" class="'+(PFILTER==='pend'?'on':'')+'" onclick="setPFilter(\'pend\')">Con pendientes · '+nPend+'</button>'+
          '<button data-f="sinturno" class="'+(PFILTER==='sinturno'?'on':'')+'" onclick="setPFilter(\'sinturno\')">Sin turno próximo · '+nSinTurno+'</button>'+
        '</div><span class="meta">Ordenado por próximo turno</span></div>'+
-     '<div class="sec" style="padding:16px 20px;border-bottom:1px solid var(--div)"><div class="legend"><b>Áreas con registros:</b>'+
-       '<span><span class="dots"><i class="a" style="background:'+DASH_COL.vitc+'"></i></span> Megadosis</span><span><span class="dots"><i class="a" style="background:'+DASH_COL.nutricion+'"></i></span> Nutrición</span>'+
-       '<span><span class="dots"><i class="a" style="background:'+DASH_COL.psicooncologia+'"></i></span> Psicooncología</span><span><span class="dots"><i class="a" style="background:'+DASH_COL.ejercicio+'"></i></span> Actividad física</span>'+
-       '<span style="margin-left:auto"><span class="dots"><i class="p" style="background:#C98A2E"></i></span> sin movimiento hace '+DIAS_AREA_ACTIVA+' días &nbsp;·&nbsp; <span class="dots"><i style="background:#D8DCD3"></i></span> sin registros</span></div></div>'+
      '<div class="scroll"><table class="tbl wide"><thead><tr>'+
-       '<th style="min-width:250px">Paciente</th><th style="min-width:230px">Diagnóstico</th><th style="min-width:130px">Áreas</th>'+
+       '<th style="min-width:250px">Paciente</th><th style="min-width:230px">Diagnóstico</th>'+
+       '<th style="min-width:130px">Áreas<button type="button" class="hhint" onclick="openAreasLegend()" title="Qué significan los colores" aria-label="Qué significan los colores">?</button></th>'+
        '<th style="min-width:190px">Situación</th><th style="min-width:150px">Próximo turno</th><th>Último registro</th></tr></thead>'+
        '<tbody id="patRows"></tbody></table></div>'+
    '</div>';
   applyList();
+}
+/* Las referencias de la columna Áreas. Antes vivían en una franja arriba de la tabla:
+   quedaban alineadas con columnas que no les correspondían y se leían como otra fila
+   de títulos. Ahora salen de un «?» al lado del título de la columna. */
+function openAreasLegend(){
+  const fila=(col,nom,txt)=>'<div class="row"><span class="k"><span class="dots" style="margin-right:9px"><i style="background:'+col+'"></i></span>'+esc(nom)+'</span><span class="v">'+esc(txt)+'</span></div>';
+  modalOpen('Las barritas de la columna Áreas',
+    '<p class="meta" style="margin:0;line-height:1.7">Cada paciente tiene cuatro barritas, siempre en el mismo orden. El color dice si esa área tiene registros y qué tan recientes son.</p>'+
+    '<div class="sec"><div class="sec-h"><span class="sec-t">Las cuatro áreas, en orden</span></div><div class="rows qq-rows">'+
+      fila(DASH_COL.vitc,'Megadosis','1ª barrita')+
+      fila(DASH_COL.nutricion,'Nutrición','2ª barrita')+
+      fila(DASH_COL.psicooncologia,'Psicooncología','3ª barrita')+
+      fila(DASH_COL.ejercicio,'Actividad física','4ª barrita')+
+    '</div></div>'+
+    '<div class="sec"><div class="sec-h"><span class="sec-t">Qué dice el color</span></div><div class="rows qq-rows">'+
+      '<div class="row"><span class="k"><span class="dots" style="margin-right:9px"><i style="background:'+DASH_COL.vitc+'"></i></span>Color pleno</span><span class="v">Con movimiento</span></div>'+
+      '<div class="row"><span class="k"><span class="dots" style="margin-right:9px"><i style="background:#C98A2E;opacity:.6"></i></span>Ocre</span><span class="v">Sin movimiento hace '+DIAS_AREA_ACTIVA+' días</span></div>'+
+      '<div class="row"><span class="k"><span class="dots" style="margin-right:9px"><i style="background:#D8DCD3"></i></span>Gris</span><span class="v">Sin registros</span></div>'+
+    '</div></div>','Cerrar', async()=>true);
+  $('mFoot').innerHTML='<button class="btn" onclick="modalClose()" style="margin-left:auto">Cerrar</button>';
 }
 function setPFilter(f){ PFILTER=f; document.querySelectorAll('#patFilters button').forEach(b=>b.classList.toggle('on',b.dataset.f===f)); applyList(); }
 function applyList(){
@@ -2166,10 +2605,59 @@ function openFichaMenu(){
     '<div class="menulist">'+
       fila('printPatient()','Exportar HC','Imprimir o guardar la historia como PDF')+
       (can.editPatient()?fila('setTab(\'hc\');setTimeout(corregirDatos,120)','Editar ficha','Diagnóstico, antecedentes, cobertura, G6PD…'):'')+
+      (can.negocio()?fila('openPlanModal()','Plan y forma de cobro','Qué paga por mes y si se factura o es en efectivo'):'')+
       (can.director()?fila('archivePatient()','Archivar paciente','Sale del listado activo. Se puede recuperar desde Archivados.',true):'')+
     '</div>','Cerrar', async()=>true);
   // es un menú: alcanza con un botón para salir
   $('mFoot').innerHTML='<button class="btn" onclick="modalClose()" style="margin-left:auto">Cerrar</button>';
+}
+async function openPlanModal(){
+  if(!CUR || !can.negocio()) return;
+  const {data}=await DB().from('patient_plans').select('*').eq('patient_id',CUR.id).order('starts_on',{ascending:false}).limit(1);
+  const a=(data||[])[0]||{kind:'meg4', cobro:'facturado', discount_pct:0, starts_on:todayLocal()};
+  const op=(v,l)=>'<option value="'+v+'"'+(a.kind===v?' selected':'')+'>'+l+'</option>';
+  modalOpen('Plan de '+(CUR.full_name||'el paciente'),
+    '<div class="field"><label>Plan</label><select id="plKind" onchange="planPreset()">'+
+      op('meg8','Megadosis · 8 por mes (USD 1.000)')+op('meg4','Megadosis · 4 por mes (USD 550)')+
+      op('nut2','Nutrición · 2 por mes ($ 160.000)')+op('suelto','Consultas sueltas')+'</select></div>'+
+    '<div class="grid g2">'+
+      '<div class="field"><label>Precio en USD</label><input id="plUsd" inputmode="decimal" value="'+(a.price_usd!=null?a.price_usd:'')+'" placeholder="dejalo vacío si es en pesos"></div>'+
+      '<div class="field"><label>Precio en pesos</label><input id="plArs" inputmode="decimal" value="'+(a.price_ars!=null?a.price_ars:'')+'" placeholder="solo si no es en USD"></div>'+
+    '</div>'+
+    '<div class="grid g2">'+
+      '<div class="field"><label>Forma de cobro</label><select id="plCobro" onchange="planCobro()">'+
+        '<option value="facturado"'+(a.cobro!=='efectivo'?' selected':'')+'>Facturado</option>'+
+        '<option value="efectivo"'+(a.cobro==='efectivo'?' selected':'')+'>Efectivo</option></select></div>'+
+      '<div class="field"><label>Descuento (%)</label><input id="plDesc" inputmode="decimal" value="'+(a.discount_pct||0)+'"></div>'+
+    '</div>'+
+    '<div class="grid g2">'+
+      '<div class="field"><label>Sesiones incluidas por mes</label><input id="plInc" inputmode="numeric" value="'+(a.sessions_included!=null?a.sessions_included:'')+'" placeholder="según el plan"></div>'+
+      '<div class="field"><label>Desde</label><input id="plDesde" type="date" value="'+(a.starts_on||todayLocal())+'"></div>'+
+    '</div>'+
+    '<p class="meta" style="margin:0;line-height:1.6">En efectivo se aplica el 10 % de descuento y no se descuentan impuestos. '+
+    'Si cambiás el plan, se guarda uno nuevo desde la fecha que pongas: los meses anteriores quedan con el plan que tenían.</p>',
+    'Guardar', guardarPlan);
+}
+function planPreset(){
+  const k=$('plKind').value, t=PLAN_TIPOS[k]||{};
+  $('plUsd').value = t.usd!=null ? t.usd : '';
+  $('plArs').value = t.ars!=null ? t.ars : '';
+  $('plInc').value = t.inc||0;
+}
+function planCobro(){ if($('plCobro').value==='efectivo' && !Number($('plDesc').value)) $('plDesc').value=10; }
+async function guardarPlan(){
+  const kind=$('plKind').value;
+  const usd=$('plUsd').value.trim(), ars=$('plArs').value.trim();
+  if(kind!=='suelto' && !usd && !ars){ toast('Poné el precio en USD o en pesos'); return false; }
+  const {error}=await DB().from('patient_plans').insert({
+    patient_id:CUR.id, kind:kind, label:(PLAN_TIPOS[kind]||{}).n||null,
+    sessions_included:Number($('plInc').value)||0,
+    price_usd: usd? Number(usd.replace(',','.')) : null,
+    price_ars: ars? Number(ars.replace(/\./g,'').replace(',','.')) : null,
+    cobro:$('plCobro').value, discount_pct:Number($('plDesc').value)||0,
+    starts_on:$('plDesde').value||todayLocal(), created_by:ME.user_id});
+  if(error){ toast(error.message); return false; }
+  toast('Plan guardado'); return true;
 }
 function openG6pdModal(){
   if(!CUR) return;
@@ -2759,6 +3247,10 @@ const QLQ_ESCALAS=[
   {k:'DI', nom:'Diarrea',                  tipo:'sint',  items:[17],         rango:3},
   {k:'FI', nom:'Dificultades económicas',  tipo:'sint',  items:[28],         rango:3}
 ];
+/* n = número del ítem en el QLQ-C30 original: es el que usa el puntaje y con el que se
+   guardan las respuestas (q1, q4, q6…), así que NO se toca.
+   d = el número que ve la gente, de 1 a 16, porque el formulario tiene 16 preguntas. */
+QLQ_ITEMS.forEach((it,i)=>{ it.d=i+1; });
 const QLQ_PEDIDOS=QLQ_ITEMS.map(i=>i.n);
 function qlqEsc(k){ return QLQ_ESCALAS.find(e=>e.k===k); }
 /* 0 a 100. En las funcionales y en la global, más alto es mejor.
@@ -2816,7 +3308,7 @@ function openQlqModal(){
   const fil=CUR.full_name||'el paciente';
   modalOpen('Calidad de vida · '+fil,
     '<p class="qq-intro">Leéle las preguntas al paciente tal como están escritas y marcá lo que te conteste. '+
-      'Las primeras dos son sobre su situación de ahora; de la tercera en adelante, sobre la <b>semana pasada</b>.'+
+      'Las dos primeras son sobre su situación de ahora; de la tercera en adelante, sobre la <b>semana pasada</b>.'+
       (borr?'<br><b>Retomamos el cuestionario que habías dejado por la mitad.</b>':'')+'</p>'+
     '<div class="grid g2">'+
       '<div class="field"><label>Fecha y hora</label><input id="qqWhen" type="datetime-local" value="'+esc(QLQ.fecha)+'" onchange="QLQ.fecha=this.value;qlqGuardarBorr()"></div>'+
@@ -2843,7 +3335,7 @@ function qlqCuerpo(){
   return h+'<div class="qq-falta" id="qqFalta"></div>';
 }
 function qlqFila(it){
-  const cab='<div class="qq-t"><b>'+it.n+'.</b> '+esc(it.t)+'</div>';
+  const cab='<div class="qq-t"><b>'+it.d+'.</b> '+esc(it.t)+'</div>';
   if(it.b==='esc'){
     let b='';
     for(let k=1;k<=7;k++) b+='<button type="button" class="qq-n" id="qb'+it.n+'_'+k+'" onclick="qlqSet('+it.n+','+k+')">'+k+'</button>';
@@ -2876,7 +3368,7 @@ async function qlqGuardar(){
   const faltan=QLQ_ITEMS.filter(it=>QLQ.ans['q'+it.n]==null);
   if(faltan.length){
     const ch=await askChoice({where:'Al guardar el cuestionario', title:'Falta'+(faltan.length===1?'':'n')+' '+faltan.length+' respuesta'+(faltan.length===1?'':'s'),
-      existing:'Sin contestar: '+faltan.map(f=>f.n).join(', '),
+      existing:'Sin contestar: '+faltan.map(f=>f.d).join(', '),
       detail:'Las que falten quedan en blanco.',
       why:'Si falta más de la mitad de una escala, esa escala no se puede puntuar.',
       primary:'Volver y completarlas', secondary:'Guardar así'});
@@ -2921,7 +3413,7 @@ function qlqVer(id){
   const filas=QLQ_ITEMS.map(it=>{
     const v=a['q'+it.n];
     const txt = v==null ? '—' : (it.b==='esc' ? v+' de 7' : (QLQ_OPC.find(o=>o[0]===v)||[0,'—'])[1]);
-    return '<div class="row"><span class="k">'+it.n+'. '+esc(it.t)+'</span><span class="v">'+esc(txt)+'</span></div>';
+    return '<div class="row"><span class="k">'+it.d+'. '+esc(it.t)+'</span><span class="v">'+esc(txt)+'</span></div>';
   }).join('');
   const esc2=QLQ_ESCALAS.filter(e=>sc[e.k]).map(e=>{
     const d=sc[e.k];
