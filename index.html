@@ -868,6 +868,15 @@ img,svg,video,canvas{max-width:100%}
 .negav:first-child{border-top:0;padding-top:0}
 .negav .d{width:6px;height:6px;border-radius:50%;flex:none;margin-top:6px;background:var(--alert)}
 .negav b{color:var(--ink);font-weight:600}
+.neg-vista{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+.neg-vista button{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;
+  font:inherit;font-family:var(--f-ui);font-size:12.5px;color:var(--muted);cursor:pointer}
+.neg-vista button.on{background:var(--raise);color:var(--ink);font-weight:500;border-color:var(--line)}
+.negmedios{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.mchip{font-family:var(--f-ui);font-size:12px;color:var(--muted);background:var(--void);
+  border:1px solid var(--line);border-radius:999px;padding:4px 11px}
+.mchip b{color:var(--ink-2);font-weight:600;margin-right:4px}
+.neg-t .debe{color:var(--alert);font-weight:500;font-size:11.5px;margin-top:3px}
 /* abajo de esto, la tabla necesita todo el ancho: el resultado pasa debajo */
 @media(max-width:1300px){ .neg-cols{grid-template-columns:1fr} }
 @media(max-width:760px){ .kpis{grid-template-columns:1fr 1fr} .kpis > div + div{border-left:0}
@@ -1044,17 +1053,25 @@ const ICPRINT='<svg viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-
    paciente y los supuestos, que se guardan con fecha para no reescribir meses
    ya cerrados.                                                                */
 const PLAN_TIPOS={
-  meg8:  {n:'Megadosis · 8 por mes', usd:1000, inc:8},
-  meg4:  {n:'Megadosis · 4 por mes', usd:550,  inc:4},
-  nut2:  {n:'Nutrición · 2 por mes', ars:160000, inc:0},
-  suelto:{n:'Consultas sueltas', inc:0}
+  meg8:  {n:'Megadosis · 8 por mes', corto:'8 megadosis/mes', usd:1000, inc:8},
+  meg4:  {n:'Megadosis · 4 por mes', corto:'4 megadosis/mes', usd:550,  inc:4},
+  nut2:  {n:'Nutrición · 2 por mes', corto:'2 nutrición/mes', ars:160000, inc:0},
+  suelto:{n:'Consultas sueltas', corto:'Consultas sueltas', inc:0}
 };
 const SUP_DEF={tc:1580, enf_hora:20000, horas_sesion:3, nutricion:40000, psico:40000, ejercicio:30000,
   consulta_precio:85000, consulta_costo:60000, eche_pct:.07, cobro_pct:0,
   iva:.21, iibb:.03, banco:.006, ganancias:.25, banco_computable:.33,
   vitc_g:237.67, magnesio_ml:692.2, procaina_ml:122, dmso_ml:181,
   agua500:7600, agua1000:10900, fis500:3800, fis1000:6200, descartables:3365.56,
-  prorrateo:'mes_completo', extras:'incluidas', extra_precio_usd:0};
+  prorrateo:'mes_completo', extras:'incluidas', extra_precio_usd:0,
+  com_efectivo:0, com_transferencia:.006, com_tarjeta:0, com_usd:0};
+const MEDIOS={
+  efectivo:     {n:'Efectivo',        corto:'Efectivo',      fee:'com_efectivo',      factura:false},
+  transferencia:{n:'Transferencia',   corto:'Transferencia', fee:'com_transferencia', factura:true },
+  tarjeta:      {n:'Tarjeta o link',  corto:'Tarjeta',       fee:'com_tarjeta',       factura:true },
+  usd:          {n:'Dólares en mano', corto:'Dólares',       fee:'com_usd',           factura:false}
+};
+let NEG_VISTA='devengado';   // devengado = el mes que cubre · caja = el mes en que entró
 let SUP=Object.assign({},SUP_DEF), SUP_ID=null, NEG_DATA=null;
 let NEG_PER='mes', NEG_D1=null, NEG_D2=null;
 
@@ -1102,6 +1119,14 @@ function planPrecio(pl){
   const d=Number(pl.discount_pct)||0;
   return base*(1-d/100);
 }
+function planCorto(pl){
+  if(!pl) return 'Sin plan cargado';
+  const t=PLAN_TIPOS[pl.kind]||{};
+  if(pl.kind==='suelto') return t.corto||t.n;
+  const pre = pl.price_ars!=null ? '$ '+esES(Math.round(pl.price_ars))
+            : 'USD '+(pl.price_usd!=null?pl.price_usd:(t.usd||0));
+  return (t.corto||t.n)+' · '+pre+((Number(pl.discount_pct)||0)?' −'+pl.discount_pct+'%':'');
+}
 function planNom(pl){
   if(!pl) return 'Sin plan cargado';
   const t=PLAN_TIPOS[pl.kind]||{};
@@ -1113,14 +1138,15 @@ function planNom(pl){
 }
 
 async function negCargar(){
-  const [SET,PL,VC,GV,IND,NT,PA] = await Promise.all([
+  const [SET,PL,VC,GV,IND,NT,PA,PG] = await Promise.all([
     DB().from('business_settings').select('*').order('effective_from',{ascending:false}).limit(1),
     DB().from('patient_plans').select('*'),
     DB().from('vitc_administrations').select('id,patient_id,indication_id,dose_g,administered_at').is('deleted_at',null),
     DB().from('infusion_components_given').select('administration_id,name,unit,dose,given'),
     DB().from('indications').select('id,vehicle,vitc_dilution_ml'),
     DB().from('notes').select('patient_id,discipline,created_at').is('deleted_at',null),
-    DB().from('patients').select('id,full_name,created_at').is('deleted_at',null)
+    DB().from('patients').select('id,full_name,created_at').is('deleted_at',null),
+    DB().from('payments').select('*').is('deleted_at',null).order('paid_on',{ascending:false})
   ]);
   const st=(SET.data||[])[0];
   SUP=Object.assign({},SUP_DEF,(st&&st.data)||{}); SUP_ID=st?st.id:null;
@@ -1131,7 +1157,7 @@ async function negCargar(){
     return {pid:v.patient_id, d:String(v.administered_at).slice(0,10), dose_g:v.dose_g,
             vehKey:vehKey(i.vehicle,i.vitc_dilution_ml), comps:compBy[v.id]||[]};
   });
-  NEG_DATA={planes:PL.data||[], ses, notas:NT.data||[], pacientes:PA.data||[]};
+  NEG_DATA={planes:PL.data||[], ses, notas:NT.data||[], pacientes:PA.data||[], pagos:PG.data||[]};
   return NEG_DATA;
 }
 
@@ -1141,7 +1167,8 @@ function negCalcular(){
   const pmap={}; NEG_DATA.pacientes.forEach(p=>pmap[p.id]=p);
   const R={};
   const nuevo=pid=>R[pid]||(R[pid]={pid, n:(pmap[pid]||{}).full_name||'Paciente', ses:0, cons:0,
-    insumos:0, enf:0, prof:0, ingreso:0, meses:{}, dosis:[], gramos:0});
+    insumos:0, enf:0, prof:0, meses:{}, dosis:[], gramos:0,
+    pagos:[], bruto:0, brutoFact:0, brutoEfe:0, comMedio:0});
 
   NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>{
     const r=nuevo(x.pid); r.ses++; r.meses[x.d.slice(0,7)]=1;
@@ -1157,45 +1184,155 @@ function negCalcular(){
             : disc==='ejercicio'?SUP.ejercicio : SUP.consulta_costo;
   });
 
+  /* Los ingresos salen de los pagos registrados, no del plan.
+     Según la vista, un pago cuenta en el mes que cubre o en el que entró. */
+  const fechaPago=g=>NEG_VISTA==='caja' ? String(g.paid_on).slice(0,10) : String(g.period).slice(0,10);
+  (NEG_DATA.pagos||[]).filter(g=>dentro(fechaPago(g))).forEach(g=>{
+    const r=nuevo(g.patient_id);
+    const m=Number(g.amount_ars)||0;
+    r.pagos.push(g); r.bruto+=m;
+    if(g.invoiced) r.brutoFact+=m; else r.brutoEfe+=m;
+    r.comMedio += m*(Number(SUP[(MEDIOS[g.method]||{}).fee])||0);
+  });
+
   const filas=Object.values(R).map(r=>{
     const pl=planDe(r.pid,d2);
     const t=PLAN_TIPOS[(pl||{}).kind]||{};
     const meses=Object.keys(r.meses).length||1;
     const inc=(pl&&pl.sessions_included)||t.inc||0;
+    // lo que el plan dice que debería entrar, para contrastar con lo cobrado
+    let esperado=0;
     if(pl && pl.kind!=='suelto'){
       let mensual=planPrecio(pl);
       if(SUP.prorrateo==='por_sesion' && inc) mensual = mensual/inc*Math.min(r.ses,inc);
-      r.ingreso += mensual*meses;
+      esperado = mensual*meses;
       if(SUP.extras==='se_cobran' && inc && r.ses>inc*meses)
-        r.ingreso += (r.ses-inc*meses)*(Number(SUP.extra_precio_usd)||0)*SUP.tc;
+        esperado += (r.ses-inc*meses)*(Number(SUP.extra_precio_usd)||0)*SUP.tc;
     }else if(pl && pl.kind==='suelto'){
-      r.ingreso += r.cons*SUP.consulta_precio;
+      esperado = r.cons*SUP.consulta_precio;
     }
-    const fact = !pl || pl.cobro!=='efectivo';
-    const bruto=r.ingreso;
-    const neto  = fact ? bruto/(1+SUP.iva) : bruto;
-    const iibb  = fact ? neto*SUP.iibb : 0;
-    const ingNeto = neto - iibb;
+    const bruto=r.bruto, share = bruto? r.brutoFact/bruto : 0;
     const directos = r.insumos + r.enf + r.prof;
+    // el IVA y los IIBB solo pesan sobre la parte facturada
+    const netoFact = r.brutoFact/(1+SUP.iva);
+    const iva = r.brutoFact - netoFact;
+    const iibb = netoFact*SUP.iibb;
+    const ingNeto = (netoFact - iibb) + r.brutoEfe;
     const eche = ingNeto*SUP.eche_pct;
-    const cobroC = bruto*SUP.cobro_pct;
-    const banco = fact ? (bruto + directos + eche + cobroC)*SUP.banco : 0;
-    const antes = ingNeto - directos - eche - cobroC - banco;
-    const gan = fact ? Math.max(Math.max(antes,0)*SUP.ganancias - banco*SUP.banco_computable, 0) : 0;
+    const banco = (r.brutoFact + (directos + eche + r.comMedio)*share)*SUP.banco;
+    const antes = ingNeto - directos - eche - r.comMedio - banco;
+    const gan = Math.max(Math.max(antes,0)*share*SUP.ganancias - banco*SUP.banco_computable, 0);
     const margen = antes - gan;
-    return Object.assign(r,{pl,fact,inc:inc*meses,meses,bruto,iva:bruto-neto,iibb,ingNeto,
-      insumosT:r.insumos,directos,eche,cobroC,banco,gan,margen,pct:bruto?margen/bruto:0});
-  }).filter(r=>r.ses||r.cons).sort((a,b)=>b.margen-a.margen);
+    const cobroTxt = !r.pagos.length ? '—'
+      : (function(){ const k={}; r.pagos.forEach(x=>k[x.method]=1); const ks=Object.keys(k);
+          return ks.length===1 ? ((MEDIOS[ks[0]]||{}).corto||ks[0]) : 'Mixto'; })();
+    return Object.assign(r,{pl,inc:inc*meses,meses,esperado,falta:Math.max(esperado-bruto,0),
+      bruto,iva,iibb,ingNeto,directos,eche,cobroC:r.comMedio,banco,gan,margen,cobroTxt,
+      pct:bruto?margen/bruto:0});
+  }).filter(r=>r.ses||r.cons||r.pagos.length).sort((a,b)=>b.margen-a.margen);
 
   const T=k=>filas.reduce((a,f)=>a+(f[k]||0),0);
   const dias={}; NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>dias[x.d]=(dias[x.d]||0)+1);
   const altas=NEG_DATA.pacientes.filter(p=>dentro(String(p.created_at).slice(0,10))).length;
-  return {filas,dias,altas,d1,d2,
+  const pagosPer=(NEG_DATA.pagos||[]).filter(g=>dentro(fechaPago(g)));
+  return {filas,dias,altas,d1,d2,pagos:pagosPer,
     tot:{bruto:T('bruto'),iva:T('iva'),iibb:T('iibb'),ingNeto:T('ingNeto'),insumos:T('insumos'),
       enf:T('enf'),prof:T('prof'),directos:T('directos'),eche:T('eche'),cobroC:T('cobroC'),
-      banco:T('banco'),gan:T('gan'),margen:T('margen'),ses:T('ses'),gramos:T('gramos')}};
+      banco:T('banco'),gan:T('gan'),margen:T('margen'),ses:T('ses'),gramos:T('gramos'),
+      esperado:T('esperado'),falta:T('falta')}};
 }
 
+
+
+function mesCorto(d){
+  if(!d) return '—';
+  const x=new Date(String(d).slice(0,10)+'T12:00:00');
+  if(isNaN(x)) return '—';
+  const t=x.toLocaleDateString('es-AR',{month:'short',year:'2-digit'});
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+function negSetVista(v){ NEG_VISTA=v;
+  document.querySelectorAll('.neg-vista button').forEach(b=>b.classList.toggle('on',b.textContent.indexOf(v==='caja'?'Caja':'mes que cubre')>-1));
+  negPintar(); }
+
+/* ---------- registrar un pago ---------- */
+async function openPagoModal(pid){
+  if(!can.negocio()) return;
+  const lista=(NEG_DATA&&NEG_DATA.pacientes)||(CACHE?CACHE.patients:[])||[];
+  const sel=pid||(CUR?CUR.id:'')||'';
+  const hoy=todayLocal();
+  const op=lista.slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''))
+    .map(x=>'<option value="'+x.id+'"'+(x.id===sel?' selected':'')+'>'+esc(x.full_name||'—')+'</option>').join('');
+  modalOpen('Registrar pago',
+    '<div class="field"><label>Paciente *</label><select id="pgPac" onchange="pagoPreset()">'+
+      '<option value="">Elegí…</option>'+op+'</select></div>'+
+    '<div class="grid g2">'+
+      '<div class="field"><label>Fecha en que entró</label><input id="pgFecha" type="date" value="'+hoy+'" max="'+hoy+'"></div>'+
+      '<div class="field"><label>Mes que cubre</label><input id="pgMes" type="month" value="'+hoy.slice(0,7)+'"></div>'+
+    '</div>'+
+    '<div class="field"><label>Medio</label><select id="pgMedio" onchange="pagoMedio()">'+
+      Object.keys(MEDIOS).map(k=>'<option value="'+k+'"'+(k==='transferencia'?' selected':'')+'>'+MEDIOS[k].n+'</option>').join('')+
+      '</select></div>'+
+    '<div class="grid g2">'+
+      '<div class="field"><label>Monto en pesos *</label><input id="pgArs" inputmode="decimal" placeholder="Ej: 782100"></div>'+
+      '<div class="field" id="pgUsdBox" hidden><label>Monto en USD</label><input id="pgUsd" inputmode="decimal" placeholder="Ej: 495" onchange="pagoDesdeUsd()" oninput="pagoDesdeUsd()"></div>'+
+    '</div>'+
+    '<div class="field"><label>¿Se facturó?</label><select id="pgFact">'+
+      '<option value="si">Sí, con factura</option><option value="no">No</option></select></div>'+
+    '<div class="field"><label>Concepto (opcional)</label><input id="pgConcepto" placeholder="Ej: plan de noviembre, sesión suelta, consulta"></div>'+
+    '<p class="meta" id="pgHint" style="margin:0;line-height:1.6"></p>',
+    'Guardar', guardarPago);
+  setTimeout(()=>{ pagoMedio(); pagoPreset(); },0);
+}
+function pagoMedio(){
+  const m=$('pgMedio').value, cfg=MEDIOS[m]||{};
+  $('pgFact').value = cfg.factura ? 'si' : 'no';
+  const box=$('pgUsdBox'); if(box) box.hidden = m!=='usd';
+  const fee=Number(SUP[cfg.fee])||0;
+  const h=$('pgHint');
+  if(h) h.textContent = (m==='usd' ? 'Se guarda el monto en USD y el tipo de cambio de hoy ('+esES(SUP.tc)+'). ' : '')+
+    (fee? 'Este medio descuenta '+(fee*100).toFixed(2).replace(/\.?0+$/,'')+' % de comisión.' : 'Este medio no tiene comisión cargada.');
+}
+function pagoDesdeUsd(){
+  const u=parseFloat(String($('pgUsd').value).replace(',','.'));
+  if(u>0) $('pgArs').value=Math.round(u*SUP.tc);
+}
+function pagoPreset(){
+  const pid=$('pgPac').value; if(!pid) return;
+  if($('pgArs').value) return;                       // no pisa lo que ya escribiste
+  const pl=planDe(pid, todayLocal());
+  if(!pl) return;
+  const m=planPrecio(pl);
+  if(m>0) $('pgArs').value=Math.round(m);
+  if(pl.cobro==='efectivo'){ $('pgMedio').value='efectivo'; pagoMedio(); }
+}
+async function guardarPago(){
+  const pid=$('pgPac').value;
+  if(!pid){ toast('Elegí el paciente'); return false; }
+  const ars=parseFloat(String($('pgArs').value).replace(/\./g,'').replace(',','.'));
+  if(!(ars>0)){ toast('Poné el monto'); return false; }
+  const m=$('pgMedio').value, usd=parseFloat(String($('pgUsd').value||'').replace(',','.'));
+  const {error}=await DB().from('payments').insert({
+    patient_id:pid, paid_on:$('pgFecha').value||todayLocal(),
+    period:($('pgMes').value||todayLocal().slice(0,7))+'-01',
+    amount_ars:ars, amount_usd:(m==='usd'&&usd>0)?usd:null, tc:(m==='usd'?SUP.tc:null),
+    method:m, invoiced:$('pgFact').value==='si',
+    concept:($('pgConcepto').value||'').trim()||null, created_by:ME.user_id});
+  if(error){ toast(error.message); return false; }
+  toast('Pago registrado');
+  if(curView==='negocio'){ await negCargar(); negPintar(); }
+  return true;
+}
+async function borrarPago(id){
+  const ch=await askChoice({where:'Al borrar un pago', title:'¿Borrar este pago?',
+    existing:'Sale de los ingresos del período', detail:'Queda registrado en la auditoría.',
+    why:'Si fue un error de carga, borralo y cargalo de nuevo.',
+    primary:'No borrarlo', secondary:'Borrarlo'});
+  if(ch!=='secondary') return;
+  const {error}=await DB().from('payments').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  if(error){ toast(error.message); return; }
+  toast('Pago borrado'); await negCargar(); negPintar();
+}
 
 /* ---------- la pantalla ---------- */
 function negARS(n){ return '$ '+esES(Math.round(n||0)); }
@@ -1220,15 +1357,27 @@ async function renderNegocio(){
    '<div class="neg-rango" id="negRango"'+(NEG_PER==='custom'?'':' hidden')+'>'+
      '<span class="meta">Del</span><input type="date" id="negD1" onchange="negSetFecha()">'+
      '<span class="meta">al</span><input type="date" id="negD2" onchange="negSetFecha()"></div>'+
+   '<div class="neg-vista">'+
+     '<button class="'+(NEG_VISTA==='devengado'?'on':'')+'" onclick="negSetVista(\'devengado\')">Por mes que cubre</button>'+
+     '<button class="'+(NEG_VISTA==='caja'?'on':'')+'" onclick="negSetVista(\'caja\')">Caja del mes</button>'+
+     '<span class="meta" id="negVistaTxt"></span></div>'+
    '<div class="kpis" id="negKpis"></div>'+
    '<div class="neg-cols">'+
      '<div class="stack">'+
        '<section class="card"><div class="sec">'+
          '<div class="sec-h"><span class="sec-t">Rentabilidad por paciente</span><span class="meta">ordenado por margen</span></div>'+
          '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Paciente</th><th>Cobro</th>'+
-           '<th class="n">Sesiones</th><th class="n">Ingreso</th><th class="n">Costo</th>'+
-           '<th class="n">Margen</th><th class="n">%</th></tr></thead>'+
+           '<th class="n">Sesiones</th><th class="n">Cobrado</th>'+
+           '<th class="n">Costo</th><th class="n">Margen</th><th class="n">%</th></tr></thead>'+
            '<tbody id="negRp"></tbody><tfoot id="negRpF"></tfoot></table></div>'+
+       '</div></section>'+
+       '<section class="card"><div class="sec">'+
+         '<div class="sec-h"><span class="sec-t">Ingresos</span>'+
+           '<button class="btn primary sm" onclick="openPagoModal()">'+PLUS+'Registrar pago</button></div>'+
+         '<div id="negMedios" class="negmedios"></div>'+
+         '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Fecha</th><th>Paciente</th>'+
+           '<th>Medio</th><th>Mes que cubre</th><th class="n">Monto</th><th></th></tr></thead>'+
+           '<tbody id="negPg"></tbody></table></div>'+
        '</div></section>'+
        '<section class="card"><div class="sec">'+
          '<div class="sec-h"><span class="sec-t">Consumo por paciente</span><span class="meta">vitamina C administrada, sesión por sesión</span></div>'+
@@ -1268,28 +1417,30 @@ function negSetTc(v){
 }
 function negPintar(){
   if(!NEG_DATA) return;
-  const {filas,tot,dias,altas}=negCalcular(), r=negRango();
+  const {filas,tot,dias,altas,pagos}=negCalcular(), r=negRango();
   const sub=$('negSub'); if(sub) sub.textContent=r.t+' · '+filas.length+' paciente'+(filas.length===1?'':'s')+' con actividad';
 
   $('negKpis').innerHTML=
     negKpi('Pacientes con actividad',filas.length,altas+' alta'+(altas===1?'':'s')+' en el período')+
     negKpi('Sesiones de megadosis',tot.ses,esES(Math.round(tot.gramos))+' g de vitamina C')+
-    negKpi('Ingresos',negMill(tot.bruto),'USD '+esES(Math.round(tot.bruto/(SUP.tc||1))))+
+    negKpi('Cobrado',negMill(tot.bruto),tot.falta>0 ? 'faltan '+negMill(tot.falta) : 'USD '+esES(Math.round(tot.bruto/(SUP.tc||1))))+
     negKpi('Margen',negMill(tot.margen),negPct(tot.margen/(tot.bruto||1))+' de lo cobrado','hero');
 
   const cls=x=>x<0?'neg':x<.2?'low':'';
   $('negRp').innerHTML=filas.map(f=>
     '<tr><td class="nm"><button class="linkbtn" onclick="openPatient(\''+f.pid+'\')">'+esc(f.n)+'</button>'+
-      '<div class="s">'+esc(planNom(f.pl))+'</div></td>'+
-    '<td><span class="tag">'+(f.fact?'Facturado':'Efectivo')+'</span></td>'+
+      '<div class="s">'+esc(planCorto(f.pl))+'</div></td>'+
+    '<td><span class="tag">'+esc(f.cobroTxt)+'</span></td>'+
     '<td class="n">'+(f.ses? f.ses+(f.cons?'<span class="meta"> +'+f.cons+'</span>':'')
                            : (f.cons?'<span class="meta">'+f.cons+' cons.</span>':'—'))+'</td>'+
-    '<td class="n">'+negARS(f.bruto)+'</td><td class="n">'+negARS(f.bruto-f.margen)+'</td>'+
+    '<td class="n">'+negARS(f.bruto)+(f.falta>0?'<div class="debe">faltan '+negARS(f.falta)+'</div>':'')+'</td>'+
+    '<td class="n">'+negARS(f.bruto-f.margen)+'</td>'+
     '<td class="n mg '+cls(f.pct)+'">'+negARS(f.margen)+'</td>'+
     '<td class="n mg '+cls(f.pct)+'">'+negPct(f.pct)+'</td></tr>').join('')
     || '<tr><td colspan="7" class="meta" style="padding:18px 0">No hay actividad en este período.</td></tr>';
   $('negRpF').innerHTML = filas.length? '<tr><td colspan="2">Total</td><td class="n">'+tot.ses+'</td>'+
-    '<td class="n">'+negARS(tot.bruto)+'</td><td class="n">'+negARS(tot.bruto-tot.margen)+'</td>'+
+    '<td class="n">'+negARS(tot.bruto)+(tot.falta>0?'<div class="debe">faltan '+negARS(tot.falta)+'</div>':'')+'</td>'+
+    '<td class="n">'+negARS(tot.bruto-tot.margen)+'</td>'+
     '<td class="n">'+negARS(tot.margen)+'</td><td class="n">'+negPct(tot.margen/(tot.bruto||1))+'</td></tr>':'';
 
   const cs=filas.filter(f=>f.ses).sort((a,b)=>b.gramos-a.gramos);
@@ -1320,18 +1471,50 @@ function negPintar(){
     (tot.gan? row('Ganancias',negNeg(tot.gan),' sub'):'')+
     '<div class="hero"><span class="k">Margen</span><span class="v'+(tot.margen<0?' neg':'')+'">'+negARS(tot.margen)+'</span></div>';
 
+  const vt=$('negVistaTxt');
+  if(vt) vt.textContent = NEG_VISTA==='devengado'
+    ? 'cada pago cuenta en el mes al que corresponde'
+    : 'cada pago cuenta el día que entró la plata';
+
+  const porMedio={};
+  (NEG_DATA.pagos||[]).filter(g=>{
+    const f=NEG_VISTA==='caja'?String(g.paid_on).slice(0,10):String(g.period).slice(0,10);
+    return f>=r.d1&&f<=r.d2;
+  }).forEach(g=>{ porMedio[g.method]=(porMedio[g.method]||0)+(Number(g.amount_ars)||0); });
+  $('negMedios').innerHTML=Object.keys(MEDIOS).filter(k=>porMedio[k]).map(k=>
+    '<span class="mchip"><b>'+MEDIOS[k].n+'</b> '+negARS(porMedio[k])+'</span>').join('')
+    || '<span class="meta">Todavía no hay pagos cargados en este período.</span>';
+
+  const pgs=(pagos||[]).slice().sort((a,b)=>String(b.paid_on).localeCompare(String(a.paid_on)));
+  const pmap2={}; NEG_DATA.pacientes.forEach(x=>pmap2[x.id]=x.full_name);
+  $('negPg').innerHTML=pgs.map(g=>
+    '<tr><td class="n" style="text-align:left">'+fmt(g.paid_on)+'</td>'+
+    '<td>'+esc(pmap2[g.patient_id]||'—')+'</td>'+
+    '<td><span class="tag">'+esc((MEDIOS[g.method]||{n:g.method}).n)+'</span>'+
+      (g.invoiced?'<span class="tag" style="margin-left:5px">Factura</span>':'')+'</td>'+
+    '<td>'+esc(mesCorto(g.period))+'</td>'+
+    '<td class="n">'+negARS(g.amount_ars)+(g.amount_usd?'<div class="meta">USD '+esES(g.amount_usd)+'</div>':'')+'</td>'+
+    '<td class="n"><button class="linkbtn" onclick="borrarPago(\''+g.id+'\')">Borrar</button></td></tr>').join('')
+    || '<tr><td colspan="6" class="meta" style="padding:18px 0">Sin pagos en este período. Tocá «Registrar pago».</td></tr>';
+
   const solos=Object.keys(dias).filter(d=>dias[d]===1);
   const av=[];
+  const deben=filas.filter(f=>f.falta>0);
+  if(deben.length) av.push('<b>Falta cobrar '+negARS(tot.falta)+'.</b> '+
+    deben.slice(0,4).map(f=>esc(f.n.split(',')[0])+' '+negARS(f.falta)).join(' · ')+
+    (deben.length>4?' y '+(deben.length-4)+' más':'')+'.');
+  const sinPago=filas.filter(f=>!f.pagos.length && (f.ses||f.cons));
+  if(sinPago.length) av.push('<b>'+sinPago.length+' paciente'+(sinPago.length>1?'s':'')+' con atención y sin ningún pago cargado.</b> '+
+    'Suman costo pero no ingreso, así que el margen de arriba está por debajo del real.');
   const sinPlan=filas.filter(f=>!f.pl);
   if(sinPlan.length) av.push('<b>'+sinPlan.length+' paciente'+(sinPlan.length>1?'s':'')+' sin plan cargado.</b> '+
-    'Suman costo pero no ingreso, así que el margen de arriba está por debajo del real. '+
-    'Se carga desde la ficha, en el menú «⋯».');
+    'Sin plan no se puede saber cuánto falta cobrarle. Se carga desde la ficha, en el menú «⋯».');
   if(solos.length) av.push('<b>'+solos.length+' turno'+(solos.length>1?'s':'')+' con un solo paciente.</b> '+
     'La enfermería de ese día ('+negARS(SUP.enf_hora*SUP.horas_sesion)+') cae entera sobre esa persona. Con dos, baja a la mitad.');
   filas.forEach(f=>{ if(f.inc && f.ses < f.inc*0.7)
     av.push('<b>'+esc(f.n.split(',')[0])+' hizo '+f.ses+' de '+f.inc+' sesiones.</b> '+
       'El plan se cobra igual, así que el margen sube justo cuando el paciente deja de venir.'); });
-  filas.filter(f=>f.pl && f.pct<.2).forEach(f=>{
+  filas.filter(f=>f.pagos.length && f.pct<.2).forEach(f=>{
     av.push('<b>'+esc(f.n.split(',')[0])+' deja '+negPct(f.pct)+'.</b> '+
       (f.pl.kind==='suelto'
         ? 'Una consulta suelta facturada a '+negARS(SUP.consulta_precio)+' con honorarios de '+negARS(SUP.consulta_costo)+' casi no deja nada.'
@@ -2605,7 +2788,8 @@ function openFichaMenu(){
     '<div class="menulist">'+
       fila('printPatient()','Exportar HC','Imprimir o guardar la historia como PDF')+
       (can.editPatient()?fila('setTab(\'hc\');setTimeout(corregirDatos,120)','Editar ficha','Diagnóstico, antecedentes, cobertura, G6PD…'):'')+
-      (can.negocio()?fila('openPlanModal()','Plan y forma de cobro','Qué paga por mes y si se factura o es en efectivo'):'')+
+      (can.negocio()?fila('openPagoModal()','Registrar un pago','Monto, medio y a qué mes corresponde'):'')+
+      (can.negocio()?fila('openPlanModal()','Plan y forma de cobro','Lo que se espera cobrar por mes'):'')+
       (can.director()?fila('archivePatient()','Archivar paciente','Sale del listado activo. Se puede recuperar desde Archivados.',true):'')+
     '</div>','Cerrar', async()=>true);
   // es un menú: alcanza con un botón para salir
