@@ -1182,7 +1182,7 @@ const CONCEPTOS={
   programa:{n:'Programa mensual',           corto:'Programa'},
   suelta:  {n:'Sesión de sueroterapia',     corto:'Sueroterapia',  mod:'suero'},
   medica:  {n:'Consulta médica',            corto:'Consulta médica',mod:'medica'},
-  nutri:   {n:'Consulta de nutrición',      corto:'Nutrición',     mod:'nutri'},
+  nutri:   {n:'Consulta nutrición',         corto:'Nutrición',     mod:'nutri'},
   psico:   {n:'Sesión de psicooncología',   corto:'Psicooncología',mod:'psico'},
   ef:      {n:'Clase de actividad física',  corto:'Act. física',   mod:'ef'},
   sena:    {n:'Seña o pago parcial',        corto:'Seña'}
@@ -1322,11 +1322,22 @@ function porRenovar(){
   });
   return out.sort((a,b)=>a.dias-b.dias);
 }
-/* cómo se nombra un pago: la seña se muestra con la prestación a la que va */
+/* La categoría de un pago es siempre la prestación. Una seña no es una categoría
+   aparte: es parte de una consulta que se termina de abonar después, así que se
+   muestra con el nombre de la prestación y el «pago parcial» va al costado. */
 function conceptoCorto(g){
-  const base=(CONCEPTOS[g.concept_kind]||{corto:g.concept||'Pago'}).corto;
-  if(g.concept_kind!=='sena') return base;
-  const d=CONCEPTOS[g.sena_kind]; return d? 'Seña · '+d.corto.toLowerCase() : base;
+  if(g.concept_kind==='sena'){
+    const d=CONCEPTOS[g.sena_kind];
+    if(d) return d.corto;
+  }
+  return (CONCEPTOS[g.concept_kind]||{corto:g.concept||'Pago'}).corto;
+}
+function conceptoLargo(g){
+  if(g.concept_kind==='sena'){
+    const d=CONCEPTOS[g.sena_kind];
+    if(d) return d.n+' · pago parcial';
+  }
+  return (CONCEPTOS[g.concept_kind]||{n:g.concept||'Pago'}).n;
 }
 function programaCorto(pg){
   if(!pg) return 'Sin programa cargado';
@@ -1657,8 +1668,9 @@ function pgLeer(){
   if(esProg && !MOD_K.some(k=>inc[k])) return {err:'El programa no tiene ninguna prestación cargada'};
   return {rec:{
     patient_id:pid, paid_on:$('pgFecha').value||todayLocal(),
-    concept_kind:c, concept:CONCEPTOS[c].n,
-    covers_from: c==='sena' ? null : (esProg ? ($('pgDesde').value||todayLocal()) : ($('pgFecha').value||todayLocal())),
+    concept_kind:c, concept:(c==='sena' ? CONCEPTOS[PG.sena].n : CONCEPTOS[c].n),
+    // solo un programa mensual cubre un período; lo demás se cobra y se acabó
+    covers_from: esProg ? ($('pgDesde').value||todayLocal()) : null,
     period: ((esProg ? ($('pgDesde').value||todayLocal()) : ($('pgFecha').value||todayLocal())).slice(0,7))+'-01',
     qty: esProg?1:PG.cant, included: c==='sena'?null:inc,
     sena_kind: c==='sena'? PG.sena : null,
@@ -1733,7 +1745,7 @@ function pgDetalle(id){
   const pmap={}; NEG_DATA.pacientes.forEach(x=>pmap[x.id]=x.full_name||'—');
   const inc=g.included||{}, det=MODS.filter(m=>Number(inc[m.k])).map(m=>inc[m.k]+' '+m.s).join(' · ');
   const hasta=g.covers_from?masUnMes(g.covers_from):null;
-  modalOpen('Pago de '+(pmap[g.patient_id]||'—'),
+  modalOpen((g.concept_kind==='sena'?'Pago parcial de ':'Pago de ')+(pmap[g.patient_id]||'—'),
     '<div class="grid g2">'+
       '<div class="field"><label for="pdFecha">Fecha del pago</label><input id="pdFecha" type="date" value="'+String(g.paid_on).slice(0,10)+'"></div>'+
       '<div class="field"><label for="pdMedio">Medio</label><select id="pdMedio">'+
@@ -1746,11 +1758,12 @@ function pgDetalle(id){
     (g.concept_kind==='sena'?'<div class="field"><label for="pdSena">¿A cuenta de qué?</label>'+
       '<select id="pdSena">'+SENA_DE.map(k=>'<option value="'+k+'"'+(g.sena_kind===k?' selected':'')+'>'+
       CONCEPTOS[k].n+'</option>').join('')+'</select></div>':'')+
-    (g.covers_from?'<div class="grid g2">'+
-      '<div class="field"><label for="pdDesde">Cubre desde</label><input id="pdDesde" type="date" value="'+String(g.covers_from).slice(0,10)+'"></div>'+
-      '<div class="field"><label>Hasta</label><input value="'+fmt(hasta)+'" disabled></div></div>':'')+
+    (g.concept_kind==='programa' && g.covers_from ?'<div class="grid g2">'+
+      '<div class="field"><label for="pdDesde">Cubre desde</label><input id="pdDesde" type="date" value="'+
+        String(g.covers_from).slice(0,10)+'" onchange="pdHasta()"></div>'+
+      '<div class="field"><label for="pdHasta">Hasta</label><input id="pdHasta" value="'+fmt(hasta)+'" disabled></div></div>':'')+
     '<div class="field"><label for="pdNota">Nota</label><input id="pdNota" value="'+esc(g.notes||'')+'"></div>'+
-    '<p class="meta" style="margin:0;line-height:1.7"><b>'+esc(conceptoCorto(g))+'</b>'+
+    '<p class="meta" style="margin:0;line-height:1.7"><b>'+esc(conceptoLargo(g))+'</b>'+
       (det?' · '+esc(det):'')+'<br>Cargado el '+fmt(g.created_at)+'.'+
       '<br><button class="linkbtn" onclick="pgBorrar(\''+g.id+'\')" style="color:var(--crit)">Borrar este pago</button></p>',
     'Guardar cambios', async ()=>{
@@ -1762,11 +1775,17 @@ function pgDetalle(id){
         amount_ars:Math.round(ars), amount_usd:Math.round(ars/tc*100)/100, tc:tc,
         notes:($('pdNota').value||'').trim()||null};
       if($('pdDesde')){ up.covers_from=$('pdDesde').value; up.period=String($('pdDesde').value).slice(0,7)+'-01'; }
-      if($('pdSena')) up.sena_kind=$('pdSena').value;
+      if($('pdSena')){ up.sena_kind=$('pdSena').value;
+        if(CONCEPTOS[up.sena_kind]) up.concept=CONCEPTOS[up.sena_kind].n; }
       const {error}=await DB().from('payments').update(up).eq('id',g.id);
       if(error){ toast(error.message); return false; }
       toast('Pago actualizado'); await negCargar(); negPintarIngresos(); return true;
     });
+}
+/* «Hasta» se recalcula sola: siempre es un mes después de «Cubre desde» */
+function pdHasta(){
+  const d=$('pdDesde'), h=$('pdHasta');
+  if(d&&h) h.value = d.value ? fmt(masUnMes(d.value)) : '—';
 }
 async function pgBorrar(id){
   const ch=await askChoice({where:'Al borrar un pago', title:'¿Borrar este pago?',
