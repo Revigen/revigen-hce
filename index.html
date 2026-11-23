@@ -1215,7 +1215,16 @@ function negNeg(n){ return '− $ '+esES(Math.round(Math.abs(n||0))); }
 function negUSD(n){ return 'USD '+esES(Math.round(n||0)); }
 function negPct(n){ return (n*100).toFixed(1).replace('.',',')+' %'; }
 /* el número grande en dólares y el peso abajo en chico */
-function dual(ars){ return '<span class="usd">'+negUSD(ars/(SUP.tc||1))+'<span class="ars">'+negARS(ars)+'</span></span>'; }
+/* Cada cobro y cada gasto guardan su propio tipo de cambio y su monto en dólares,
+   el del día en que se cargó. El tablero suma esos dólares, no vuelve a convertir.
+   Lo que no tiene dólares propios —los costos internos, que salen de los supuestos
+   en pesos— se expresa al tipo de cambio promedio de lo cobrado en el período. */
+let TC_PER = 0;
+function tcPer(){ return TC_PER || SUP.tc || 1; }
+function dual(ars, usd){
+  const u = (usd!=null && isFinite(usd)) ? usd : (ars/tcPer());
+  return '<span class="usd">'+negUSD(u)+'<span class="ars">'+negARS(ars)+'</span></span>';
+}
 
 function negRango(){
   const hoy=new Date(), y=hoy.getFullYear(), m=hoy.getMonth();
@@ -1359,7 +1368,7 @@ function negCalcular(){
   const pmap={}; NEG_DATA.pacientes.forEach(p=>pmap[p.id]=p);
   const R={};
   const nuevo=pid=>R[pid]||(R[pid]={pid, n:(pmap[pid]||{}).full_name||'Paciente', ses:0, cons:0,
-    insumos:0, enf:0, prof:0, pagos:[], bruto:0, brutoFact:0, brutoEfe:0});
+    insumos:0, enf:0, prof:0, pagos:[], bruto:0, brutoUsd:0, brutoFact:0, brutoEfe:0});
 
   NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>{
     const r=nuevo(x.pid); r.ses++;
@@ -1376,6 +1385,7 @@ function negCalcular(){
   (NEG_DATA.pagos||[]).filter(g=>dentro(String(g.paid_on).slice(0,10))).forEach(g=>{
     const r=nuevo(g.patient_id), m=Number(g.amount_ars)||0;
     r.pagos.push(g); r.bruto+=m;
+    r.brutoUsd += (Number(g.amount_usd)||0) || (m/(Number(g.tc)||SUP.tc));
     if(g.method==='electronico') r.brutoFact+=m; else r.brutoEfe+=m;
   });
 
@@ -1401,11 +1411,13 @@ function negCalcular(){
   const altas=NEG_DATA.pacientes.filter(p=>dentro(String(p.created_at).slice(0,10))).length;
   const gastos=(NEG_DATA.gastos||[]).filter(g=>dentro(String(g.spent_on).slice(0,10)));
   const gTot=gastos.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
+  const gTotUsd=gastos.reduce((a,g)=>a+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc))),0);
   return {filas,dias,altas,d1,d2,gastos,
     pagos:(NEG_DATA.pagos||[]).filter(g=>dentro(String(g.paid_on).slice(0,10))),
     tot:{bruto:T('bruto'),iva:T('iva'),iibb:T('iibb'),ingNeto:T('ingNeto'),insumos:T('insumos'),
       enf:T('enf'),prof:T('prof'),directos:T('directos'),eche:T('eche'),
-      banco:T('banco'),gan:T('gan'),margen:T('margen'),ses:T('ses'),gastos:gTot}};
+      banco:T('banco'),gan:T('gan'),margen:T('margen'),ses:T('ses'),
+      brutoUsd:T('brutoUsd'),gastos:gTot,gastosUsd:gTotUsd}};
 }
 
 /* ===================== Negocio · pantallas ===================== */
@@ -1414,18 +1426,12 @@ function negFiltroFechas(pref,extra){
   return '<div class="filt">'+
     '<div class="fg"><label for="'+pref+'D1">Desde</label><input id="'+pref+'D1" type="date" value="'+r.d1+'" onchange="negSetFecha()"></div>'+
     '<div class="fg"><label for="'+pref+'D2">Hasta</label><input id="'+pref+'D2" type="date" value="'+r.d2+'" onchange="negSetFecha()"></div>'+
-    (extra||'')+
-    '<div class="tcb"><label for="'+pref+'Tc">Tipo de cambio</label>'+
-      '<input id="'+pref+'Tc" inputmode="decimal" value="'+esES(SUP.tc)+'" onchange="negSetTc(this.value)"></div></div>';
+    (extra||'')+'</div>';
 }
 function negSetFecha(){
   const a=document.querySelector('.filt input[type=date]'), b=document.querySelectorAll('.filt input[type=date]')[1];
   if(a&&a.value) NEG_D1=a.value; if(b&&b.value) NEG_D2=b.value;
   negRepintar();
-}
-function negSetTc(v){
-  const n=parseFloat(String(v).replace(/\./g,'').replace(',','.'));
-  if(n>0){ SUP.tc=n; negRepintar(); }
 }
 function negRepintar(){
   if(curView==='negocio') negPintarResumen();
@@ -1477,13 +1483,14 @@ async function renderNegocio(){
 function negPintarResumen(){
   if(!NEG_DATA||!$('negKpis')) return;
   const {filas,tot,dias,altas}=negCalcular(), r=negRango();
+  TC_PER = (tot.bruto>0 && tot.brutoUsd>0) ? tot.bruto/tot.brutoUsd : 0;
   const sub=$('negSub'); if(sub) sub.textContent='Del '+fmt(r.d1)+' al '+fmt(r.d2)+' · '+filas.length+' paciente'+(filas.length===1?'':'s')+' con actividad';
   $('negBanda').innerHTML=negBanda(false);
   $('negKpis').innerHTML=
     negKpi('Pacientes con actividad',filas.length,altas+' alta'+(altas===1?'':'s')+' en el período')+
     negKpi('Sesiones de sueroterapia',tot.ses,Object.keys(dias).length+' día'+(Object.keys(dias).length===1?'':'s')+' de infusión')+
-    negKpi('Cobrado',negUSD(tot.bruto/(SUP.tc||1)),negARS(tot.bruto))+
-    negKpi('Margen',negUSD(tot.margen/(SUP.tc||1)),negPct(tot.margen/(tot.bruto||1))+' de lo cobrado','hero');
+    negKpi('Cobrado',negUSD(tot.brutoUsd),negARS(tot.bruto)+(TC_PER?' · TC promedio '+esES(Math.round(TC_PER)):''))+
+    negKpi('Margen',negUSD(tot.margen/tcPer()),negPct(tot.margen/(tot.bruto||1))+' de lo cobrado','hero');
 
   const cls=x=>x<0?'neg':x<.2?'low':'';
   $('negRp').innerHTML=filas.map(f=>{
@@ -1492,11 +1499,11 @@ function negPintarResumen(){
     '<td class="meta">'+esc(s?programaCorto(s.pg):'Sin programa')+'</td>'+
     '<td class="n">'+(s? (s.totQ?s.totQ:'<span class="meta">sin saldo</span>') : '—')+'</td>'+
     '<td class="n">'+(s? (s.porVencer?venceChip(s):fmtDMShort(s.hasta)) : '—')+'</td>'+
-    '<td class="n">'+dual(f.bruto)+'</td>'+
+    '<td class="n">'+dual(f.bruto,f.brutoUsd)+'</td>'+
     '<td class="n mg '+cls(f.pct)+'">'+dual(f.margen)+'</td>'+
     '<td class="n mg '+cls(f.pct)+'">'+negPct(f.pct)+'</td></tr>';}).join('')
     || '<tr><td colspan="7" class="meta" style="padding:18px 0">No hay actividad en este período.</td></tr>';
-  $('negRpF').innerHTML = filas.length? '<tr><td colspan="4">Total</td><td class="n">'+dual(tot.bruto)+'</td>'+
+  $('negRpF').innerHTML = filas.length? '<tr><td colspan="4">Total</td><td class="n">'+dual(tot.bruto,tot.brutoUsd)+'</td>'+
     '<td class="n">'+dual(tot.margen)+'</td><td class="n">'+negPct(tot.margen/(tot.bruto||1))+'</td></tr>':'';
 
   const row=(k,v,c)=>'<div class="r'+(c||'')+'"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';
@@ -1707,6 +1714,8 @@ function negPintarIngresos(){
     return !q || String(pmap[g.patient_id]||'').toLowerCase().indexOf(q)>-1;
   }).sort((a,b)=>String(b.paid_on).localeCompare(String(a.paid_on)));
   const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
+  const totU=lista.reduce((a,g)=>a+(Number(g.amount_usd)||0),0);
+  TC_PER = (tot>0 && totU>0) ? tot/totU : 0;
   $('pgBody').innerHTML=lista.map(g=>{
     const inc=g.included||{}, det=MODS.filter(m=>Number(inc[m.k])).map(m=>inc[m.k]+' '+m.s).join(' · ');
     return '<tr class="cl" onclick="pgDetalle(\''+g.id+'\')"><td class="n" style="text-align:left">'+fmtDMShort(g.paid_on)+'</td>'+
@@ -1714,9 +1723,9 @@ function negPintarIngresos(){
       '<td><span class="tag">'+esc(conceptoCorto(g))+'</span></td>'+
       '<td class="meta">'+esc(det||(g.concept_kind==='sena'?'pago parcial':'—'))+'</td>'+
       '<td class="meta">'+esc((MEDIOS[g.method]||{n:g.method||'—'}).n)+'</td>'+
-      '<td class="n">'+dual(Number(g.amount_ars)||0)+'</td></tr>';
+      '<td class="n">'+dual(Number(g.amount_ars)||0, Number(g.amount_usd))+'</td></tr>';
   }).join('') || '<tr><td colspan="6" class="meta" style="padding:18px 0">Sin pagos en este período.</td></tr>';
-  $('pgFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot)+'</td></tr>':'';
+  $('pgFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot,totU)+'</td></tr>':'';
   const t=$('pgTot'); if(t) t.textContent=lista.length+' pago'+(lista.length===1?'':'s');
 }
 function pgDetalle(id){
@@ -1807,16 +1816,21 @@ function negPintarGastos(){
     const f=String(g.spent_on).slice(0,10);
     return f>=d1 && f<=d2 && (!GA_FILTRO.cat || g.category===GA_FILTRO.cat);
   }).sort((a,b)=>String(b.spent_on).localeCompare(String(a.spent_on)));
-  const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
-  const ins=lista.filter(g=>g.category==='Insumos y materia prima').reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
-  const efe=lista.filter(g=>g.method==='efectivo').reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
-  const porQuien={}; lista.forEach(g=>porQuien[g.paid_by]=(porQuien[g.paid_by]||0)+(Number(g.amount_ars)||0));
+  const sumU=l=>l.reduce((a,g)=>a+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc))),0);
+  const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), totU=sumU(lista);
+  TC_PER = (tot>0 && totU>0) ? tot/totU : 0;
+  const insL=lista.filter(g=>g.category==='Insumos y materia prima');
+  const efeL=lista.filter(g=>g.method==='efectivo');
+  const ins=insL.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), insU=sumU(insL);
+  const efe=efeL.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), efeU=sumU(efeL);
+  const porQuien={}; lista.forEach(g=>{const k=g.paid_by;
+    porQuien[k]=(porQuien[k]||0)+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc)));});
   const quienTxt=Object.keys(porQuien).sort((a,b)=>porQuien[b]-porQuien[a])
-    .map(k=>(PAGADO[k]||k)+' '+negUSD(porQuien[k]/(SUP.tc||1))).join(' · ')||'—';
+    .map(k=>(PAGADO[k]||k)+' '+negUSD(porQuien[k])).join(' · ')||'—';
   $('gaKpis').innerHTML=
-    negKpi('Total del período',negUSD(tot/(SUP.tc||1)),negARS(tot)+' · '+lista.length+' movimiento'+(lista.length===1?'':'s'))+
-    negKpi('Insumos',negUSD(ins/(SUP.tc||1)),tot?negPct(ins/tot)+' del total':'—')+
-    negKpi('En efectivo',negUSD(efe/(SUP.tc||1)),negUSD((tot-efe)/(SUP.tc||1))+' electrónico')+
+    negKpi('Total del período',negUSD(totU),negARS(tot)+' · '+lista.length+' movimiento'+(lista.length===1?'':'s'))+
+    negKpi('Insumos',negUSD(insU),tot?negPct(ins/tot)+' del total':'—')+
+    negKpi('En efectivo',negUSD(efeU),negUSD(totU-efeU)+' electrónico')+
     negKpi('Quién puso la plata',Object.keys(porQuien).length||'—',quienTxt);
   $('gaBody').innerHTML=lista.map(g=>
     '<tr class="cl" onclick="gaModal(\''+g.id+'\')"><td class="n" style="text-align:left">'+fmtDMShort(g.spent_on)+'</td>'+
@@ -1824,10 +1838,10 @@ function negPintarGastos(){
     '<td><span class="tag">'+esc(g.category||'Sin categoría')+'</span></td>'+
     '<td>'+esc(PAGADO[g.paid_by]||g.paid_by||'—')+'</td>'+
     '<td class="meta">'+esc((MEDIOS[g.method]||{n:g.method||'—'}).n)+'</td>'+
-    '<td class="n">'+dual(Number(g.amount_ars)||0)+'</td>'+
+    '<td class="n">'+dual(Number(g.amount_ars)||0, Number(g.amount_usd))+'</td>'+
     '<td>'+(g.source==='telegram'?'<span class="tag tg">Telegram</span>':'<span class="meta">a mano</span>')+'</td></tr>').join('')
     || '<tr><td colspan="7" class="meta" style="padding:18px 0">Sin gastos en este período.</td></tr>';
-  $('gaFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot)+'</td><td></td></tr>':'';
+  $('gaFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot,totU)+'</td><td></td></tr>':'';
   const t=$('gaTot'); if(t) t.textContent=lista.length+' movimiento'+(lista.length===1?'':'s');
 }
 function gaModal(id){
@@ -1883,8 +1897,8 @@ async function renderPL(){
   const ses=(NEG_DATA.ses||[]).filter(x=>x.d>=desde);
   const diasInf=new Set(ses.map(x=>x.d)).size;
   const sum=(l,k)=>l.reduce((a,x)=>a+(Number(x[k])||0),0);
-  const fila=(h,q,n,m)=>'<tr><td><span class="tag">'+h+'</span></td><td class="meta">'+q+'</td>'+
-    '<td class="n">'+n+'</td><td class="n">'+(m==null?'—':dual(m))+'</td></tr>';
+  const fila=(h,q,n,m,u)=>'<tr><td><span class="tag">'+h+'</span></td><td class="meta">'+q+'</td>'+
+    '<td class="n">'+n+'</td><td class="n">'+(m==null?'—':dual(m,u))+'</td></tr>';
   p.innerHTML=
    '<div class="phead-page"><div><h1>P&amp;L</h1>'+
      '<p class="sub">Todos los viernes se agregan las filas nuevas a la planilla.</p></div></div>'+
@@ -1893,8 +1907,10 @@ async function renderPL(){
        '<span class="meta">desde el '+fmt(desde)+'</span></div>'+
      '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Hoja</th><th>Qué se agrega</th>'+
        '<th class="n">Filas</th><th class="n">Monto</th></tr></thead><tbody>'+
-       fila('Ingresos','Cobros de la semana con su medio y tipo de cambio',pagos.length,sum(pagos,'amount_ars'))+
-       fila('Gastos','Lo que entró por el grupo de Telegram y lo cargado a mano',gastos.length,sum(gastos,'amount_ars'))+
+       fila('Ingresos','Cobros de la semana, cada uno a su tipo de cambio',pagos.length,
+            sum(pagos,'amount_ars'),sum(pagos,'amount_usd'))+
+       fila('Gastos','Lo que entró por el grupo de Telegram y lo cargado a mano',gastos.length,
+            sum(gastos,'amount_ars'),sum(gastos,'amount_usd'))+
        fila('Honorarios profesionales','Enfermería de los días en que hubo infusión',diasInf,
             diasInf*SUP.enf_hora*SUP.horas_sesion)+
        '</tbody></table></div>'+
@@ -1906,7 +1922,7 @@ async function renderPL(){
 
 /* ---------- supuestos ---------- */
 const NEG_CAMPOS=[
-  ['tc','Tipo de cambio'],
+  ['tc','Tipo de cambio sugerido al cargar'],
   ['pre_suero_usd','Sueroterapia · se cobra (USD)'],['consulta_precio','Consulta médica · se cobra'],
   ['pre_nutri','Nutrición · se cobra'],['pre_psico','Psicooncología · se cobra'],
   ['pre_ef_pres','Act. física presencial · se cobra'],['pre_ef_virt','Act. física virtual · se cobra'],
