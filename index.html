@@ -1313,6 +1313,12 @@ function porRenovar(){
   });
   return out.sort((a,b)=>a.dias-b.dias);
 }
+/* cómo se nombra un pago: la seña se muestra con la prestación a la que va */
+function conceptoCorto(g){
+  const base=(CONCEPTOS[g.concept_kind]||{corto:g.concept||'Pago'}).corto;
+  if(g.concept_kind!=='sena') return base;
+  const d=CONCEPTOS[g.sena_kind]; return d? 'Seña · '+d.corto.toLowerCase() : base;
+}
 function programaCorto(pg){
   if(!pg) return 'Sin programa cargado';
   const inc=incDe(pg);
@@ -1536,11 +1542,13 @@ function negKpi(l,n,d,c){
 
 /* ---------- Ingresos ---------- */
 let PG={conc:'programa', inc:{suero:4,medica:1,nutri:0,psico:0,ef:0}, ef:'virtual',
-        cant:1, medio:'electronico', mon:'ars', pid:'', edit:null};
+        cant:1, medio:'electronico', mon:'ars', pid:'', edit:null, sena:'medica'};
+/* una seña siempre es a cuenta de algo: eso es lo que después va como categoría */
+const SENA_DE=['medica','nutri','psico','ef','suelta','programa'];
 
 function pgPrecio(){
   const c=PG.conc;
-  if(c==='sena') return 0;
+  if(c==='sena') return 0;   // el monto de una seña lo pone la persona
   if(c==='suelta') return SUP.pre_suero_usd*SUP.tc*PG.cant;
   if(c==='medica') return SUP.consulta_precio*PG.cant;
   if(c==='nutri')  return SUP.pre_nutri*PG.cant;
@@ -1552,6 +1560,7 @@ function pgPrecio(){
 }
 function pgSetConc(c){ PG.conc=c; PG.cant=1; pgForm(); }
 function pgSetCant(d){ PG.cant=Math.max(1,Math.min(30,PG.cant+d)); pgForm(); }
+function pgSetSena(k){ PG.sena=k; pgForm(); }
 function pgPaso(k,d){ PG.inc[k]=Math.max(0,Math.min(31,(PG.inc[k]||0)+d)); pgForm(); }
 function pgSetEf(m){ PG.ef=m; pgForm(); }
 function pgSetMon(m){ PG.mon=m; pgForm(); }
@@ -1591,7 +1600,17 @@ function pgForm(){
          '<div class="field"><label for="pgHasta">Hasta</label><input id="pgHasta" value="'+fmt(masUnMes(guarda.desde||hoy))+' · un mes" disabled></div>'+
        '</div>'
      : c==='sena'
-       ? '<p class="meta" style="margin:12px 0 2px;line-height:1.6">Una seña o un pago parcial no arranca ni renueva ningún programa: solo queda registrado el ingreso.</p>'
+       ? '<div class="grid g2" style="margin:12px 0 2px">'+
+           '<div class="field"><label for="pgSena">¿A cuenta de qué?</label>'+
+             '<select id="pgSena" onchange="pgSetSena(this.value)">'+
+             SENA_DE.map(k=>'<option value="'+k+'"'+(PG.sena===k?' selected':'')+'>'+CONCEPTOS[k].n+'</option>').join('')+
+           '</select></div>'+
+           '<div class="field"><label>Entero saldría</label>'+
+             '<input value="'+(function(){const g=PG.conc; PG.conc=PG.sena; const v=pgPrecio(); PG.conc=g;
+               return v? (PG.mon==='usd'? 'USD '+esES(Math.round(v/SUP.tc)) : negARS(v)) : '—';})()+'" disabled></div>'+
+         '</div>'+
+         '<p class="meta" style="margin:0 0 2px;line-height:1.6">La seña no arranca ni renueva nada: queda el ingreso, '+
+         'y la categoría pasa a ser la prestación que elijas acá.</p>'
        : '<div class="mod" style="border-top:0"><span class="dot" style="background:'+
            (MODS.find(m=>m.k===CONCEPTOS[c].mod)||{col:'var(--sage)'}).col+'"></span>'+
            '<span class="nm">¿Cuántas paga ahora?<span>se cobra suelta, no arranca ni renueva un programa</span></span>'+
@@ -1635,6 +1654,7 @@ function pgLeer(){
     covers_from: c==='sena' ? null : (esProg ? ($('pgDesde').value||todayLocal()) : ($('pgFecha').value||todayLocal())),
     period: ((esProg ? ($('pgDesde').value||todayLocal()) : ($('pgFecha').value||todayLocal())).slice(0,7))+'-01',
     qty: esProg?1:PG.cant, included: c==='sena'?null:inc,
+    sena_kind: c==='sena'? PG.sena : null,
     ef_modality: (inc.ef? PG.ef : null),
     amount_ars:Math.round(ars), amount_usd:Math.round(usd*100)/100, tc:tc,
     method:$('pgMedio').value, invoiced:$('pgMedio').value==='electronico',
@@ -1691,8 +1711,8 @@ function negPintarIngresos(){
     const inc=g.included||{}, det=MODS.filter(m=>Number(inc[m.k])).map(m=>inc[m.k]+' '+m.s).join(' · ');
     return '<tr class="cl" onclick="pgDetalle(\''+g.id+'\')"><td class="n" style="text-align:left">'+fmtDMShort(g.paid_on)+'</td>'+
       '<td class="nm">'+esc(pmap[g.patient_id]||'—')+'</td>'+
-      '<td><span class="tag">'+esc((CONCEPTOS[g.concept_kind]||{corto:g.concept||'Pago'}).corto)+'</span></td>'+
-      '<td class="meta">'+esc(det||'—')+'</td>'+
+      '<td><span class="tag">'+esc(conceptoCorto(g))+'</span></td>'+
+      '<td class="meta">'+esc(det||(g.concept_kind==='sena'?'pago parcial':'—'))+'</td>'+
       '<td class="meta">'+esc((MEDIOS[g.method]||{n:g.method||'—'}).n)+'</td>'+
       '<td class="n">'+dual(Number(g.amount_ars)||0)+'</td></tr>';
   }).join('') || '<tr><td colspan="6" class="meta" style="padding:18px 0">Sin pagos en este período.</td></tr>';
@@ -1714,11 +1734,14 @@ function pgDetalle(id){
       '<div class="field"><label for="pdArs">Monto en pesos</label><input id="pdArs" inputmode="decimal" value="'+esES(Math.round(Number(g.amount_ars)||0))+'"></div>'+
       '<div class="field"><label for="pdTc">Tipo de cambio</label><input id="pdTc" inputmode="decimal" value="'+esES(Number(g.tc)||SUP.tc)+'"></div>'+
     '</div>'+
+    (g.concept_kind==='sena'?'<div class="field"><label for="pdSena">¿A cuenta de qué?</label>'+
+      '<select id="pdSena">'+SENA_DE.map(k=>'<option value="'+k+'"'+(g.sena_kind===k?' selected':'')+'>'+
+      CONCEPTOS[k].n+'</option>').join('')+'</select></div>':'')+
     (g.covers_from?'<div class="grid g2">'+
       '<div class="field"><label for="pdDesde">Cubre desde</label><input id="pdDesde" type="date" value="'+String(g.covers_from).slice(0,10)+'"></div>'+
       '<div class="field"><label>Hasta</label><input value="'+fmt(hasta)+'" disabled></div></div>':'')+
     '<div class="field"><label for="pdNota">Nota</label><input id="pdNota" value="'+esc(g.notes||'')+'"></div>'+
-    '<p class="meta" style="margin:0;line-height:1.7"><b>'+esc((CONCEPTOS[g.concept_kind]||{n:g.concept||'Pago'}).n)+'</b>'+
+    '<p class="meta" style="margin:0;line-height:1.7"><b>'+esc(conceptoCorto(g))+'</b>'+
       (det?' · '+esc(det):'')+'<br>Cargado el '+fmt(g.created_at)+'.'+
       '<br><button class="linkbtn" onclick="pgBorrar(\''+g.id+'\')" style="color:var(--crit)">Borrar este pago</button></p>',
     'Guardar cambios', async ()=>{
@@ -1730,6 +1753,7 @@ function pgDetalle(id){
         amount_ars:Math.round(ars), amount_usd:Math.round(ars/tc*100)/100, tc:tc,
         notes:($('pdNota').value||'').trim()||null};
       if($('pdDesde')){ up.covers_from=$('pdDesde').value; up.period=String($('pdDesde').value).slice(0,7)+'-01'; }
+      if($('pdSena')) up.sena_kind=$('pdSena').value;
       const {error}=await DB().from('payments').update(up).eq('id',g.id);
       if(error){ toast(error.message); return false; }
       toast('Pago actualizado'); await negCargar(); negPintarIngresos(); return true;
