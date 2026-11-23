@@ -877,6 +877,32 @@ img,svg,video,canvas{max-width:100%}
   border:1px solid var(--line);border-radius:999px;padding:4px 11px}
 .mchip b{color:var(--ink-2);font-weight:600;margin-right:4px}
 .neg-t .debe{color:var(--alert);font-weight:500;font-size:11.5px;margin-top:3px}
+.neg-t td.debe{color:var(--alert);font-weight:600}
+
+/* ---------- calidad de vida ---------- */
+.sp{display:block}
+.dlt{font-family:var(--f-ui);font-size:12px;color:var(--muted);white-space:nowrap}
+.dlt.up{color:var(--vital);font-weight:600}
+.dlt.down{color:var(--alert);font-weight:600}
+.caldet{display:block}
+.calbig{max-width:560px}
+.calsub{margin:20px 0 10px}
+.minis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.minic{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--void)}
+.minic .mt{font-family:var(--f-ui);font-size:11.5px;color:var(--muted);line-height:1.35;min-height:30px}
+.minic .mv{font-size:20px;font-weight:500;margin:2px 0 4px;letter-spacing:-.01em}
+.minic .mu{display:block;font-family:var(--f-ui);font-size:10.5px;font-weight:400;color:var(--faint);letter-spacing:0}
+.minic .md{margin-top:4px}
+.minic .qq-par{margin-left:5px}
+.calrow{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.calnow{flex:none;min-width:116px}
+.calnow .n{font-size:38px;font-weight:400;letter-spacing:-.025em;line-height:1.05;color:var(--vital)}
+.calnow .k{font-family:var(--f-ui);font-size:12px;color:var(--muted);margin-top:2px}
+.calnow .d{margin-top:7px}
+.calsp{flex:1 1 300px;min-width:0}
+@media(max-width:1180px){ .minis{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media(max-width:820px){  .minis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media(max-width:460px){  .minis{grid-template-columns:1fr} }
 /* abajo de esto, la tabla necesita todo el ancho: el resultado pasa debajo */
 @media(max-width:1300px){ .neg-cols{grid-template-columns:1fr} }
 @media(max-width:760px){ .kpis{grid-template-columns:1fr 1fr} .kpis > div + div{border-left:0}
@@ -887,6 +913,90 @@ img,svg,video,canvas{max-width:100%}
 .qq-rows .row .k{flex:1 1 auto;line-height:1.5}
 .qq-rows .row .v{flex:none;white-space:nowrap;font-weight:600}
 @media(max-width:600px){ .qq-op{grid-template-columns:repeat(2,1fr)} .qq-sc{grid-template-columns:repeat(4,1fr)} }
+/* ---------- Revigen App: switch de producto ---------- */
+.rail .swi{display:flex;gap:3px;background:var(--void);border:1px solid var(--line);
+  border-radius:10px;padding:3px;margin:0 0 24px}
+.rail .swi button{flex:1;border:0;background:none;font-family:var(--f-ui);font-size:12.5px;
+  color:var(--muted);padding:7px 6px;border-radius:8px;cursor:pointer;white-space:nowrap}
+.rail .swi button:hover{color:var(--ink-2)}
+.rail .swi button.on{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.rail nav button .bdg .al{display:inline-block;background:var(--alert);color:#fff;border-radius:999px;
+  padding:1px 7px;font-size:11px;font-weight:600}
+
+/* ---------- filtros de período ---------- */
+.filt{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;font-family:var(--f-ui);margin-bottom:16px}
+.filt .fg label{display:block;font-size:11.5px;color:var(--muted);margin-bottom:5px}
+.filt .fg input,.filt .fg select{border:1px solid var(--line);background:var(--panel);border-radius:9px;
+  padding:8px 10px;font:inherit;font-size:13.5px;color:var(--ink);font-family:var(--f-ui)}
+.filt .fg input:focus,.filt .fg select:focus{outline:none;border-color:var(--sage)}
+.filt .tcb{margin-left:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:7px 12px;display:flex;align-items:center;gap:9px}
+.filt .tcb label{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.filt .tcb input{border:0;border-bottom:1px solid var(--line);background:none;font:inherit;font-size:14px;
+  width:72px;text-align:right;padding:1px 0;color:var(--ink);font-variant-numeric:tabular-nums}
+.filt .tcb input:focus{outline:none;border-bottom-color:var(--vital)}
+
+/* ---------- plata en dólares con el peso abajo ---------- */
+.usd{display:inline-block;font-variant-numeric:tabular-nums;white-space:nowrap}
+.usd .ars{display:block;font-family:var(--f-ui);font-size:11.5px;color:var(--faint);margin-top:1px;font-weight:400}
+
+/* ---------- armador de programa ---------- */
+.mod{display:flex;align-items:center;gap:13px;padding:11px 0;border-top:1px solid var(--div)}
+.mod .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.mod .nm{flex:1;min-width:0;font-family:var(--f-ui);font-size:13.5px;color:var(--ink)}
+.mod .nm span{display:block;font-size:11.5px;color:var(--faint)}
+.mod.off .nm{color:var(--faint)}
+.step{display:flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;flex:none}
+.step button{width:32px;height:34px;border:0;background:var(--void);color:var(--muted);cursor:pointer;font-size:16px;padding:0}
+.step button:hover{background:var(--panel-2);color:var(--ink)}
+.step .v{width:36px;display:grid;place-items:center;font-family:var(--f-ui);font-size:14px;
+  font-variant-numeric:tabular-nums;background:var(--panel);color:var(--ink)}
+.mt{display:flex;gap:4px;border:1px solid var(--line);border-radius:8px;padding:3px;background:var(--void);flex:none}
+.mt button{border:0;background:none;font-family:var(--f-ui);font-size:11.5px;color:var(--muted);
+  padding:4px 9px;border-radius:6px;cursor:pointer}
+.mt button.on{background:var(--panel);color:var(--ink);font-weight:600}
+
+/* ---------- aviso de renovación ---------- */
+.band{background:#FBF1E1;border:1px solid #EBD6B6;border-radius:12px;padding:13px 16px;margin-bottom:16px;
+  font-family:var(--f-ui);font-size:13.5px;color:#8A5212;line-height:1.6}
+.band b{color:#6B3F0C}
+.band.big{padding:16px 18px;font-size:14px;border-width:1.5px}
+.band .list{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.band .list span{background:#fff;border:1px solid #EBD6B6;border-radius:999px;padding:4px 12px;font-size:12.5px}
+.band .list .linkbtn{color:#6B3F0C;font-weight:600}
+.tag.over{color:#8E2A1D;background:#FBE9E6;border-color:#EFCCC6;font-weight:600}
+.tag.due{color:#8A5212;background:#FBF1E1;border-color:#EBD6B6}
+.tag.tg{color:#1C5B63;background:#E7F1F2;border-color:#CDE2E4}
+.tbl tbody tr.cl{cursor:pointer}
+.tbl tbody tr.cl:hover{background:#FAFBF8}
+
+/* ---------- saldo de sesiones en la ficha ---------- */
+.saldo{display:flex;flex-direction:column;gap:9px}
+.saldo .s-r{display:flex;align-items:center;gap:11px;font-family:var(--f-ui);font-size:13.5px}
+.saldo .s-n{flex:1;min-width:0;color:var(--ink-2)}
+.saldo .s-b{height:5px;border-radius:3px;background:var(--panel-2);overflow:hidden;width:70px;flex:none}
+.saldo .s-b i{display:block;height:100%;border-radius:3px}
+.saldo .s-q{width:84px;text-align:right;flex:none;font-variant-numeric:tabular-nums;color:var(--ink)}
+.saldo .s-q.zero{color:var(--faint)}
+
+/* ---------- formulario de ingresos en página (mismo estilo que los modales) ---------- */
+#pgForm .field{margin:0}
+#pgForm label{display:block;font-family:var(--f-ui);font-size:12px;color:var(--muted);margin-bottom:6px}
+#pgForm input,#pgForm select{width:100%;background:var(--void);border:1px solid var(--line);
+  border-radius:9px;padding:10px 12px;color:var(--ink);font:inherit;font-size:14px}
+#pgForm input:focus,#pgForm select:focus{border-color:var(--sage);outline:none}
+#pgForm input[disabled]{color:var(--faint);background:var(--panel-2)}
+#pgForm .step .v{font-size:14px}
+
+@media(max-width:760px){
+  .kpis .n{font-size:27px;letter-spacing:-.02em}
+  .filt{gap:8px}
+  .filt .fg{flex:1 1 46%;min-width:0}
+  .filt .fg input,.filt .fg select{width:100%}
+  .filt .tcb{margin-left:0;flex:1 1 100%;justify-content:space-between}
+  .band .list span{flex:1 1 100%}
+}
+
 </style>
 <body>
 
@@ -1040,7 +1150,11 @@ const IC={
   equipo:'<svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   archivados:'<svg viewBox="0 0 24 24"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1zM10 12h4"/></svg>',
   catalogo:'<svg viewBox="0 0 24 24"><path d="M12 2.7 6.8 9.4a7 7 0 1 0 10.4 0z"/><path d="M9 14h6M12 11v6"/></svg>',
-  negocio:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>'
+  negocio:'<svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  ingresos:'<svg viewBox="0 0 24 24"><path d="M12 2v20M17 6H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  gastos:'<svg viewBox="0 0 24 24"><path d="M3 6h18l-2 13H5L3 6zM8 6V4h8v2"/></svg>',
+  pl:'<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 15l3-4 2.5 2.5L17 9"/></svg>',
+  calidad:'<svg viewBox="0 0 24 24"><path d="M3 13h4l2.5-7 4 14L16 13h5"/></svg>'
 };
 const IC_PEN='<svg viewBox="0 0 24 24" style="width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;opacity:.55;margin-left:5px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 const PLUS='<svg viewBox="0 0 24 24" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>';
@@ -1048,105 +1162,175 @@ const ICPRINT='<svg viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-
 
 
 /* ===================== Negocio (solo administradores) =====================
-   Todo lo clínico se lee de lo que el equipo ya carga: sesiones, dosis, vehículo,
-   componentes y consultas. Lo comercial sale de dos lugares: el plan de cada
-   paciente y los supuestos, que se guardan con fecha para no reescribir meses
-   ya cerrados.                                                                */
-const PLAN_TIPOS={
-  meg8:  {n:'Megadosis · 8 por mes', corto:'8 megadosis/mes', usd:1000, inc:8},
-  meg4:  {n:'Megadosis · 4 por mes', corto:'4 megadosis/mes', usd:550,  inc:4},
-  nut2:  {n:'Nutrición · 2 por mes', corto:'2 nutrición/mes', ars:160000, inc:0},
-  suelto:{n:'Consultas sueltas', corto:'Consultas sueltas', inc:0}
+   Los ingresos salen de los pagos que se cargan acá: cada pago dice qué
+   concepto cubre, desde qué fecha y con qué medio. Los costos salen de lo
+   que el equipo ya carga en la historia clínica. Los gastos entran por el
+   grupo de Telegram o a mano. Todo se mira en dólares al último tipo de
+   cambio registrado, con el monto en pesos siempre a la vista.            */
+
+/* módulos que puede incluir un programa mensual */
+const MODS=[
+  {k:'suero', n:'Sueroterapia (megadosis)', s:'suero',      u:'sesiones por mes', col:'#0E9BB5', disc:'__vitc'},
+  {k:'medica',n:'Médica integrativa',       s:'médica',     u:'consultas por mes',col:'#3C6B3A', disc:'oncologia'},
+  {k:'nutri', n:'Nutrición',                s:'nutrición',  u:'consultas por mes',col:'#15803D', disc:'nutricion'},
+  {k:'psico', n:'Psicooncología',           s:'psico',      u:'sesiones por mes', col:'#7C3AED', disc:'psicooncologia'},
+  {k:'ef',    n:'Actividad física',         s:'act. física',u:'clases por mes',   col:'#D97706', disc:'ejercicio', modal:true}
+];
+const MOD_K=MODS.map(m=>m.k);
+/* conceptos que se pueden cobrar */
+const CONCEPTOS={
+  programa:{n:'Programa mensual',           corto:'Programa'},
+  suelta:  {n:'Sesión de sueroterapia',     corto:'Sueroterapia',  mod:'suero'},
+  medica:  {n:'Consulta médica',            corto:'Consulta médica',mod:'medica'},
+  nutri:   {n:'Consulta de nutrición',      corto:'Nutrición',     mod:'nutri'},
+  psico:   {n:'Sesión de psicooncología',   corto:'Psicooncología',mod:'psico'},
+  ef:      {n:'Clase de actividad física',  corto:'Act. física',   mod:'ef'},
+  sena:    {n:'Seña o pago parcial',        corto:'Seña'}
 };
+const MEDIOS={ efectivo:{n:'Efectivo',corto:'Efectivo'}, electronico:{n:'Electrónico',corto:'Electrónico'} };
+const PAGADO={ mati:'Mati', ivan:'Iván', revigen:'Revigen', ambos:'Los dos' };
+/* las 21 categorías de la planilla de P&L */
+const GASTO_CATS=['Alquiler / Arrendamientos','Alquiler de equipos','Capacitación y RRHH','Comisiones y ventas',
+'Depreciación / Amortización','Diversos / Misceláneos','Equipamiento y mobiliario','Gastos administrativos y oficina',
+'Honorarios profesionales','Impuestos y tasas','Insumos y materia prima','Logística y transporte',
+'Mantenimiento y reparaciones','Marketing y publicidad','Otros servicios profesionales y legales','Seguros',
+'Servicios financieros y bancarios','Servicios','Sueldos y cargas','Tecnología y software','Viáticos'];
+
 const SUP_DEF={tc:1580, enf_hora:20000, horas_sesion:3, nutricion:40000, psico:40000, ejercicio:30000,
-  consulta_precio:85000, consulta_costo:60000, eche_pct:.07, cobro_pct:0,
+  consulta_precio:85000, consulta_costo:60000, eche_pct:.07,
+  pre_suero_usd:137.5, pre_nutri:80000, pre_psico:80000, pre_ef_pres:35000, pre_ef_virt:18000,
   iva:.21, iibb:.03, banco:.006, ganancias:.25, banco_computable:.33,
   vitc_g:237.67, magnesio_ml:692.2, procaina_ml:122, dmso_ml:181,
   agua500:7600, agua1000:10900, fis500:3800, fis1000:6200, descartables:3365.56,
-  prorrateo:'mes_completo', extras:'incluidas', extra_precio_usd:0,
-  com_efectivo:0, com_transferencia:.006, com_tarjeta:0, com_usd:0};
-const MEDIOS={
-  efectivo:     {n:'Efectivo',        corto:'Efectivo',      fee:'com_efectivo',      factura:false},
-  transferencia:{n:'Transferencia',   corto:'Transferencia', fee:'com_transferencia', factura:true },
-  tarjeta:      {n:'Tarjeta o link',  corto:'Tarjeta',       fee:'com_tarjeta',       factura:true },
-  usd:          {n:'Dólares en mano', corto:'Dólares',       fee:'com_usd',           factura:false}
-};
-let NEG_VISTA='devengado';   // devengado = el mes que cubre · caja = el mes en que entró
+  dias_aviso:7};
+
 let SUP=Object.assign({},SUP_DEF), SUP_ID=null, NEG_DATA=null;
-let NEG_PER='mes', NEG_D1=null, NEG_D2=null;
+let NEG_D1=null, NEG_D2=null;                 // rango elegido a mano
+let PG_FILTRO={q:'',d1:null,d2:null};         // filtros del listado de pagos
+let GA_FILTRO={cat:'',d1:null,d2:null};
+
+/* ---------- plata ---------- */
+function negARS(n){ return '$ '+esES(Math.round(n||0)); }
+function negNeg(n){ return '− $ '+esES(Math.round(Math.abs(n||0))); }
+function negUSD(n){ return 'USD '+esES(Math.round(n||0)); }
+function negPct(n){ return (n*100).toFixed(1).replace('.',',')+' %'; }
+/* el número grande en dólares y el peso abajo en chico */
+function dual(ars){ return '<span class="usd">'+negUSD(ars/(SUP.tc||1))+'<span class="ars">'+negARS(ars)+'</span></span>'; }
 
 function negRango(){
   const hoy=new Date(), y=hoy.getFullYear(), m=hoy.getMonth();
-  const f=d=>ymd(d);
-  if(NEG_PER==='mes')  return {t:mesNombre(y,m), d1:f(new Date(y,m,1)),   d2:f(new Date(y,m+1,0))};
-  if(NEG_PER==='prev') return {t:mesNombre(y,m-1), d1:f(new Date(y,m-1,1)), d2:f(new Date(y,m,0))};
-  if(NEG_PER==='t3')   return {t:'Últimos 3 meses', d1:f(new Date(y,m-2,1)), d2:f(new Date(y,m+1,0))};
-  if(NEG_PER==='anio') return {t:String(y), d1:y+'-01-01', d2:y+'-12-31'};
-  return {t:'Período elegido', d1:NEG_D1||f(new Date(y,m,1)), d2:NEG_D2||f(new Date(y,m+1,0))};
+  return {d1:NEG_D1||ymd(new Date(y,m,1)), d2:NEG_D2||ymd(hoy)};
 }
-function mesNombre(y,m){ const d=new Date(y,m,1);
-  const s=d.toLocaleDateString('es-AR',{month:'long',year:'numeric'}); return s.charAt(0).toUpperCase()+s.slice(1); }
+function masUnMes(iso){
+  if(!iso) return null;
+  const x=new Date(String(iso).slice(0,10)+'T12:00:00');
+  if(isNaN(x)) return null;
+  const d=x.getDate(); x.setMonth(x.getMonth()+1);
+  if(x.getDate()<d) x.setDate(0);              // 31 de enero → 28/29 de febrero
+  return ymd(x);
+}
+function diasHasta(iso){
+  if(!iso) return null;
+  const x=new Date(String(iso).slice(0,10)+'T12:00:00'), h=new Date();
+  return Math.round((x - new Date(h.getFullYear(),h.getMonth(),h.getDate(),12))/86400000);
+}
 
-/* vehículo de la indicación → clave de precio */
+/* ---------- costo de insumos de una sesión ---------- */
 function vehKey(nombre,ml){
   const v=(nombre||'').toLowerCase(), mil=(Number(ml)||500)>700;
   if(v.indexOf('fisio')>-1) return mil?'fis1000':'fis500';
-  return mil?'agua1000':'agua500';   // agua destilada estéril es el vehículo por defecto
+  return mil?'agua1000':'agua500';
 }
-/* costo de insumos de UNA sesión, con lo que quedó registrado */
 function negInsumos(ses){
   const g=Number(ses.dose_g)||0;
   let conIva = g*SUP.vitc_g + SUP[ses.vehKey];
   (ses.comps||[]).forEach(c=>{
     const n=(c.name||'').toLowerCase(), d=Number(c.dose)||0;
-    if(n.indexOf('magnesio')>-1 && (c.unit||'')==='mg') conIva += (d/200)*SUP.magnesio_ml;   // 20 % = 200 mg/ml
-    else if(n.indexOf('procaína')>-1||n.indexOf('procaina')>-1) conIva += (d/10)*SUP.procaina_ml; // 1 % = 10 mg/ml
-    else if(n.indexOf('dmso')>-1) conIva += d*SUP.dmso_ml;                                    // se carga en gramos ≈ ml
+    if(n.indexOf('magnesio')>-1 && (c.unit||'')==='mg') conIva += (d/200)*SUP.magnesio_ml;
+    else if(n.indexOf('procaína')>-1||n.indexOf('procaina')>-1) conIva += (d/10)*SUP.procaina_ml;
+    else if(n.indexOf('dmso')>-1) conIva += d*SUP.dmso_ml;
   });
-  return conIva/1.21 + SUP.descartables;   // los descartables ya vienen sin IVA
-}
-function planDe(pid,hasta){
-  const ps=(NEG_DATA.planes||[]).filter(x=>x.patient_id===pid && x.starts_on<=hasta)
-    .sort((a,b)=>b.starts_on.localeCompare(a.starts_on));
-  return ps[0]||null;
-}
-function planPrecio(pl){
-  if(!pl) return 0;
-  const t=PLAN_TIPOS[pl.kind]||{};
-  let base = pl.price_ars!=null ? Number(pl.price_ars)
-           : pl.price_usd!=null ? Number(pl.price_usd)*SUP.tc
-           : (t.usd!=null ? t.usd*SUP.tc : (t.ars||0));
-  const d=Number(pl.discount_pct)||0;
-  return base*(1-d/100);
-}
-function planCorto(pl){
-  if(!pl) return 'Sin plan cargado';
-  const t=PLAN_TIPOS[pl.kind]||{};
-  if(pl.kind==='suelto') return t.corto||t.n;
-  const pre = pl.price_ars!=null ? '$ '+esES(Math.round(pl.price_ars))
-            : 'USD '+(pl.price_usd!=null?pl.price_usd:(t.usd||0));
-  return (t.corto||t.n)+' · '+pre+((Number(pl.discount_pct)||0)?' −'+pl.discount_pct+'%':'');
-}
-function planNom(pl){
-  if(!pl) return 'Sin plan cargado';
-  const t=PLAN_TIPOS[pl.kind]||{};
-  const nom=pl.label||t.n||pl.kind;
-  if(pl.kind==='suelto') return nom;
-  const pre = pl.price_ars!=null ? '$ '+esES(Math.round(pl.price_ars))
-            : 'USD '+(pl.price_usd!=null?pl.price_usd:(t.usd||0));
-  return nom+' · '+pre+((Number(pl.discount_pct)||0)?' −'+pl.discount_pct+' %':'');
+  return conIva/1.21 + SUP.descartables;
 }
 
+/* ---------- programas y saldo de sesiones ---------- */
+function incDe(pg){
+  const o={}; MOD_K.forEach(k=>o[k]=0);
+  const inc=(pg&&pg.included)||{};
+  MOD_K.forEach(k=>{ o[k]=Number(inc[k])||0; });
+  return o;
+}
+/* el programa vigente de un paciente: el último pago de tipo programa */
+function programaDe(pid,hasta){
+  const h=hasta||todayLocal();
+  const ps=((NEG_DATA&&NEG_DATA.pagos)||[])
+    .filter(x=>x.patient_id===pid && x.concept_kind==='programa' && String(x.covers_from||'').slice(0,10)<=h)
+    .sort((a,b)=>String(b.covers_from).localeCompare(String(a.covers_from)));
+  return ps[0]||null;
+}
+/* cuánto consumió desde que arrancó el programa */
+function consumoDesde(pid,desde,hasta){
+  const o={}; MOD_K.forEach(k=>o[k]=0);
+  if(!desde) return o;
+  const d1=String(desde).slice(0,10), d2=hasta||'9999-12-31';
+  ((NEG_DATA&&NEG_DATA.ses)||[]).forEach(s=>{ if(s.pid===pid && s.d>=d1 && s.d<=d2) o.suero++; });
+  ((NEG_DATA&&NEG_DATA.notas)||[]).forEach(n=>{
+    if(n.patient_id!==pid) return;
+    const f=String(n.created_at).slice(0,10); if(f<d1||f>d2) return;
+    const m=MODS.find(x=>x.disc===n.discipline); if(m) o[m.k]++;
+  });
+  return o;
+}
+/* todo lo que hay que saber del programa de un paciente, para la ficha y para el aviso */
+function saldoDe(pid){
+  const pg=programaDe(pid);
+  if(!pg) return null;
+  const desde=String(pg.covers_from).slice(0,10), hasta=masUnMes(desde);
+  const inc=incDe(pg), usado=consumoDesde(pid,desde,hasta);
+  const quedan={}; let totQ=0, totI=0;
+  MOD_K.forEach(k=>{ quedan[k]=Math.max(inc[k]-usado[k],0); totQ+=quedan[k]; totI+=inc[k]; });
+  return {pg,desde,hasta,inc,usado,quedan,totQ,totI,dias:diasHasta(hasta),
+          vencido:diasHasta(hasta)<0, porVencer:diasHasta(hasta)<=(SUP.dias_aviso||7)};
+}
+function venceTxt(s){
+  const f=fmt(s.hasta);
+  return s.dias<0 ? 'venció el '+f+' · hace '+(-s.dias)+' día'+(s.dias===-1?'':'s')
+                  : 'vence el '+f+' · en '+s.dias+' día'+(s.dias===1?'':'s');
+}
+function venceChip(s){
+  return '<span class="tag '+(s.dias<0?'over':'due')+'">'+fmtDMShort(s.hasta)+
+         (s.dias<0?' · vencido':' · '+s.dias+' d')+'</span>';
+}
+/* los que hay que ir a cobrar */
+function porRenovar(){
+  if(!NEG_DATA) return [];
+  const vistos={}, out=[];
+  (NEG_DATA.pagos||[]).filter(p=>p.concept_kind==='programa').forEach(p=>{
+    if(vistos[p.patient_id]) return; vistos[p.patient_id]=1;
+    const s=saldoDe(p.patient_id); if(!s||!s.porVencer) return;
+    const pac=(NEG_DATA.pacientes||[]).find(x=>x.id===p.patient_id);
+    if(pac) out.push(Object.assign({id:pac.id,n:pac.full_name},s));
+  });
+  return out.sort((a,b)=>a.dias-b.dias);
+}
+function programaCorto(pg){
+  if(!pg) return 'Sin programa cargado';
+  const inc=incDe(pg);
+  const t=MODS.filter(m=>inc[m.k]).map(m=>inc[m.k]+' '+m.s).join(' · ');
+  return t||'Programa sin prestaciones';
+}
+
+/* ---------- carga ---------- */
 async function negCargar(){
-  const [SET,PL,VC,GV,IND,NT,PA,PG] = await Promise.all([
+  const [SET,VC,GV,IND,NT,PA,PG,GA] = await Promise.all([
     DB().from('business_settings').select('*').order('effective_from',{ascending:false}).limit(1),
-    DB().from('patient_plans').select('*'),
     DB().from('vitc_administrations').select('id,patient_id,indication_id,dose_g,administered_at').is('deleted_at',null),
     DB().from('infusion_components_given').select('administration_id,name,unit,dose,given'),
     DB().from('indications').select('id,vehicle,vitc_dilution_ml'),
     DB().from('notes').select('patient_id,discipline,created_at').is('deleted_at',null),
     DB().from('patients').select('id,full_name,created_at').is('deleted_at',null),
-    DB().from('payments').select('*').is('deleted_at',null).order('paid_on',{ascending:false})
+    DB().from('payments').select('*').is('deleted_at',null).order('paid_on',{ascending:false}),
+    DB().from('expenses').select('*').is('deleted_at',null).order('spent_on',{ascending:false})
   ]);
   const st=(SET.data||[])[0];
   SUP=Object.assign({},SUP_DEF,(st&&st.data)||{}); SUP_ID=st?st.id:null;
@@ -1157,190 +1341,101 @@ async function negCargar(){
     return {pid:v.patient_id, d:String(v.administered_at).slice(0,10), dose_g:v.dose_g,
             vehKey:vehKey(i.vehicle,i.vitc_dilution_ml), comps:compBy[v.id]||[]};
   });
-  NEG_DATA={planes:PL.data||[], ses, notas:NT.data||[], pacientes:PA.data||[], pagos:PG.data||[]};
+  NEG_DATA={ses, notas:NT.data||[], pacientes:PA.data||[], pagos:PG.data||[],
+             gastos:(GA&&GA.data)||[], gastosErr:(GA&&GA.error)?GA.error.message:null};
   return NEG_DATA;
 }
 
+/* ---------- el cálculo ---------- */
 function negCalcular(){
   const {d1,d2}=negRango(), dentro=x=>x>=d1&&x<=d2;
   const porDia={}; NEG_DATA.ses.forEach(x=>porDia[x.d]=(porDia[x.d]||0)+1);
   const pmap={}; NEG_DATA.pacientes.forEach(p=>pmap[p.id]=p);
   const R={};
   const nuevo=pid=>R[pid]||(R[pid]={pid, n:(pmap[pid]||{}).full_name||'Paciente', ses:0, cons:0,
-    insumos:0, enf:0, prof:0, meses:{}, dosis:[], gramos:0,
-    pagos:[], bruto:0, brutoFact:0, brutoEfe:0, comMedio:0});
+    insumos:0, enf:0, prof:0, pagos:[], bruto:0, brutoFact:0, brutoEfe:0});
 
   NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>{
-    const r=nuevo(x.pid); r.ses++; r.meses[x.d.slice(0,7)]=1;
-    const g=Number(x.dose_g)||0; r.dosis.push(g); r.gramos+=g;
+    const r=nuevo(x.pid); r.ses++;
     r.insumos += negInsumos(x);
     r.enf     += SUP.enf_hora*SUP.horas_sesion/porDia[x.d];
   });
   NEG_DATA.notas.filter(n=>dentro(String(n.created_at).slice(0,10))).forEach(n=>{
-    const disc=n.discipline;
-    if(disc==='enfermeria') return;                 // enfermería ya entra por la sesión
-    const r=nuevo(n.patient_id); r.cons++; r.meses[String(n.created_at).slice(0,7)]=1;
-    r.prof += disc==='nutricion'?SUP.nutricion : disc==='psicooncologia'?SUP.psico
-            : disc==='ejercicio'?SUP.ejercicio : SUP.consulta_costo;
+    if(n.discipline==='enfermeria'||n.discipline==='megadosis') return;   // ya entran por la sesión
+    const r=nuevo(n.patient_id); r.cons++;
+    r.prof += n.discipline==='nutricion'?SUP.nutricion : n.discipline==='psicooncologia'?SUP.psico
+            : n.discipline==='ejercicio'?SUP.ejercicio : SUP.consulta_costo;
   });
-
-  /* Los ingresos salen de los pagos registrados, no del plan.
-     Según la vista, un pago cuenta en el mes que cubre o en el que entró. */
-  const fechaPago=g=>NEG_VISTA==='caja' ? String(g.paid_on).slice(0,10) : String(g.period).slice(0,10);
-  (NEG_DATA.pagos||[]).filter(g=>dentro(fechaPago(g))).forEach(g=>{
-    const r=nuevo(g.patient_id);
-    const m=Number(g.amount_ars)||0;
+  /* un pago cuenta el día que entró la plata */
+  (NEG_DATA.pagos||[]).filter(g=>dentro(String(g.paid_on).slice(0,10))).forEach(g=>{
+    const r=nuevo(g.patient_id), m=Number(g.amount_ars)||0;
     r.pagos.push(g); r.bruto+=m;
-    if(g.invoiced) r.brutoFact+=m; else r.brutoEfe+=m;
-    r.comMedio += m*(Number(SUP[(MEDIOS[g.method]||{}).fee])||0);
+    if(g.method==='electronico') r.brutoFact+=m; else r.brutoEfe+=m;
   });
 
   const filas=Object.values(R).map(r=>{
-    const pl=planDe(r.pid,d2);
-    const t=PLAN_TIPOS[(pl||{}).kind]||{};
-    const meses=Object.keys(r.meses).length||1;
-    const inc=(pl&&pl.sessions_included)||t.inc||0;
-    // lo que el plan dice que debería entrar, para contrastar con lo cobrado
-    let esperado=0;
-    if(pl && pl.kind!=='suelto'){
-      let mensual=planPrecio(pl);
-      if(SUP.prorrateo==='por_sesion' && inc) mensual = mensual/inc*Math.min(r.ses,inc);
-      esperado = mensual*meses;
-      if(SUP.extras==='se_cobran' && inc && r.ses>inc*meses)
-        esperado += (r.ses-inc*meses)*(Number(SUP.extra_precio_usd)||0)*SUP.tc;
-    }else if(pl && pl.kind==='suelto'){
-      esperado = r.cons*SUP.consulta_precio;
-    }
+    const s=saldoDe(r.pid);
     const bruto=r.bruto, share = bruto? r.brutoFact/bruto : 0;
     const directos = r.insumos + r.enf + r.prof;
-    // el IVA y los IIBB solo pesan sobre la parte facturada
     const netoFact = r.brutoFact/(1+SUP.iva);
     const iva = r.brutoFact - netoFact;
     const iibb = netoFact*SUP.iibb;
     const ingNeto = (netoFact - iibb) + r.brutoEfe;
     const eche = ingNeto*SUP.eche_pct;
-    const banco = (r.brutoFact + (directos + eche + r.comMedio)*share)*SUP.banco;
-    const antes = ingNeto - directos - eche - r.comMedio - banco;
+    const banco = (r.brutoFact + (directos + eche)*share)*SUP.banco;
+    const antes = ingNeto - directos - eche - banco;
     const gan = Math.max(Math.max(antes,0)*share*SUP.ganancias - banco*SUP.banco_computable, 0);
     const margen = antes - gan;
-    const cobroTxt = !r.pagos.length ? '—'
-      : (function(){ const k={}; r.pagos.forEach(x=>k[x.method]=1); const ks=Object.keys(k);
-          return ks.length===1 ? ((MEDIOS[ks[0]]||{}).corto||ks[0]) : 'Mixto'; })();
-    return Object.assign(r,{pl,inc:inc*meses,meses,esperado,falta:Math.max(esperado-bruto,0),
-      bruto,iva,iibb,ingNeto,directos,eche,cobroC:r.comMedio,banco,gan,margen,cobroTxt,
+    return Object.assign(r,{saldo:s,iva,iibb,ingNeto,directos,eche,banco,gan,margen,
       pct:bruto?margen/bruto:0});
   }).filter(r=>r.ses||r.cons||r.pagos.length).sort((a,b)=>b.margen-a.margen);
 
   const T=k=>filas.reduce((a,f)=>a+(f[k]||0),0);
   const dias={}; NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>dias[x.d]=(dias[x.d]||0)+1);
   const altas=NEG_DATA.pacientes.filter(p=>dentro(String(p.created_at).slice(0,10))).length;
-  const pagosPer=(NEG_DATA.pagos||[]).filter(g=>dentro(fechaPago(g)));
-  return {filas,dias,altas,d1,d2,pagos:pagosPer,
+  const gastos=(NEG_DATA.gastos||[]).filter(g=>dentro(String(g.spent_on).slice(0,10)));
+  const gTot=gastos.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
+  return {filas,dias,altas,d1,d2,gastos,
+    pagos:(NEG_DATA.pagos||[]).filter(g=>dentro(String(g.paid_on).slice(0,10))),
     tot:{bruto:T('bruto'),iva:T('iva'),iibb:T('iibb'),ingNeto:T('ingNeto'),insumos:T('insumos'),
-      enf:T('enf'),prof:T('prof'),directos:T('directos'),eche:T('eche'),cobroC:T('cobroC'),
-      banco:T('banco'),gan:T('gan'),margen:T('margen'),ses:T('ses'),gramos:T('gramos'),
-      esperado:T('esperado'),falta:T('falta')}};
+      enf:T('enf'),prof:T('prof'),directos:T('directos'),eche:T('eche'),
+      banco:T('banco'),gan:T('gan'),margen:T('margen'),ses:T('ses'),gastos:gTot}};
 }
 
-
-
-function mesCorto(d){
-  if(!d) return '—';
-  const x=new Date(String(d).slice(0,10)+'T12:00:00');
-  if(isNaN(x)) return '—';
-  const t=x.toLocaleDateString('es-AR',{month:'short',year:'2-digit'});
-  return t.charAt(0).toUpperCase()+t.slice(1);
+/* ===================== Negocio · pantallas ===================== */
+function negFiltroFechas(pref,extra){
+  const r=negRango();
+  return '<div class="filt">'+
+    '<div class="fg"><label for="'+pref+'D1">Desde</label><input id="'+pref+'D1" type="date" value="'+r.d1+'" onchange="negSetFecha()"></div>'+
+    '<div class="fg"><label for="'+pref+'D2">Hasta</label><input id="'+pref+'D2" type="date" value="'+r.d2+'" onchange="negSetFecha()"></div>'+
+    (extra||'')+
+    '<div class="tcb"><label for="'+pref+'Tc">Tipo de cambio</label>'+
+      '<input id="'+pref+'Tc" inputmode="decimal" value="'+esES(SUP.tc)+'" onchange="negSetTc(this.value)"></div></div>';
 }
-function negSetVista(v){ NEG_VISTA=v;
-  document.querySelectorAll('.neg-vista button').forEach(b=>b.classList.toggle('on',b.textContent.indexOf(v==='caja'?'Caja':'mes que cubre')>-1));
-  negPintar(); }
-
-/* ---------- registrar un pago ---------- */
-async function openPagoModal(pid){
-  if(!can.negocio()) return;
-  const lista=(NEG_DATA&&NEG_DATA.pacientes)||(CACHE?CACHE.patients:[])||[];
-  const sel=pid||(CUR?CUR.id:'')||'';
-  const hoy=todayLocal();
-  const op=lista.slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''))
-    .map(x=>'<option value="'+x.id+'"'+(x.id===sel?' selected':'')+'>'+esc(x.full_name||'—')+'</option>').join('');
-  modalOpen('Registrar pago',
-    '<div class="field"><label>Paciente *</label><select id="pgPac" onchange="pagoPreset()">'+
-      '<option value="">Elegí…</option>'+op+'</select></div>'+
-    '<div class="grid g2">'+
-      '<div class="field"><label>Fecha en que entró</label><input id="pgFecha" type="date" value="'+hoy+'" max="'+hoy+'"></div>'+
-      '<div class="field"><label>Mes que cubre</label><input id="pgMes" type="month" value="'+hoy.slice(0,7)+'"></div>'+
-    '</div>'+
-    '<div class="field"><label>Medio</label><select id="pgMedio" onchange="pagoMedio()">'+
-      Object.keys(MEDIOS).map(k=>'<option value="'+k+'"'+(k==='transferencia'?' selected':'')+'>'+MEDIOS[k].n+'</option>').join('')+
-      '</select></div>'+
-    '<div class="grid g2">'+
-      '<div class="field"><label>Monto en pesos *</label><input id="pgArs" inputmode="decimal" placeholder="Ej: 782100"></div>'+
-      '<div class="field" id="pgUsdBox" hidden><label>Monto en USD</label><input id="pgUsd" inputmode="decimal" placeholder="Ej: 495" onchange="pagoDesdeUsd()" oninput="pagoDesdeUsd()"></div>'+
-    '</div>'+
-    '<div class="field"><label>¿Se facturó?</label><select id="pgFact">'+
-      '<option value="si">Sí, con factura</option><option value="no">No</option></select></div>'+
-    '<div class="field"><label>Concepto (opcional)</label><input id="pgConcepto" placeholder="Ej: plan de noviembre, sesión suelta, consulta"></div>'+
-    '<p class="meta" id="pgHint" style="margin:0;line-height:1.6"></p>',
-    'Guardar', guardarPago);
-  setTimeout(()=>{ pagoMedio(); pagoPreset(); },0);
+function negSetFecha(){
+  const a=document.querySelector('.filt input[type=date]'), b=document.querySelectorAll('.filt input[type=date]')[1];
+  if(a&&a.value) NEG_D1=a.value; if(b&&b.value) NEG_D2=b.value;
+  negRepintar();
 }
-function pagoMedio(){
-  const m=$('pgMedio').value, cfg=MEDIOS[m]||{};
-  $('pgFact').value = cfg.factura ? 'si' : 'no';
-  const box=$('pgUsdBox'); if(box) box.hidden = m!=='usd';
-  const fee=Number(SUP[cfg.fee])||0;
-  const h=$('pgHint');
-  if(h) h.textContent = (m==='usd' ? 'Se guarda el monto en USD y el tipo de cambio de hoy ('+esES(SUP.tc)+'). ' : '')+
-    (fee? 'Este medio descuenta '+(fee*100).toFixed(2).replace(/\.?0+$/,'')+' % de comisión.' : 'Este medio no tiene comisión cargada.');
+function negSetTc(v){
+  const n=parseFloat(String(v).replace(/\./g,'').replace(',','.'));
+  if(n>0){ SUP.tc=n; negRepintar(); }
 }
-function pagoDesdeUsd(){
-  const u=parseFloat(String($('pgUsd').value).replace(',','.'));
-  if(u>0) $('pgArs').value=Math.round(u*SUP.tc);
+function negRepintar(){
+  if(curView==='negocio') negPintarResumen();
+  else if(curView==='ingresos') negPintarIngresos();
+  else if(curView==='gastos') negPintarGastos();
 }
-function pagoPreset(){
-  const pid=$('pgPac').value; if(!pid) return;
-  if($('pgArs').value) return;                       // no pisa lo que ya escribiste
-  const pl=planDe(pid, todayLocal());
-  if(!pl) return;
-  const m=planPrecio(pl);
-  if(m>0) $('pgArs').value=Math.round(m);
-  if(pl.cobro==='efectivo'){ $('pgMedio').value='efectivo'; pagoMedio(); }
-}
-async function guardarPago(){
-  const pid=$('pgPac').value;
-  if(!pid){ toast('Elegí el paciente'); return false; }
-  const ars=parseFloat(String($('pgArs').value).replace(/\./g,'').replace(',','.'));
-  if(!(ars>0)){ toast('Poné el monto'); return false; }
-  const m=$('pgMedio').value, usd=parseFloat(String($('pgUsd').value||'').replace(',','.'));
-  const {error}=await DB().from('payments').insert({
-    patient_id:pid, paid_on:$('pgFecha').value||todayLocal(),
-    period:($('pgMes').value||todayLocal().slice(0,7))+'-01',
-    amount_ars:ars, amount_usd:(m==='usd'&&usd>0)?usd:null, tc:(m==='usd'?SUP.tc:null),
-    method:m, invoiced:$('pgFact').value==='si',
-    concept:($('pgConcepto').value||'').trim()||null, created_by:ME.user_id});
-  if(error){ toast(error.message); return false; }
-  toast('Pago registrado');
-  if(curView==='negocio'){ await negCargar(); negPintar(); }
-  return true;
-}
-async function borrarPago(id){
-  const ch=await askChoice({where:'Al borrar un pago', title:'¿Borrar este pago?',
-    existing:'Sale de los ingresos del período', detail:'Queda registrado en la auditoría.',
-    why:'Si fue un error de carga, borralo y cargalo de nuevo.',
-    primary:'No borrarlo', secondary:'Borrarlo'});
-  if(ch!=='secondary') return;
-  const {error}=await DB().from('payments').update({deleted_at:new Date().toISOString()}).eq('id',id);
-  if(error){ toast(error.message); return; }
-  toast('Pago borrado'); await negCargar(); negPintar();
+function negBanda(destacada){
+  const pv=porRenovar();
+  if(!pv.length) return '';
+  return '<div class="band'+(destacada?' big':'')+'"><b>'+pv.length+' paciente'+(pv.length>1?'s':'')+
+    ' por renovar.</b> El programa corre un mes desde el día que pagaron, no desde el 1º.'+
+    '<div class="list">'+pv.map(p=>'<span><button class="linkbtn" onclick="openPatient(\''+p.id+'\')">'+
+      esc(p.n)+'</button> · '+venceTxt(p)+'</span>').join('')+'</div></div>';
 }
 
-/* ---------- la pantalla ---------- */
-function negARS(n){ return '$ '+esES(Math.round(n||0)); }
-function negNeg(n){ return '− $ '+esES(Math.round(Math.abs(n||0))); }
-function negMill(n){ return Math.abs(n)>=1e6 ? '$ '+(n/1e6).toFixed(2).replace('.',',')+' M' : negARS(n); }
-function negPct(n){ return (n*100).toFixed(1).replace('.',',')+' %'; }
-function negG(n){ return n.toFixed(1).replace('.',',')+' g'; }
-
+/* ---------- Resumen ---------- */
 async function renderNegocio(){
   const p=$('page');
   p.innerHTML='<div class="loading">Calculando…</div>';
@@ -1348,112 +1443,55 @@ async function renderNegocio(){
   catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
   if(curView!=='negocio') return;
   p.innerHTML=
-   '<div class="phead-page"><div><h1>Negocio</h1><p class="sub" id="negSub"></p></div>'+
-     '<div class="tcbox"><label for="negTc">Tipo de cambio</label>'+
-     '<input id="negTc" type="text" inputmode="decimal" value="'+esES(SUP.tc)+'" onchange="negSetTc(this.value)" oninput="negSetTc(this.value)"></div></div>'+
-   '<div class="subpills neg-per" id="negPer">'+
-     [['mes','Este mes'],['prev','Mes pasado'],['t3','Últimos 3 meses'],['anio','Este año'],['custom','Personalizado']]
-       .map(([k,l])=>'<button class="'+(NEG_PER===k?'on':'')+'" onclick="negSetPer(\''+k+'\')">'+l+'</button>').join('')+'</div>'+
-   '<div class="neg-rango" id="negRango"'+(NEG_PER==='custom'?'':' hidden')+'>'+
-     '<span class="meta">Del</span><input type="date" id="negD1" onchange="negSetFecha()">'+
-     '<span class="meta">al</span><input type="date" id="negD2" onchange="negSetFecha()"></div>'+
-   '<div class="neg-vista">'+
-     '<button class="'+(NEG_VISTA==='devengado'?'on':'')+'" onclick="negSetVista(\'devengado\')">Por mes que cubre</button>'+
-     '<button class="'+(NEG_VISTA==='caja'?'on':'')+'" onclick="negSetVista(\'caja\')">Caja del mes</button>'+
-     '<span class="meta" id="negVistaTxt"></span></div>'+
+   '<div class="phead-page"><div><h1>Resumen</h1><p class="sub" id="negSub"></p></div></div>'+
+   negFiltroFechas('neg')+
+   '<div id="negBanda"></div>'+
    '<div class="kpis" id="negKpis"></div>'+
+   '<section class="card"><div class="sec">'+
+     '<div class="sec-h"><span class="sec-t">Qué hace y qué deja cada paciente</span>'+
+       '<span class="meta">sale de lo que se cargó en los pagos</span></div>'+
+     '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Paciente</th><th>Programa</th>'+
+       '<th class="n">Saldo</th><th class="n">Renueva</th><th class="n">Cobrado</th>'+
+       '<th class="n">Margen</th><th class="n">%</th></tr></thead>'+
+       '<tbody id="negRp"></tbody><tfoot id="negRpF"></tfoot></table></div>'+
+   '</div></section>'+
    '<div class="neg-cols">'+
-     '<div class="stack">'+
-       '<section class="card"><div class="sec">'+
-         '<div class="sec-h"><span class="sec-t">Rentabilidad por paciente</span><span class="meta">ordenado por margen</span></div>'+
-         '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Paciente</th><th>Cobro</th>'+
-           '<th class="n">Sesiones</th><th class="n">Cobrado</th>'+
-           '<th class="n">Costo</th><th class="n">Margen</th><th class="n">%</th></tr></thead>'+
-           '<tbody id="negRp"></tbody><tfoot id="negRpF"></tfoot></table></div>'+
-       '</div></section>'+
-       '<section class="card"><div class="sec">'+
-         '<div class="sec-h"><span class="sec-t">Ingresos</span>'+
-           '<button class="btn primary sm" onclick="openPagoModal()">'+PLUS+'Registrar pago</button></div>'+
-         '<div id="negMedios" class="negmedios"></div>'+
-         '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Fecha</th><th>Paciente</th>'+
-           '<th>Medio</th><th>Mes que cubre</th><th class="n">Monto</th><th></th></tr></thead>'+
-           '<tbody id="negPg"></tbody></table></div>'+
-       '</div></section>'+
-       '<section class="card"><div class="sec">'+
-         '<div class="sec-h"><span class="sec-t">Consumo por paciente</span><span class="meta">vitamina C administrada, sesión por sesión</span></div>'+
-         '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Paciente</th><th class="n">Sesiones</th>'+
-           '<th class="n">Vitamina C</th><th class="n">Promedio</th><th>Evolución de la dosis</th>'+
-           '<th class="n">Insumos</th></tr></thead><tbody id="negCp"></tbody><tfoot id="negCpF"></tfoot></table></div>'+
-       '</div></section>'+
-     '</div>'+
-     '<div class="stack">'+
-       '<section class="card"><div class="sec">'+
-         '<div class="sec-h"><span class="sec-t">Resultado del período</span></div><div class="negpl" id="negPl"></div>'+
-       '</div></section>'+
-       '<section class="card"><div class="sec">'+
-         '<div class="sec-h"><span class="sec-t">Para mirar</span></div><div id="negAv"></div>'+
-       '</div></section>'+
-     '</div>'+
+     '<section class="card"><div class="sec">'+
+       '<div class="sec-h"><span class="sec-t">Resultado del período</span></div><div class="negpl" id="negPl"></div>'+
+     '</div></section>'+
+     '<section class="card"><div class="sec">'+
+       '<div class="sec-h"><span class="sec-t">Para mirar</span></div><div id="negAv"></div>'+
+     '</div></section>'+
    '</div>'+
    '<details class="base" id="negSup"><summary><svg class="caret" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>'+
-     '<div><b>Supuestos del cálculo</b><div class="sub">Tipo de cambio, honorarios, insumos e impuestos · se guardan con fecha</div></div></summary>'+
+     '<div><b>Supuestos del cálculo</b><div class="sub">Precios, honorarios, insumos e impuestos · se guardan con fecha</div></div></summary>'+
      '<div class="body" id="negSupBody"></div></details>';
-  const r=negRango();
-  if($('negD1')){ $('negD1').value=NEG_D1||r.d1; $('negD2').value=NEG_D2||r.d2; }
-  negPintar();
+  negPintarResumen();
 }
-function negSetPer(k){
-  NEG_PER=k;
-  document.querySelectorAll('#negPer button').forEach((b,i)=>b.classList.toggle('on',
-    ['mes','prev','t3','anio','custom'][i]===k));
-  const el=$('negRango'); if(el) el.hidden = k!=='custom';
-  if(k==='custom' && !NEG_D1){ const r=negRango(); NEG_D1=r.d1; NEG_D2=r.d2; $('negD1').value=r.d1; $('negD2').value=r.d2; }
-  negPintar();
-}
-function negSetFecha(){ NEG_D1=$('negD1').value; NEG_D2=$('negD2').value; negPintar(); }
-function negSetTc(v){
-  const n=parseFloat(String(v).replace(/\./g,'').replace(',','.'));
-  if(n>0){ SUP.tc=n; negPintar(); }
-}
-function negPintar(){
-  if(!NEG_DATA) return;
-  const {filas,tot,dias,altas,pagos}=negCalcular(), r=negRango();
-  const sub=$('negSub'); if(sub) sub.textContent=r.t+' · '+filas.length+' paciente'+(filas.length===1?'':'s')+' con actividad';
-
+function negPintarResumen(){
+  if(!NEG_DATA||!$('negKpis')) return;
+  const {filas,tot,dias,altas}=negCalcular(), r=negRango();
+  const sub=$('negSub'); if(sub) sub.textContent='Del '+fmt(r.d1)+' al '+fmt(r.d2)+' · '+filas.length+' paciente'+(filas.length===1?'':'s')+' con actividad';
+  $('negBanda').innerHTML=negBanda(false);
   $('negKpis').innerHTML=
     negKpi('Pacientes con actividad',filas.length,altas+' alta'+(altas===1?'':'s')+' en el período')+
-    negKpi('Sesiones de megadosis',tot.ses,esES(Math.round(tot.gramos))+' g de vitamina C')+
-    negKpi('Cobrado',negMill(tot.bruto),tot.falta>0 ? 'faltan '+negMill(tot.falta) : 'USD '+esES(Math.round(tot.bruto/(SUP.tc||1))))+
-    negKpi('Margen',negMill(tot.margen),negPct(tot.margen/(tot.bruto||1))+' de lo cobrado','hero');
+    negKpi('Sesiones de sueroterapia',tot.ses,Object.keys(dias).length+' día'+(Object.keys(dias).length===1?'':'s')+' de infusión')+
+    negKpi('Cobrado',negUSD(tot.bruto/(SUP.tc||1)),negARS(tot.bruto))+
+    negKpi('Margen',negUSD(tot.margen/(SUP.tc||1)),negPct(tot.margen/(tot.bruto||1))+' de lo cobrado','hero');
 
   const cls=x=>x<0?'neg':x<.2?'low':'';
-  $('negRp').innerHTML=filas.map(f=>
-    '<tr><td class="nm"><button class="linkbtn" onclick="openPatient(\''+f.pid+'\')">'+esc(f.n)+'</button>'+
-      '<div class="s">'+esc(planCorto(f.pl))+'</div></td>'+
-    '<td><span class="tag">'+esc(f.cobroTxt)+'</span></td>'+
-    '<td class="n">'+(f.ses? f.ses+(f.cons?'<span class="meta"> +'+f.cons+'</span>':'')
-                           : (f.cons?'<span class="meta">'+f.cons+' cons.</span>':'—'))+'</td>'+
-    '<td class="n">'+negARS(f.bruto)+(f.falta>0?'<div class="debe">faltan '+negARS(f.falta)+'</div>':'')+'</td>'+
-    '<td class="n">'+negARS(f.bruto-f.margen)+'</td>'+
-    '<td class="n mg '+cls(f.pct)+'">'+negARS(f.margen)+'</td>'+
-    '<td class="n mg '+cls(f.pct)+'">'+negPct(f.pct)+'</td></tr>').join('')
+  $('negRp').innerHTML=filas.map(f=>{
+    const s=f.saldo;
+    return '<tr><td class="nm"><button class="linkbtn" onclick="openPatient(\''+f.pid+'\')">'+esc(f.n)+'</button></td>'+
+    '<td class="meta">'+esc(s?programaCorto(s.pg):'Sin programa')+'</td>'+
+    '<td class="n">'+(s? (s.totQ?s.totQ:'<span class="meta">sin saldo</span>') : '—')+'</td>'+
+    '<td class="n">'+(s? (s.porVencer?venceChip(s):fmtDMShort(s.hasta)) : '—')+'</td>'+
+    '<td class="n">'+dual(f.bruto)+'</td>'+
+    '<td class="n mg '+cls(f.pct)+'">'+dual(f.margen)+'</td>'+
+    '<td class="n mg '+cls(f.pct)+'">'+negPct(f.pct)+'</td></tr>';}).join('')
     || '<tr><td colspan="7" class="meta" style="padding:18px 0">No hay actividad en este período.</td></tr>';
-  $('negRpF').innerHTML = filas.length? '<tr><td colspan="2">Total</td><td class="n">'+tot.ses+'</td>'+
-    '<td class="n">'+negARS(tot.bruto)+(tot.falta>0?'<div class="debe">faltan '+negARS(tot.falta)+'</div>':'')+'</td>'+
-    '<td class="n">'+negARS(tot.bruto-tot.margen)+'</td>'+
-    '<td class="n">'+negARS(tot.margen)+'</td><td class="n">'+negPct(tot.margen/(tot.bruto||1))+'</td></tr>':'';
-
-  const cs=filas.filter(f=>f.ses).sort((a,b)=>b.gramos-a.gramos);
-  $('negCp').innerHTML=cs.map(f=>{
-    const mx=Math.max.apply(null,f.dosis)||1;
-    const barras='<span class="dosis">'+f.dosis.map(d=>'<i style="height:'+Math.max(3,Math.round(d/mx*22))+'px" title="'+d+' g"></i>').join('')+'</span>';
-    const d0=f.dosis[0], dn=f.dosis[f.dosis.length-1];
-    const t=f.dosis.length>1?'<span class="trend'+(dn>d0?' up':'')+'">'+d0+' → '+dn+' g</span>':'';
-    return '<tr><td class="nm">'+esc(f.n)+'</td><td class="n">'+f.ses+'</td><td class="n">'+esES(f.gramos)+' g</td>'+
-      '<td class="n">'+negG(f.gramos/f.ses)+'</td><td>'+barras+t+'</td><td class="n">'+negARS(f.insumos)+'</td></tr>';
-  }).join('') || '<tr><td colspan="6" class="meta" style="padding:18px 0">Sin infusiones en este período.</td></tr>';
-  $('negCpF').innerHTML = cs.length? '<tr><td>Total</td><td class="n">'+tot.ses+'</td><td class="n">'+esES(Math.round(tot.gramos))+
-    ' g</td><td class="n">'+negG(tot.gramos/(tot.ses||1))+'</td><td></td><td class="n">'+negARS(tot.insumos)+'</td></tr>':'';
+  $('negRpF').innerHTML = filas.length? '<tr><td colspan="4">Total</td><td class="n">'+dual(tot.bruto)+'</td>'+
+    '<td class="n">'+dual(tot.margen)+'</td><td class="n">'+negPct(tot.margen/(tot.bruto||1))+'</td></tr>':'';
 
   const row=(k,v,c)=>'<div class="r'+(c||'')+'"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>';
   $('negPl').innerHTML=
@@ -1466,93 +1504,405 @@ function negPintar(){
     row('Profesionales',negNeg(tot.prof),' sub')+
     row('Costos directos',negNeg(tot.directos),' tot')+
     row('Comisión Eche',negNeg(tot.eche),' sub')+
-    (tot.cobroC? row('Comisión del medio de cobro',negNeg(tot.cobroC),' sub'):'')+
     (tot.banco? row('Impuesto al cheque',negNeg(tot.banco),' sub'):'')+
     (tot.gan? row('Ganancias',negNeg(tot.gan),' sub'):'')+
-    '<div class="hero"><span class="k">Margen</span><span class="v'+(tot.margen<0?' neg':'')+'">'+negARS(tot.margen)+'</span></div>';
-
-  const vt=$('negVistaTxt');
-  if(vt) vt.textContent = NEG_VISTA==='devengado'
-    ? 'cada pago cuenta en el mes al que corresponde'
-    : 'cada pago cuenta el día que entró la plata';
-
-  const porMedio={};
-  (NEG_DATA.pagos||[]).filter(g=>{
-    const f=NEG_VISTA==='caja'?String(g.paid_on).slice(0,10):String(g.period).slice(0,10);
-    return f>=r.d1&&f<=r.d2;
-  }).forEach(g=>{ porMedio[g.method]=(porMedio[g.method]||0)+(Number(g.amount_ars)||0); });
-  $('negMedios').innerHTML=Object.keys(MEDIOS).filter(k=>porMedio[k]).map(k=>
-    '<span class="mchip"><b>'+MEDIOS[k].n+'</b> '+negARS(porMedio[k])+'</span>').join('')
-    || '<span class="meta">Todavía no hay pagos cargados en este período.</span>';
-
-  const pgs=(pagos||[]).slice().sort((a,b)=>String(b.paid_on).localeCompare(String(a.paid_on)));
-  const pmap2={}; NEG_DATA.pacientes.forEach(x=>pmap2[x.id]=x.full_name);
-  $('negPg').innerHTML=pgs.map(g=>
-    '<tr><td class="n" style="text-align:left">'+fmt(g.paid_on)+'</td>'+
-    '<td>'+esc(pmap2[g.patient_id]||'—')+'</td>'+
-    '<td><span class="tag">'+esc((MEDIOS[g.method]||{n:g.method}).n)+'</span>'+
-      (g.invoiced?'<span class="tag" style="margin-left:5px">Factura</span>':'')+'</td>'+
-    '<td>'+esc(mesCorto(g.period))+'</td>'+
-    '<td class="n">'+negARS(g.amount_ars)+(g.amount_usd?'<div class="meta">USD '+esES(g.amount_usd)+'</div>':'')+'</td>'+
-    '<td class="n"><button class="linkbtn" onclick="borrarPago(\''+g.id+'\')">Borrar</button></td></tr>').join('')
-    || '<tr><td colspan="6" class="meta" style="padding:18px 0">Sin pagos en este período. Tocá «Registrar pago».</td></tr>';
+    '<div class="hero"><span class="k">Margen</span><span class="v'+(tot.margen<0?' neg':'')+'">'+negARS(tot.margen)+'</span></div>'+
+    (tot.gastos? '<div class="r sub" style="margin-top:10px"><span class="k">Gastos del período</span><span class="v">'+negNeg(tot.gastos)+'</span></div>'+
+      '<div class="r tot"><span class="k">Margen menos gastos</span><span class="v">'+negARS(tot.margen-tot.gastos)+'</span></div>' : '');
 
   const solos=Object.keys(dias).filter(d=>dias[d]===1);
-  const av=[];
-  const deben=filas.filter(f=>f.falta>0);
-  if(deben.length) av.push('<b>Falta cobrar '+negARS(tot.falta)+'.</b> '+
-    deben.slice(0,4).map(f=>esc(f.n.split(',')[0])+' '+negARS(f.falta)).join(' · ')+
-    (deben.length>4?' y '+(deben.length-4)+' más':'')+'.');
+  const av=[], pv=porRenovar();
+  if(pv.length) av.push('<b>'+pv.length+' programa'+(pv.length>1?'s':'')+' por renovar.</b> '+
+    pv.slice(0,4).map(p=>esc(String(p.n).split(',')[0])+' '+fmtDMShort(p.hasta)).join(' · ')+'.');
   const sinPago=filas.filter(f=>!f.pagos.length && (f.ses||f.cons));
   if(sinPago.length) av.push('<b>'+sinPago.length+' paciente'+(sinPago.length>1?'s':'')+' con atención y sin ningún pago cargado.</b> '+
     'Suman costo pero no ingreso, así que el margen de arriba está por debajo del real.');
-  const sinPlan=filas.filter(f=>!f.pl);
-  if(sinPlan.length) av.push('<b>'+sinPlan.length+' paciente'+(sinPlan.length>1?'s':'')+' sin plan cargado.</b> '+
-    'Sin plan no se puede saber cuánto falta cobrarle. Se carga desde la ficha, en el menú «⋯».');
   if(solos.length) av.push('<b>'+solos.length+' turno'+(solos.length>1?'s':'')+' con un solo paciente.</b> '+
     'La enfermería de ese día ('+negARS(SUP.enf_hora*SUP.horas_sesion)+') cae entera sobre esa persona. Con dos, baja a la mitad.');
-  filas.forEach(f=>{ if(f.inc && f.ses < f.inc*0.7)
-    av.push('<b>'+esc(f.n.split(',')[0])+' hizo '+f.ses+' de '+f.inc+' sesiones.</b> '+
-      'El plan se cobra igual, así que el margen sube justo cuando el paciente deja de venir.'); });
+  filas.forEach(f=>{ const s=f.saldo; if(!s||!s.totI) return;
+    const usado=MOD_K.reduce((a,k)=>a+Math.min(s.usado[k],s.inc[k]),0);
+    if(usado < s.totI*0.6) av.push('<b>'+esc(String(f.n).split(',')[0])+' usó '+usado+' de '+s.totI+' prestaciones.</b> '+
+      'El programa se cobró igual, así que el margen sube justo cuando el paciente deja de venir.'); });
   filas.filter(f=>f.pagos.length && f.pct<.2).forEach(f=>{
-    av.push('<b>'+esc(f.n.split(',')[0])+' deja '+negPct(f.pct)+'.</b> '+
-      (f.pl.kind==='suelto'
-        ? 'Una consulta suelta facturada a '+negARS(SUP.consulta_precio)+' con honorarios de '+negARS(SUP.consulta_costo)+' casi no deja nada.'
-        : 'Conviene mirar el plan contra lo que consume.')); });
+    av.push('<b>'+esc(String(f.n).split(',')[0])+' deja '+negPct(f.pct)+'.</b> Conviene mirar lo que paga contra lo que consume.'); });
   $('negAv').innerHTML = av.length
     ? av.map(a=>'<div class="negav"><span class="d"></span><div>'+a+'</div></div>').join('')
     : '<p class="meta" style="margin:0">Nada que requiera una decisión en este período.</p>';
-
   negSupuestos();
 }
 function negKpi(l,n,d,c){
   return '<div class="'+(c==='hero'?'kpi-hero':'')+'"><div class="label">'+l+'</div><div class="n">'+n+'</div><div class="sub">'+d+'</div></div>';
 }
+
+/* ---------- Ingresos ---------- */
+let PG={conc:'programa', inc:{suero:4,medica:1,nutri:0,psico:0,ef:0}, ef:'virtual',
+        cant:1, medio:'electronico', mon:'ars', pid:'', edit:null};
+
+function pgPrecio(){
+  const c=PG.conc;
+  if(c==='sena') return 0;
+  if(c==='suelta') return SUP.pre_suero_usd*SUP.tc*PG.cant;
+  if(c==='medica') return SUP.consulta_precio*PG.cant;
+  if(c==='nutri')  return SUP.pre_nutri*PG.cant;
+  if(c==='psico')  return SUP.pre_psico*PG.cant;
+  if(c==='ef')     return (PG.ef==='presencial'?SUP.pre_ef_pres:SUP.pre_ef_virt)*PG.cant;
+  return PG.inc.suero*SUP.pre_suero_usd*SUP.tc + PG.inc.medica*SUP.consulta_precio +
+         PG.inc.nutri*SUP.pre_nutri + PG.inc.psico*SUP.pre_psico +
+         PG.inc.ef*(PG.ef==='presencial'?SUP.pre_ef_pres:SUP.pre_ef_virt);
+}
+function pgSetConc(c){ PG.conc=c; PG.cant=1; pgForm(); }
+function pgSetCant(d){ PG.cant=Math.max(1,Math.min(30,PG.cant+d)); pgForm(); }
+function pgPaso(k,d){ PG.inc[k]=Math.max(0,Math.min(31,(PG.inc[k]||0)+d)); pgForm(); }
+function pgSetEf(m){ PG.ef=m; pgForm(); }
+function pgSetMon(m){ PG.mon=m; pgForm(); }
+function pgSetMedio(m){ PG.medio=m; }
+function pgSetDesde(v){ const h=$('pgHasta'); if(h) h.value=v? fmt(masUnMes(v))+' · un mes':''; }
+
+function pgForm(){
+  const el=$('pgForm'); if(!el) return;
+  const guarda={pac:$('pgPac')?$('pgPac').value:PG.pid, fecha:$('pgFecha')?$('pgFecha').value:todayLocal(),
+                desde:$('pgDesde')?$('pgDesde').value:todayLocal(), nota:$('pgNota')?$('pgNota').value:''};
+  const lista=((NEG_DATA&&NEG_DATA.pacientes)||[]).slice().sort((a,b)=>(a.full_name||'').localeCompare(b.full_name||''));
+  const hoy=todayLocal();
+  const c=PG.conc, esProg=c==='programa';
+  const monto=pgPrecio();
+  const valMonto = PG.mon==='usd' ? (monto?Math.round(monto/SUP.tc):'') : (monto?esES(Math.round(monto)):'');
+  el.innerHTML=
+   '<div class="grid g3">'+
+     '<div class="field"><label for="pgPac">Paciente *</label><select id="pgPac"><option value="">Elegí…</option>'+
+       lista.map(x=>'<option value="'+x.id+'"'+(x.id===guarda.pac?' selected':'')+'>'+esc(x.full_name||'—')+'</option>').join('')+'</select></div>'+
+     '<div class="field"><label for="pgConc">Concepto</label><select id="pgConc" onchange="pgSetConc(this.value)">'+
+       Object.keys(CONCEPTOS).map(k=>'<option value="'+k+'"'+(c===k?' selected':'')+'>'+CONCEPTOS[k].n+'</option>').join('')+'</select></div>'+
+     '<div class="field"><label for="pgFecha">Fecha del pago</label><input id="pgFecha" type="date" value="'+(guarda.fecha||hoy)+'" max="'+hoy+'"></div>'+
+   '</div>'+
+   (esProg
+     ? '<div class="sec-h" style="margin:14px 0 2px"><span class="sec-t" style="font-size:14px">Qué incluye el programa</span>'+
+         '<span class="meta">lo que se le va a descontar sesión a sesión</span></div>'+
+       MODS.map(m=>{const v=PG.inc[m.k]||0;
+         return '<div class="mod'+(v?'':' off')+'"><span class="dot" style="background:'+m.col+'"></span>'+
+           '<span class="nm">'+m.n+'<span>'+m.u+'</span></span>'+
+           (m.modal&&v?'<span class="mt">'+['virtual','presencial'].map(x=>
+             '<button type="button" class="'+(PG.ef===x?'on':'')+'" onclick="pgSetEf(\''+x+'\')">'+
+             (x==='virtual'?'Virtual':'Presencial')+'</button>').join('')+'</span>':'')+
+           '<span class="step"><button type="button" onclick="pgPaso(\''+m.k+'\',-1)">−</button>'+
+           '<span class="v">'+v+'</span><button type="button" onclick="pgPaso(\''+m.k+'\',1)">+</button></span></div>';}).join('')+
+       '<div class="grid g2" style="margin-top:12px">'+
+         '<div class="field"><label for="pgDesde">Cubre desde</label><input id="pgDesde" type="date" value="'+(guarda.desde||hoy)+'" onchange="pgSetDesde(this.value)"></div>'+
+         '<div class="field"><label for="pgHasta">Hasta</label><input id="pgHasta" value="'+fmt(masUnMes(guarda.desde||hoy))+' · un mes" disabled></div>'+
+       '</div>'
+     : c==='sena'
+       ? '<p class="meta" style="margin:12px 0 2px;line-height:1.6">Una seña o un pago parcial no arranca ni renueva ningún programa: solo queda registrado el ingreso.</p>'
+       : '<div class="mod" style="border-top:0"><span class="dot" style="background:'+
+           (MODS.find(m=>m.k===CONCEPTOS[c].mod)||{col:'var(--sage)'}).col+'"></span>'+
+           '<span class="nm">¿Cuántas paga ahora?<span>se cobra suelta, no arranca ni renueva un programa</span></span>'+
+           (c==='ef'?'<span class="mt">'+['virtual','presencial'].map(x=>
+             '<button type="button" class="'+(PG.ef===x?'on':'')+'" onclick="pgSetEf(\''+x+'\')">'+
+             (x==='virtual'?'Virtual':'Presencial')+'</button>').join('')+'</span>':'')+
+           '<span class="step"><button type="button" onclick="pgSetCant(-1)">−</button><span class="v">'+PG.cant+
+           '</span><button type="button" onclick="pgSetCant(1)">+</button></span></div>')+
+   '<div class="grid g3" style="margin-top:12px">'+
+     '<div class="field"><label for="pgMon">Moneda</label><select id="pgMon" onchange="pgSetMon(this.value)">'+
+       '<option value="ars"'+(PG.mon==='ars'?' selected':'')+'>Pesos</option>'+
+       '<option value="usd"'+(PG.mon==='usd'?' selected':'')+'>Dólares</option></select></div>'+
+     '<div class="field"><label for="pgMonto">Monto en '+(PG.mon==='usd'?'USD':'pesos')+' *</label>'+
+       '<input id="pgMonto" inputmode="decimal" value="'+valMonto+'"></div>'+
+     '<div class="field"><label for="pgMedio">Medio</label><select id="pgMedio" onchange="pgSetMedio(this.value)">'+
+       Object.keys(MEDIOS).map(k=>'<option value="'+k+'"'+(PG.medio===k?' selected':'')+'>'+MEDIOS[k].n+'</option>').join('')+'</select></div>'+
+   '</div>'+
+   '<div class="grid g2">'+
+     '<div class="field"><label for="pgTc">Tipo de cambio del día</label><input id="pgTc" inputmode="decimal" value="'+esES(SUP.tc)+'"></div>'+
+     '<div class="field"><label for="pgNota">Nota (opcional)</label><input id="pgNota" value="'+esc(guarda.nota||'')+'" placeholder="Ej: pagó la mitad, el resto el 20"></div>'+
+   '</div>'+
+   '<div class="savebar" style="margin-top:12px"><button class="btn primary sm" onclick="pgGuardar(0)">Guardar pago</button>'+
+     '<button class="btn sm" onclick="pgGuardar(1)">Guardar y cargar otro</button>'+
+     '<span class="meta" id="pgHint"></span></div>';
+}
+function pgLeer(){
+  const pid=$('pgPac').value;
+  if(!pid) return {err:'Elegí el paciente'};
+  const raw=String($('pgMonto').value||'').replace(/\./g,'').replace(',','.');
+  const v=parseFloat(raw);
+  if(!(v>0)) return {err:'Poné el monto'};
+  const tc=parseFloat(String($('pgTc').value||'').replace(/\./g,'').replace(',','.'))||SUP.tc;
+  const ars = PG.mon==='usd' ? v*tc : v;
+  const usd = PG.mon==='usd' ? v : v/tc;
+  const c=PG.conc, esProg=c==='programa';
+  const inc={}; MOD_K.forEach(k=>inc[k]=esProg?(PG.inc[k]||0):(CONCEPTOS[c].mod===k?PG.cant:0));
+  if(esProg && !MOD_K.some(k=>inc[k])) return {err:'El programa no tiene ninguna prestación cargada'};
+  return {rec:{
+    patient_id:pid, paid_on:$('pgFecha').value||todayLocal(),
+    concept_kind:c, concept:CONCEPTOS[c].n,
+    covers_from: c==='sena' ? null : (esProg ? ($('pgDesde').value||todayLocal()) : ($('pgFecha').value||todayLocal())),
+    period: ((esProg ? ($('pgDesde').value||todayLocal()) : ($('pgFecha').value||todayLocal())).slice(0,7))+'-01',
+    qty: esProg?1:PG.cant, included: c==='sena'?null:inc,
+    ef_modality: (inc.ef? PG.ef : null),
+    amount_ars:Math.round(ars), amount_usd:Math.round(usd*100)/100, tc:tc,
+    method:$('pgMedio').value, invoiced:$('pgMedio').value==='electronico',
+    notes:($('pgNota').value||'').trim()||null}};
+}
+async function pgGuardar(otro){
+  const {err,rec}=pgLeer();
+  if(err){ toast(err); return; }
+  rec.created_by=ME.user_id;
+  const {error}=await DB().from('payments').insert(rec);
+  if(error){ toast(error.message); return; }
+  toast('Pago registrado');
+  await negCargar();
+  if(!otro){ PG.conc='programa'; PG.cant=1; }
+  negPintarIngresos();
+  if(otro && $('pgMonto')) $('pgMonto').focus();
+}
+
+async function renderIngresos(){
+  const p=$('page');
+  p.innerHTML='<div class="loading">Cargando…</div>';
+  try{ await negCargar(); }
+  catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
+  if(curView!=='ingresos') return;
+  p.innerHTML=
+   '<div class="phead-page"><div><h1>Ingresos</h1><p class="sub">Cargar lo que entra. Nada más.</p></div></div>'+
+   '<div id="pgBanda"></div>'+
+   '<section class="card"><div class="sec">'+
+     '<div class="sec-h"><span class="sec-t">Registrar pago</span></div><div id="pgForm"></div>'+
+   '</div></section>'+
+   '<section class="card"><div class="sec">'+
+     '<div class="sec-h"><span class="sec-t">Pagos cargados</span><span class="meta" id="pgTot"></span></div>'+
+     negFiltroFechas('pg','<div class="fg"><label for="pgQ">Paciente</label>'+
+       '<input id="pgQ" placeholder="Buscar por nombre" oninput="PG_FILTRO.q=this.value;negPintarIngresos()" value="'+esc(PG_FILTRO.q||'')+'"></div>')+
+     '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Fecha</th><th>Paciente</th><th>Concepto</th>'+
+       '<th>Qué incluyó</th><th>Medio</th><th class="n">Monto</th></tr></thead>'+
+       '<tbody id="pgBody"></tbody><tfoot id="pgFoot"></tfoot></table></div>'+
+     '<p class="meta" style="margin:10px 0 0">Tocá una fila para ver el pago entero y corregirlo.</p>'+
+   '</div></section>';
+  pgForm(); negPintarIngresos();
+}
+function negPintarIngresos(){
+  if(!NEG_DATA||!$('pgBody')) return;
+  const {d1,d2}=negRango(), q=(PG_FILTRO.q||'').toLowerCase();
+  const pmap={}; NEG_DATA.pacientes.forEach(x=>pmap[x.id]=x.full_name||'—');
+  $('pgBanda').innerHTML=negBanda(true);
+  const lista=(NEG_DATA.pagos||[]).filter(g=>{
+    const f=String(g.paid_on).slice(0,10);
+    if(f<d1||f>d2) return false;
+    return !q || String(pmap[g.patient_id]||'').toLowerCase().indexOf(q)>-1;
+  }).sort((a,b)=>String(b.paid_on).localeCompare(String(a.paid_on)));
+  const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
+  $('pgBody').innerHTML=lista.map(g=>{
+    const inc=g.included||{}, det=MODS.filter(m=>Number(inc[m.k])).map(m=>inc[m.k]+' '+m.s).join(' · ');
+    return '<tr class="cl" onclick="pgDetalle(\''+g.id+'\')"><td class="n" style="text-align:left">'+fmtDMShort(g.paid_on)+'</td>'+
+      '<td class="nm">'+esc(pmap[g.patient_id]||'—')+'</td>'+
+      '<td><span class="tag">'+esc((CONCEPTOS[g.concept_kind]||{corto:g.concept||'Pago'}).corto)+'</span></td>'+
+      '<td class="meta">'+esc(det||'—')+'</td>'+
+      '<td class="meta">'+esc((MEDIOS[g.method]||{n:g.method||'—'}).n)+'</td>'+
+      '<td class="n">'+dual(Number(g.amount_ars)||0)+'</td></tr>';
+  }).join('') || '<tr><td colspan="6" class="meta" style="padding:18px 0">Sin pagos en este período.</td></tr>';
+  $('pgFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot)+'</td></tr>':'';
+  const t=$('pgTot'); if(t) t.textContent=lista.length+' pago'+(lista.length===1?'':'s');
+}
+function pgDetalle(id){
+  const g=(NEG_DATA.pagos||[]).find(x=>x.id===id); if(!g) return;
+  const pmap={}; NEG_DATA.pacientes.forEach(x=>pmap[x.id]=x.full_name||'—');
+  const inc=g.included||{}, det=MODS.filter(m=>Number(inc[m.k])).map(m=>inc[m.k]+' '+m.s).join(' · ');
+  const hasta=g.covers_from?masUnMes(g.covers_from):null;
+  modalOpen('Pago de '+(pmap[g.patient_id]||'—'),
+    '<div class="grid g2">'+
+      '<div class="field"><label for="pdFecha">Fecha del pago</label><input id="pdFecha" type="date" value="'+String(g.paid_on).slice(0,10)+'"></div>'+
+      '<div class="field"><label for="pdMedio">Medio</label><select id="pdMedio">'+
+        Object.keys(MEDIOS).map(k=>'<option value="'+k+'"'+(g.method===k?' selected':'')+'>'+MEDIOS[k].n+'</option>').join('')+'</select></div>'+
+    '</div>'+
+    '<div class="grid g2">'+
+      '<div class="field"><label for="pdArs">Monto en pesos</label><input id="pdArs" inputmode="decimal" value="'+esES(Math.round(Number(g.amount_ars)||0))+'"></div>'+
+      '<div class="field"><label for="pdTc">Tipo de cambio</label><input id="pdTc" inputmode="decimal" value="'+esES(Number(g.tc)||SUP.tc)+'"></div>'+
+    '</div>'+
+    (g.covers_from?'<div class="grid g2">'+
+      '<div class="field"><label for="pdDesde">Cubre desde</label><input id="pdDesde" type="date" value="'+String(g.covers_from).slice(0,10)+'"></div>'+
+      '<div class="field"><label>Hasta</label><input value="'+fmt(hasta)+'" disabled></div></div>':'')+
+    '<div class="field"><label for="pdNota">Nota</label><input id="pdNota" value="'+esc(g.notes||'')+'"></div>'+
+    '<p class="meta" style="margin:0;line-height:1.7"><b>'+esc((CONCEPTOS[g.concept_kind]||{n:g.concept||'Pago'}).n)+'</b>'+
+      (det?' · '+esc(det):'')+'<br>Cargado el '+fmt(g.created_at)+'.'+
+      '<br><button class="linkbtn" onclick="pgBorrar(\''+g.id+'\')" style="color:var(--crit)">Borrar este pago</button></p>',
+    'Guardar cambios', async ()=>{
+      const ars=parseFloat(String($('pdArs').value).replace(/\./g,'').replace(',','.'));
+      if(!(ars>0)){ toast('Poné el monto'); return false; }
+      const tc=parseFloat(String($('pdTc').value).replace(/\./g,'').replace(',','.'))||SUP.tc;
+      const up={paid_on:$('pdFecha').value, method:$('pdMedio').value,
+        invoiced:$('pdMedio').value==='electronico',
+        amount_ars:Math.round(ars), amount_usd:Math.round(ars/tc*100)/100, tc:tc,
+        notes:($('pdNota').value||'').trim()||null};
+      if($('pdDesde')){ up.covers_from=$('pdDesde').value; up.period=String($('pdDesde').value).slice(0,7)+'-01'; }
+      const {error}=await DB().from('payments').update(up).eq('id',g.id);
+      if(error){ toast(error.message); return false; }
+      toast('Pago actualizado'); await negCargar(); negPintarIngresos(); return true;
+    });
+}
+async function pgBorrar(id){
+  const ch=await askChoice({where:'Al borrar un pago', title:'¿Borrar este pago?',
+    existing:'Sale de los ingresos del período', detail:'Si era un programa, el paciente queda sin saldo.',
+    why:'Si fue un error de carga, borralo y cargalo de nuevo.',
+    primary:'No borrarlo', secondary:'Borrarlo'});
+  if(ch!=='secondary') return;
+  const {error}=await DB().from('payments').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  if(error){ toast(error.message); return; }
+  modalClose(); toast('Pago borrado'); await negCargar(); negPintarIngresos();
+}
+
+/* ---------- Gastos ---------- */
+async function renderGastos(){
+  const p=$('page');
+  p.innerHTML='<div class="loading">Cargando…</div>';
+  try{ await negCargar(); }
+  catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
+  if(curView!=='gastos') return;
+  if(NEG_DATA.gastosErr){
+    p.innerHTML='<div class="phead-page"><div><h1>Gastos</h1></div></div>'+
+      '<div class="callout"><p><b>Falta crear la tabla de gastos en la base.</b></p>'+
+      '<p class="meta">'+esc(NEG_DATA.gastosErr)+'</p></div>';
+    return;
+  }
+  p.innerHTML=
+   '<div class="phead-page"><div><h1>Gastos</h1>'+
+     '<p class="sub">Entran por el grupo de Telegram. Acá se revisan y se corrigen.</p></div>'+
+     '<button class="btn primary sm" onclick="gaModal()">'+PLUS+'Cargar a mano</button></div>'+
+   negFiltroFechas('ga','<div class="fg"><label for="gaCat">Categoría</label>'+
+     '<select id="gaCat" onchange="GA_FILTRO.cat=this.value;negPintarGastos()"><option value="">Todas</option>'+
+     GASTO_CATS.map(c=>'<option'+(GA_FILTRO.cat===c?' selected':'')+'>'+c+'</option>').join('')+'</select></div>')+
+   '<div class="kpis" id="gaKpis"></div>'+
+   '<section class="card"><div class="sec">'+
+     '<div class="sec-h"><span class="sec-t">Movimientos</span><span class="meta" id="gaTot"></span></div>'+
+     '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th>'+
+       '<th>Pagó</th><th>Medio</th><th class="n">Monto</th><th>Origen</th></tr></thead>'+
+       '<tbody id="gaBody"></tbody><tfoot id="gaFoot"></tfoot></table></div>'+
+     '<p class="meta" style="margin:10px 0 0">Tocá una fila para corregir el concepto, la categoría, quién lo pagó o el monto.</p>'+
+   '</div></section>';
+  negPintarGastos();
+}
+function negPintarGastos(){
+  if(!NEG_DATA||!$('gaBody')) return;
+  const {d1,d2}=negRango();
+  const lista=(NEG_DATA.gastos||[]).filter(g=>{
+    const f=String(g.spent_on).slice(0,10);
+    return f>=d1 && f<=d2 && (!GA_FILTRO.cat || g.category===GA_FILTRO.cat);
+  }).sort((a,b)=>String(b.spent_on).localeCompare(String(a.spent_on)));
+  const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
+  const ins=lista.filter(g=>g.category==='Insumos y materia prima').reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
+  const efe=lista.filter(g=>g.method==='efectivo').reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
+  const porQuien={}; lista.forEach(g=>porQuien[g.paid_by]=(porQuien[g.paid_by]||0)+(Number(g.amount_ars)||0));
+  const quienTxt=Object.keys(porQuien).sort((a,b)=>porQuien[b]-porQuien[a])
+    .map(k=>(PAGADO[k]||k)+' '+negUSD(porQuien[k]/(SUP.tc||1))).join(' · ')||'—';
+  $('gaKpis').innerHTML=
+    negKpi('Total del período',negUSD(tot/(SUP.tc||1)),negARS(tot)+' · '+lista.length+' movimiento'+(lista.length===1?'':'s'))+
+    negKpi('Insumos',negUSD(ins/(SUP.tc||1)),tot?negPct(ins/tot)+' del total':'—')+
+    negKpi('En efectivo',negUSD(efe/(SUP.tc||1)),negUSD((tot-efe)/(SUP.tc||1))+' electrónico')+
+    negKpi('Quién puso la plata',Object.keys(porQuien).length||'—',quienTxt);
+  $('gaBody').innerHTML=lista.map(g=>
+    '<tr class="cl" onclick="gaModal(\''+g.id+'\')"><td class="n" style="text-align:left">'+fmtDMShort(g.spent_on)+'</td>'+
+    '<td class="nm">'+esc(g.concept||'—')+'</td>'+
+    '<td><span class="tag">'+esc(g.category||'Sin categoría')+'</span></td>'+
+    '<td>'+esc(PAGADO[g.paid_by]||g.paid_by||'—')+'</td>'+
+    '<td class="meta">'+esc((MEDIOS[g.method]||{n:g.method||'—'}).n)+'</td>'+
+    '<td class="n">'+dual(Number(g.amount_ars)||0)+'</td>'+
+    '<td>'+(g.source==='telegram'?'<span class="tag tg">Telegram</span>':'<span class="meta">a mano</span>')+'</td></tr>').join('')
+    || '<tr><td colspan="7" class="meta" style="padding:18px 0">Sin gastos en este período.</td></tr>';
+  $('gaFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot)+'</td><td></td></tr>':'';
+  const t=$('gaTot'); if(t) t.textContent=lista.length+' movimiento'+(lista.length===1?'':'s');
+}
+function gaModal(id){
+  const g=id?((NEG_DATA.gastos||[]).find(x=>x.id===id)||{}):{};
+  const hoy=todayLocal();
+  modalOpen(id?'Gasto':'Cargar un gasto',
+    '<div class="grid g2">'+
+      '<div class="field"><label for="gxFecha">Fecha</label><input id="gxFecha" type="date" value="'+(g.spent_on?String(g.spent_on).slice(0,10):hoy)+'"></div>'+
+      '<div class="field"><label for="gxMonto">Monto en pesos *</label><input id="gxMonto" inputmode="decimal" value="'+(g.amount_ars?esES(Math.round(g.amount_ars)):'')+'"></div>'+
+    '</div>'+
+    '<div class="field"><label for="gxConc">Concepto *</label><input id="gxConc" value="'+esc(g.concept||'')+'" placeholder="Ej: vitamina C Farmados"></div>'+
+    '<div class="field"><label for="gxCat">Categoría</label><select id="gxCat"><option value="">Sin categoría</option>'+
+      GASTO_CATS.map(c=>'<option'+(g.category===c?' selected':'')+'>'+c+'</option>').join('')+'</select></div>'+
+    '<div class="grid g3">'+
+      '<div class="field"><label for="gxQuien">Lo pagó *</label><select id="gxQuien">'+
+        Object.keys(PAGADO).map(k=>'<option value="'+k+'"'+((g.paid_by||'revigen')===k?' selected':'')+'>'+PAGADO[k]+'</option>').join('')+'</select></div>'+
+      '<div class="field"><label for="gxMedio">Medio</label><select id="gxMedio">'+
+        Object.keys(MEDIOS).map(k=>'<option value="'+k+'"'+((g.method||'electronico')===k?' selected':'')+'>'+MEDIOS[k].n+'</option>').join('')+'</select></div>'+
+      '<div class="field"><label for="gxTc">Tipo de cambio</label><input id="gxTc" inputmode="decimal" value="'+esES(Number(g.tc)||SUP.tc)+'"></div>'+
+    '</div>'+
+    (g.raw_text?'<p class="meta" style="margin:0;line-height:1.7">Vino de Telegram'+(g.tg_from?' · lo mandó '+esc(g.tg_from):'')+
+      ':<br>«'+esc(g.raw_text)+'»</p>':''),
+    id?'Guardar cambios':'Guardar gasto', async ()=>{
+      const ars=parseFloat(String($('gxMonto').value).replace(/\./g,'').replace(',','.'));
+      if(!(ars>0)){ toast('Poné el monto'); return false; }
+      const conc=($('gxConc').value||'').trim();
+      if(!conc){ toast('Poné el concepto'); return false; }
+      const tc=parseFloat(String($('gxTc').value).replace(/\./g,'').replace(',','.'))||SUP.tc;
+      const rec={spent_on:$('gxFecha').value||hoy, concept:conc, category:$('gxCat').value||null,
+        paid_by:$('gxQuien').value, method:$('gxMedio').value,
+        amount_ars:Math.round(ars), amount_usd:Math.round(ars/tc*100)/100, tc:tc};
+      let error;
+      if(id){ rec.updated_at=new Date().toISOString(); ({error}=await DB().from('expenses').update(rec).eq('id',id)); }
+      else  { rec.source='manual'; rec.created_by=ME.user_id; ({error}=await DB().from('expenses').insert(rec)); }
+      if(error){ toast(error.message); return false; }
+      toast(id?'Gasto actualizado':'Gasto cargado'); await negCargar(); negPintarGastos(); return true;
+    });
+}
+
+/* ---------- P&L ---------- */
+const PL_URL='https://docs.google.com/spreadsheets/d/1-PxDTfLbaZc_rcDAulQBEHa_wMNydSFnqHUPIeCqq-E/edit';
+async function renderPL(){
+  const p=$('page');
+  p.innerHTML='<div class="loading">Cargando…</div>';
+  try{ await negCargar(); }
+  catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
+  if(curView!=='pl') return;
+  /* qué se mandaría en la próxima sincronización: todo lo que entró desde el viernes pasado */
+  const hoy=new Date(), d=hoy.getDay(), atras=(d+2)%7||7;
+  const desde=ymd(new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()-atras));
+  const pagos=(NEG_DATA.pagos||[]).filter(x=>String(x.paid_on).slice(0,10)>=desde);
+  const gastos=(NEG_DATA.gastos||[]).filter(x=>String(x.spent_on).slice(0,10)>=desde);
+  const ses=(NEG_DATA.ses||[]).filter(x=>x.d>=desde);
+  const diasInf=new Set(ses.map(x=>x.d)).size;
+  const sum=(l,k)=>l.reduce((a,x)=>a+(Number(x[k])||0),0);
+  const fila=(h,q,n,m)=>'<tr><td><span class="tag">'+h+'</span></td><td class="meta">'+q+'</td>'+
+    '<td class="n">'+n+'</td><td class="n">'+(m==null?'—':dual(m))+'</td></tr>';
+  p.innerHTML=
+   '<div class="phead-page"><div><h1>P&amp;L</h1>'+
+     '<p class="sub">Todos los viernes se agregan las filas nuevas a la planilla.</p></div></div>'+
+   '<section class="card"><div class="sec">'+
+     '<div class="sec-h"><span class="sec-t">Lo que va en la próxima sincronización</span>'+
+       '<span class="meta">desde el '+fmt(desde)+'</span></div>'+
+     '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Hoja</th><th>Qué se agrega</th>'+
+       '<th class="n">Filas</th><th class="n">Monto</th></tr></thead><tbody>'+
+       fila('Ingresos','Cobros de la semana con su medio y tipo de cambio',pagos.length,sum(pagos,'amount_ars'))+
+       fila('Gastos','Lo que entró por el grupo de Telegram y lo cargado a mano',gastos.length,sum(gastos,'amount_ars'))+
+       fila('Honorarios profesionales','Enfermería de los días en que hubo infusión',diasInf,
+            diasInf*SUP.enf_hora*SUP.horas_sesion)+
+       '</tbody></table></div>'+
+     '<div class="savebar" style="margin-top:14px"><a class="btn primary sm" href="'+PL_URL+'" target="_blank" rel="noopener">Abrir la planilla</a></div>'+
+     '<p class="meta" style="margin:12px 0 0;line-height:1.7">La hoja <b>Análisis</b> no se toca: sigue sumando sola desde Ingresos y Gastos. '+
+     'La tarea nunca reescribe ni duplica filas ya mandadas; si una semana falla, queda pendiente y se avisa.</p>'+
+   '</div></section>';
+}
+
+/* ---------- supuestos ---------- */
 const NEG_CAMPOS=[
-  ['tc','Tipo de cambio'],['enf_hora','Enfermería por hora'],['horas_sesion','Horas por sesión'],
-  ['nutricion','Nutrición por consulta'],['psico','Psico-oncología por consulta'],['ejercicio','Educación física por clase'],
-  ['consulta_precio','Consulta médica · se cobra'],['consulta_costo','Consulta médica · se paga'],
+  ['tc','Tipo de cambio'],
+  ['pre_suero_usd','Sueroterapia · se cobra (USD)'],['consulta_precio','Consulta médica · se cobra'],
+  ['pre_nutri','Nutrición · se cobra'],['pre_psico','Psicooncología · se cobra'],
+  ['pre_ef_pres','Act. física presencial · se cobra'],['pre_ef_virt','Act. física virtual · se cobra'],
+  ['consulta_costo','Consulta médica · se paga'],['nutricion','Nutrición · se paga'],
+  ['psico','Psicooncología · se paga'],['ejercicio','Act. física · se paga'],
+  ['enf_hora','Enfermería por hora'],['horas_sesion','Horas por sesión'],
   ['vitc_g','Vitamina C por gramo'],['magnesio_ml','Cloruro de magnesio por ml'],
   ['agua500','Agua destilada 500 cc'],['fis500','Solución fisiológica 500 cc'],
-  ['descartables','Descartables por sesión']
+  ['descartables','Descartables por sesión'],['dias_aviso','Avisar la renovación con (días)']
 ];
-const NEG_PCT=[['eche_pct','Comisión Eche'],['cobro_pct','Comisión del medio de cobro'],
-  ['iva','IVA'],['iibb','Ingresos Brutos'],['banco','Impuesto al cheque'],['ganancias','Ganancias']];
+const NEG_PCT=[['eche_pct','Comisión Eche'],['iva','IVA'],['iibb','Ingresos Brutos'],
+  ['banco','Impuesto al cheque'],['ganancias','Ganancias']];
 function negSupuestos(){
   const h=$('negSupBody'); if(!h || h.dataset.listo) return;
   h.dataset.listo='1';
   h.innerHTML='<div class="grid g3">'+
-    NEG_CAMPOS.map(([k,l])=>'<div class="field"><label>'+l+'</label>'+
+    NEG_CAMPOS.map(([k,l])=>'<div class="field"><label for="sup_'+k+'">'+l+'</label>'+
       '<input id="sup_'+k+'" value="'+SUP[k]+'" inputmode="decimal" onchange="negSupSet(\''+k+'\',this.value,1)"></div>').join('')+
-    NEG_PCT.map(([k,l])=>'<div class="field"><label>'+l+' (%)</label>'+
+    NEG_PCT.map(([k,l])=>'<div class="field"><label for="sup_'+k+'">'+l+' (%)</label>'+
       '<input id="sup_'+k+'" value="'+(SUP[k]*100).toFixed(2).replace(/\.?0+$/,'')+'" inputmode="decimal" onchange="negSupSet(\''+k+'\',this.value,100)"></div>').join('')+
-    '<div class="field"><label>Si empieza a mitad de mes</label><select id="sup_prorrateo" onchange="SUP.prorrateo=this.value;negPintar()">'+
-      '<option value="mes_completo"'+(SUP.prorrateo==='mes_completo'?' selected':'')+'>Cobra el mes completo</option>'+
-      '<option value="por_sesion"'+(SUP.prorrateo==='por_sesion'?' selected':'')+'>Proporcional a las sesiones</option></select></div>'+
-    '<div class="field"><label>Sesiones de más</label><select id="sup_extras" onchange="SUP.extras=this.value;negPintar()">'+
-      '<option value="incluidas"'+(SUP.extras==='incluidas'?' selected':'')+'>Entran en el plan</option>'+
-      '<option value="se_cobran"'+(SUP.extras==='se_cobran'?' selected':'')+'>Se cobran aparte</option></select></div>'+
-    '<div class="field"><label>Sesión extra (USD)</label><input id="sup_extra_precio_usd" value="'+SUP.extra_precio_usd+'" inputmode="decimal" onchange="negSupSet(\'extra_precio_usd\',this.value,1)"></div>'+
     '</div>'+
     '<div class="savebar" style="margin-top:14px"><button class="btn primary sm" onclick="negGuardarSup()">Guardar supuestos</button>'+
       '<span class="meta">Se guardan con la fecha de hoy: los meses ya cerrados siguen con los valores que tenían.</span></div>';
@@ -1561,13 +1911,264 @@ function negSupSet(k,v,div){
   const n=parseFloat(String(v).replace(/\./g,'').replace(',','.'));
   if(isNaN(n)) return;
   SUP[k]= div===100 ? n/100 : n;
-  if(k==='tc' && $('negTc')) $('negTc').value=esES(n);
-  negPintar();
+  negRepintar();
 }
 async function negGuardarSup(){
   const {error}=await DB().from('business_settings').insert({effective_from:todayLocal(), data:SUP, created_by:ME.user_id});
   if(error){ toast(error.message); return; }
   toast('Supuestos guardados');
+}
+
+
+/* ===================== Calidad de vida · seguimiento =====================
+   Lee los cuestionarios ya tomados y muestra cómo evoluciona cada paciente.
+   Lo ve el mismo equipo que puede tomar el cuestionario.                   */
+let CAL_DATA=null, CAL_FILTRO='todos', CAL_ABIERTO=null;
+
+function calSerie(tomas,k){
+  return tomas.map(t=>{ const sc=(t.scores||{})[k]; return sc?{v:sc.v,parcial:sc.parcial,at:t.administered_at}:null; })
+              .filter(Boolean);
+}
+function calEstado(tomas){
+  const ult=tomas[tomas.length-1]||null;
+  const dias=ult?Math.floor(daysSince(ult.administered_at)):null;
+  const g=calSerie(tomas,'QL2');
+  const ultG=g.length?g[g.length-1].v:null;
+  const delta=g.length>1 ? Math.round((g[g.length-1].v-g[g.length-2].v)*10)/10 : null;
+  const peor = (tomas.length>1) ? qlqCambios(ult.scores,tomas[tomas.length-2].scores).filter(c=>!c.mejoro) : [];
+  return {ult,dias,ultG,delta,peor,vencido: ult==null || dias>=QLQ_DIAS};
+}
+
+/* línea chiquita, 0 a 100 */
+function calSpark(serie,mejorAlto,w,h){
+  w=w||86; h=h||26;
+  if(!serie.length) return '<span class="meta">—</span>';
+  if(serie.length===1) return '<svg class="sp" viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'"><circle cx="'+(w/2)+'" cy="'+(h-(h-4)*serie[0].v/100-2)+'" r="3" fill="#0E9BB5"/></svg>';
+  const X=i=>2+(w-4)*i/(serie.length-1), Y=v=>h-2-(h-6)*(v/100);
+  const d=serie.map((p,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(p.v).toFixed(1)).join(' ');
+  const dif=serie[serie.length-1].v-serie[0].v;
+  const mejor = mejorAlto ? dif>0 : dif<0;
+  const col = Math.abs(dif)<QLQ_MIC ? '#7A8379' : (mejor?'#3C6B3A':'#B45309');
+  const lx=X(serie.length-1), ly=Y(serie[serie.length-1].v);
+  return '<svg class="sp" viewBox="0 0 '+w+' '+h+'" width="'+w+'" height="'+h+'" aria-hidden="true">'+
+    '<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>'+
+    '<circle cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="2.6" fill="'+col+'"/></svg>';
+}
+/* el grande, con eje 0-100 y la franja de lo que se considera un cambio que se nota */
+function calChart(serie,mejorAlto,titulo){
+  if(serie.length<1) return '<div class="empty" style="padding:28px 12px"><p>Sin datos para graficar.</p></div>';
+  const W=480,H=210,L=38,R=466,T=18,B=172;
+  const n=serie.length;
+  const X=i=> n===1?(L+R)/2 : L+(R-L)*i/(n-1);
+  const Y=v=> B-(B-T)*(v/100);
+  const pts=serie.map((p,i)=>[X(i),Y(p.v)]);
+  const line=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area=(n>1)?('M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1)+pts.slice(1).map(p=>'L'+p[0].toFixed(1)+' '+p[1].toFixed(1)).join('')+'L'+pts[n-1][0].toFixed(1)+' '+B+'L'+pts[0][0].toFixed(1)+' '+B+'Z'):'';
+  const dif=n>1?serie[n-1].v-serie[0].v:0;
+  const mejor= mejorAlto ? dif>0 : dif<0;
+  const col = n<2||Math.abs(dif)<QLQ_MIC ? '#0E9BB5' : (mejor?'#3C6B3A':'#B45309');
+  const grid=[0,25,50,75,100].map(v=>'<line x1="'+L+'" y1="'+Y(v).toFixed(1)+'" x2="'+R+'" y2="'+Y(v).toFixed(1)+'"/>').join('');
+  const ylabs=[0,50,100].map(v=>'<text x="'+(L-9)+'" y="'+(Y(v)+4).toFixed(1)+'">'+v+'</text>').join('');
+  const dots=pts.map((p,i)=>'<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(i===n-1?5:3.2)+'"'+(i===n-1?' stroke="#FFFFFF" stroke-width="2.2"':'')+'/>').join('');
+  const xl=serie.map((p,i)=>'<text x="'+X(i).toFixed(1)+'" y="193">'+fmtDMShort(p.at)+'</text>').join('');
+  const vl='<text x="'+X(n-1).toFixed(1)+'" y="'+(Y(serie[n-1].v)-13).toFixed(1)+'" text-anchor="middle" fill="#1B241F" font-size="13.5" font-family="Instrument Sans,sans-serif">'+serie[n-1].v+'</text>';
+  return '<svg viewBox="0 0 480 210" width="100%" role="img" aria-label="'+esc(titulo||'')+'">'+
+    '<defs><linearGradient id="calg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".15"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'+
+    '<g stroke="#E6E9E1" stroke-width="1">'+grid+'</g>'+
+    '<g fill="#79837A" font-size="11.5" font-family="Inter,sans-serif" text-anchor="end">'+ylabs+'</g>'+
+    (area?'<path d="'+area+'" fill="url(#calg)"/>':'')+
+    '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linejoin="round"/>'+
+    '<g fill="'+col+'">'+dots+'</g>'+vl+
+    '<g fill="#79837A" font-size="11.5" font-family="Inter,sans-serif" text-anchor="middle">'+xl+'</g></svg>';
+}
+function calDelta(d,mejorAlto){
+  if(d==null) return '<span class="meta">primera toma</span>';
+  if(Math.abs(d)<QLQ_MIC) return '<span class="dlt">sin cambios</span>';
+  const mejor = mejorAlto ? d>0 : d<0;
+  return '<span class="dlt '+(mejor?'up':'down')+'">'+(d>0?'+':'')+String(d).replace('.',',')+' · '+(mejor?'mejor':'peor')+'</span>';
+}
+
+async function renderCalidad(){
+  const p=$('page'); p.innerHTML='<div class="loading">Cargando el seguimiento…</div>';
+  const [QQ,PA]=await Promise.all([
+    DB().from('questionnaires').select('*').is('deleted_at',null).order('administered_at',{ascending:true}),
+    DB().from('patients').select('id,full_name').is('deleted_at',null)
+  ]);
+  if(curView!=='calidad') return;
+  if(QQ.error){ p.innerHTML='<div class="callout"><p>'+esc(QQ.error.message)+'</p></div>'; return; }
+  const porPac=groupBy(QQ.data||[],'patient_id');
+  const pacs=(PA.data||[]).map(x=>({id:x.id,n:x.full_name,tomas:porPac[x.id]||[]}))
+    .filter(x=>x.tomas.length).map(x=>Object.assign(x,calEstado(x.tomas)));
+  CAL_DATA={pacs, total:(QQ.data||[]).length, pacientes:PA.data||[]};
+  p.innerHTML=
+   '<div class="phead-page"><div><h1>Calidad de vida</h1>'+
+     '<p class="sub">Cuestionario EORTC QLQ-C30 · 16 preguntas · se repite cada '+QLQ_DIAS+' días</p></div></div>'+
+   '<div class="kpis" id="calKpis"></div>'+
+   '<div class="subpills" id="calPills"></div>'+
+   '<section class="card"><div class="sec">'+
+     '<div class="sec-h"><span class="sec-t">Evolución por paciente</span><span class="meta">la línea es la calidad de vida global, de 0 a 100</span></div>'+
+     '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Paciente</th><th class="n">Tomas</th>'+
+       '<th>Evolución</th><th class="n">Último</th><th>Contra la anterior</th><th class="n">Hace</th><th></th></tr></thead>'+
+       '<tbody id="calBody"></tbody></table></div>'+
+   '</div></section>'+
+   '<div id="calDetalle"></div>';
+  calPintar();
+}
+function calSetFiltro(f){ CAL_FILTRO=f; calPintar(); }
+function calPintar(){
+  if(!CAL_DATA) return;
+  const todos=CAL_DATA.pacs;
+  const alDia=todos.filter(x=>!x.vencido).length;
+  const venc=todos.filter(x=>x.vencido).length;
+  const peores=todos.filter(x=>x.peor.length).length;
+  const d30=CAL_DATA.pacs.reduce((a,x)=>a+x.tomas.filter(t=>daysSince(t.administered_at)<=30).length,0);
+  const conG=todos.filter(x=>x.ultG!=null);
+  const prom=conG.length? Math.round(conG.reduce((a,x)=>a+x.ultG,0)/conG.length*10)/10 : null;
+
+  $('calKpis').innerHTML=
+    '<div><div class="label">Pacientes con cuestionario</div><div class="n">'+todos.length+'</div>'+
+      '<div class="sub">'+CAL_DATA.total+' toma'+(CAL_DATA.total===1?'':'s')+' en total</div></div>'+
+    '<div><div class="label">Al día</div><div class="n">'+alDia+'</div>'+
+      '<div class="sub">'+(venc?venc+' con el cuestionario vencido':'ninguno vencido')+'</div></div>'+
+    '<div><div class="label">Tomas del último mes</div><div class="n">'+d30+'</div>'+
+      '<div class="sub">se repite cada '+QLQ_DIAS+' días</div></div>'+
+    '<div><div class="label">Calidad de vida promedio</div><div class="n">'+(prom!=null?prom:'—')+'</div>'+
+      '<div class="sub">último valor de cada paciente, sobre 100</div></div>';
+
+  $('calPills').innerHTML=[['todos','Todos',todos.length],['aldia','Al día',alDia],
+    ['vencidos','Vencidos',venc],['peor','Empeoraron',peores]]
+    .map(([k,l,n])=>'<button class="'+(CAL_FILTRO===k?'on':'')+'" onclick="calSetFiltro(\''+k+'\')">'+l+' · '+n+'</button>').join('');
+
+  let lista=todos.slice();
+  if(CAL_FILTRO==='aldia') lista=lista.filter(x=>!x.vencido);
+  else if(CAL_FILTRO==='vencidos') lista=lista.filter(x=>x.vencido);
+  else if(CAL_FILTRO==='peor') lista=lista.filter(x=>x.peor.length);
+  lista.sort((a,b)=>(b.peor.length-a.peor.length)||((b.dias||0)-(a.dias||0)));
+
+  $('calBody').innerHTML=lista.map(x=>{
+    const serie=calSerie(x.tomas,'QL2');
+    return '<tr><td class="nm"><button class="linkbtn" onclick="openPatient(\''+x.id+'\')">'+esc(x.n)+'</button>'+
+      (x.peor.length?'<div class="s" style="color:var(--alert)">'+esc(x.peor.slice(0,2).map(c=>c.nom.toLowerCase()).join(' · '))+'</div>':'')+'</td>'+
+      '<td class="n">'+x.tomas.length+'</td>'+
+      '<td>'+calSpark(serie,true)+'</td>'+
+      '<td class="n">'+(x.ultG!=null?'<b>'+x.ultG+'</b>':'—')+'</td>'+
+      '<td>'+calDelta(x.delta,true)+'</td>'+
+      '<td class="n'+(x.vencido?' debe':'')+'">'+(x.dias!=null?x.dias+' d':'—')+'</td>'+
+      '<td class="n"><button class="btn sm" onclick="calDetalle(\''+x.id+'\')">Ver evolución</button></td></tr>';
+  }).join('') || '<tr><td colspan="7" class="meta" style="padding:18px 0">Nadie en este filtro.</td></tr>';
+
+  if(CAL_ABIERTO) calDetalle(CAL_ABIERTO,true);
+}
+function calDetalle(pid,quieto){
+  const x=CAL_DATA.pacs.find(y=>y.id===pid); if(!x) return;
+  CAL_ABIERTO=pid;
+  const serie=calSerie(x.tomas,'QL2');
+  const minis=QLQ_ESCALAS.filter(e=>e.k!=='QL2').map(e=>{
+    const sr=calSerie(x.tomas,e.k);
+    if(!sr.length) return '';
+    const mejorAlto=e.tipo!=='sint';
+    const ult=sr[sr.length-1], d=sr.length>1?Math.round((ult.v-sr[sr.length-2].v)*10)/10:null;
+    return '<div class="minic"><div class="mt">'+esc(e.nom)+(ult.parcial?'<i class="qq-par">parcial</i>':'')+'</div>'+
+      '<div class="mv">'+ult.v+'<span class="mu">'+(mejorAlto?'más alto, mejor':'más alto, peor')+'</span></div>'+
+      calSpark(sr,mejorAlto,100,28)+'<div class="md">'+calDelta(d,mejorAlto)+'</div></div>';
+  }).join('');
+  $('calDetalle').innerHTML=
+    '<section class="card" id="calDet"><div class="sec">'+
+      '<div class="sec-h"><span class="sec-t">'+esc(x.n)+'</span>'+
+        '<span style="display:flex;gap:8px">'+
+        '<button class="btn sm" onclick="calImprimir(\''+x.id+'\')">'+ICPRINT+'Informe para el paciente</button>'+
+        '<button class="btn sm" onclick="calCerrar()">Cerrar</button></span></div>'+
+      '<div class="caldet">'+
+        '<div class="calbig"><div class="meta" style="margin-bottom:6px">Calidad de vida global · '+
+          x.tomas.length+' toma'+(x.tomas.length===1?'':'s')+'</div>'+
+          calChart(serie,true,'Calidad de vida global de '+x.n)+'</div>'+
+        '<div class="calsub meta">El resto de las escalas</div>'+
+        '<div class="minis">'+(minis||'<p class="meta" style="margin:0">Sin escalas calculables todavía.</p>')+'</div>'+
+      '</div>'+
+      '<p class="qq-legal" style="margin-top:14px">Un cambio de 10 puntos o más es el umbral aceptado para considerarlo clínicamente relevante. '+
+      'Las escalas marcadas como parciales se calculan con menos ítems de los que tienen: sirven para seguir a este paciente, no para comparar con valores de referencia.</p>'+
+    '</div></section>';
+  if(!quieto) setTimeout(()=>{ const el=$('calDet'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); },60);
+}
+function calCerrar(){ CAL_ABIERTO=null; $('calDetalle').innerHTML=''; }
+
+/* ---------- informe de evolución para entregarle al paciente ---------- */
+function calImprimir(pid,tomasIn,nombreIn){
+  const x = (CAL_DATA && CAL_DATA.pacs.find(y=>y.id===pid)) || null;
+  const tomas = tomasIn || (x?x.tomas:null);
+  const nom   = nombreIn || (x?x.n:'') || (CUR&&CUR.id===pid?CUR.full_name:'') || 'Paciente';
+  if(!tomas || !tomas.length){ toast('Este paciente todavía no tiene cuestionarios'); return; }
+  const serie=calSerie(tomas,'QL2');
+  const ult=tomas[tomas.length-1], prev=tomas.length>1?tomas[tomas.length-2]:null;
+  const cambios=prev?qlqCambios(ult.scores,prev.scores):[];
+  const mejor=cambios.filter(c=>c.mejoro), peor=cambios.filter(c=>!c.mejoro);
+
+  const fechas=tomas.map(t=>'<th>'+fmtDMShort(t.administered_at)+'</th>').join('');
+  const filas=QLQ_ESCALAS.map(e=>{
+    const vs=tomas.map(t=>{const sc=(t.scores||{})[e.k]; return sc?sc.v:null;});
+    if(!vs.some(v=>v!=null)) return '';
+    const mejorAlto=e.tipo!=='sint';
+    const a=vs.filter(v=>v!=null);
+    const d=a.length>1?Math.round((a[a.length-1]-a[0])*10)/10:null;
+    const sig=d==null?'—':(Math.abs(d)<QLQ_MIC?'sin cambios':((mejorAlto?d>0:d<0)?'mejoró':'empeoró'));
+    const cl=d==null||Math.abs(d)<QLQ_MIC?'':((mejorAlto?d>0:d<0)?'up':'down');
+    return '<tr><td class="e">'+esc(e.nom)+'<i>'+(mejorAlto?'más alto es mejor':'más alto es peor')+'</i></td>'+
+      vs.map(v=>'<td class="n">'+(v==null?'—':String(v).replace('.',','))+'</td>').join('')+
+      '<td class="n '+cl+'">'+(d==null?'—':(d>0?'+':'')+String(d).replace('.',','))+'</td>'+
+      '<td class="'+cl+'">'+sig+'</td></tr>';
+  }).join('');
+
+  const lista=l=>l.length? '<ul>'+l.map(c=>'<li><b>'+esc(c.nom)+'</b> · '+(c.d>0?'+':'')+String(c.d).replace('.',',')+' puntos</li>').join('')+'</ul>' : '<p class="na">—</p>';
+  const chart=calChart(serie,true,'Calidad de vida global');
+
+  const html='<!doctype html><html lang="es"><head><meta charset="utf-8">'+
+   '<title>Calidad de vida - '+esc(nom)+'</title><style>'+
+   '@page{size:A4;margin:16mm}'+
+   'body{font-family:Arial,Helvetica,sans-serif;color:#1f2a37;max-width:820px;margin:0 auto;padding:16px;font-size:13px;line-height:1.55}'+
+   'h1{color:#232824;border-bottom:2px solid #7d8a68;padding-bottom:8px;margin:0 0 4px;font-size:20px}'+
+   '.meta{color:#666;font-size:12px;margin-bottom:18px}'+
+   'h3{background:#eef2e4;color:#3a4038;padding:6px 10px;border-radius:5px;margin:20px 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.04em}'+
+   '.chart{border:1px solid #e3e7dd;border-radius:8px;padding:10px 6px;margin-bottom:6px}'+
+   'table{width:100%;border-collapse:collapse;font-size:12px}'+
+   'th{text-align:left;color:#666;font-weight:bold;border-bottom:1px solid #ddd;padding:5px 6px;white-space:nowrap}'+
+   'th.n,td.n{text-align:right}'+
+   'td{padding:5px 6px;border-bottom:1px solid #eee;vertical-align:top}'+
+   'td.e{width:40%}td.e i{display:block;color:#888;font-style:normal;font-size:11px}'+
+   '.up{color:#2f6b33;font-weight:bold}.down{color:#9a5a12;font-weight:bold}'+
+   'ul{margin:4px 0 0;padding-left:18px}li{margin-bottom:3px}.na{color:#888;margin:4px 0 0}'+
+   '.cols{display:flex;gap:22px}.cols>div{flex:1}'+
+   '.nota{background:#f7f8f1;border-left:3px solid #7d8a68;padding:9px 12px;margin-top:18px;font-size:12px;color:#44504a}'+
+   '@media print{.noprint{display:none}}</style></head><body>'+
+   '<h1>REVIGEN — Cómo venís</h1>'+
+   '<div class="meta">'+esc(nom)+' · '+tomas.length+' cuestionario'+(tomas.length===1?'':'s')+
+     ' entre el '+fmt(tomas[0].administered_at)+' y el '+fmt(ult.administered_at)+
+     ' · emitido el '+fmt(new Date().toISOString())+'</div>'+
+   '<h3>Calidad de vida global</h3>'+
+   '<div class="chart">'+chart+'</div>'+
+   '<p style="margin:0;color:#666;font-size:12px">La escala va de 0 a 100: cuanto más alto, mejor te sentís en general.</p>'+
+   (cambios.length?'<h3>Qué cambió desde el cuestionario anterior</h3><div class="cols">'+
+     '<div><b>Mejoró</b>'+lista(mejor)+'</div><div><b>Empeoró</b>'+lista(peor)+'</div></div>':'')+
+   '<h3>Todas las escalas</h3>'+
+   '<table><thead><tr><th>Escala</th>'+fechas+'<th class="n">Cambio</th><th>Qué pasó</th></tr></thead>'+
+   '<tbody>'+filas+'</tbody></table>'+
+   '<div class="nota">Este informe resume tus propias respuestas al cuestionario EORTC QLQ-C30. '+
+   'Un cambio de 10 puntos o más es el que se considera lo bastante grande como para notarse en el día a día. '+
+   'No reemplaza la consulta: lo vemos juntos con tu equipo de Revigen.</div>'+
+   '<p class="noprint" style="margin-top:22px"><button onclick="window.print()" style="padding:9px 16px;font-size:14px;cursor:pointer">Imprimir o guardar como PDF</button></p>'+
+   '</body></html>';
+  const w=window.open('','_blank');
+  if(!w){ toast('El navegador bloqueó la ventana. Permití las ventanas emergentes.'); return; }
+  w.document.write(html); w.document.close();
+  setTimeout(()=>{ try{ w.focus(); w.print(); }catch(e){} },400);
+}
+/* desde la ficha del paciente */
+async function calImprimirPaciente(){
+  if(!CUR) return;
+  const {data,error}=await DB().from('questionnaires').select('*').eq('patient_id',CUR.id)
+    .is('deleted_at',null).order('administered_at',{ascending:true});
+  if(error){ toast(error.message); return; }
+  if(!data||!data.length){ toast('Todavía no hay cuestionarios cargados'); return; }
+  calImprimir(CUR.id,data,CUR.full_name);
 }
 
 /* ---------- pantallas ---------- */
@@ -1588,7 +2189,27 @@ function railBtn(view,label,badge){
   return '<button class="'+(curView===view?'on':'')+'" onclick="navigate(\''+view+'\')">'+IC[view]+
     '<span class="t">'+label+'</span>'+(badge?'<span class="bdg">'+badge+'</span>':'')+'</button>';
 }
+const VIEWS_NEG=['negocio','ingresos','gastos','pl'];
+function esVistaNeg(v){ return VIEWS_NEG.indexOf(v)>-1; }
+function setProd(p){
+  if(p==='ng' && !can.negocio()) return;
+  navigate(p==='ng' ? 'negocio' : 'inicio');
+}
 function buildRail(){
+  const ng=esVistaNeg(curView);
+  const swi = can.negocio()
+    ? '<div class="swi"><button class="'+(ng?'':'on')+'" onclick="setProd(\'hc\')">Historia clínica</button>'+
+      '<button class="'+(ng?'on':'')+'" onclick="setProd(\'ng\')">Negocio</button></div>' : '';
+  if(ng){
+    const n=(typeof porRenovar==='function' && NEG_DATA)?porRenovar().length:0;
+    $('rail').innerHTML=
+      '<img class="lockup" src="'+LOGO+'" alt="Revigen · Oncología Integrativa">'+ swi +
+      '<div class="grp">Administración</div><nav>'+
+        railBtn('negocio','Resumen')+railBtn('ingresos','Ingresos',n?'<span class="al">'+n+'</span>':'')+
+        railBtn('gastos','Gastos')+railBtn('pl','P&L')+'</nav>'+
+      railMe();
+    buildBottomNav(); return;
+  }
   const openRow = CUR ? '<div class="grp">Ficha abierta</div><nav><button class="'+(curView==='ficha'?'on':'')+'" onclick="navigate(\'ficha\')">'+IC.ficha+
       '<span class="t">'+esc(CUR.full_name||'Paciente')+'</span></button></nav>' : '';
   let gest='';
@@ -1596,12 +2217,11 @@ function buildRail(){
     gest='<div class="grp">Gestión</div><nav>'+
       (can.manageUsers()?railBtn('equipo','Equipo'):'')+
       (can.director()?railBtn('archivados','Archivados'):'')+
-      (can.catalog()?railBtn('catalogo','Catálogo'):'')+
-      (can.negocio()?railBtn('negocio','Negocio'):'')+'</nav>';
+      (can.catalog()?railBtn('catalogo','Catálogo'):'')+'</nav>';
   }
   $('rail').innerHTML=
-    '<img class="lockup" src="'+LOGO+'" alt="Revigen · Oncología Integrativa">'+
-    '<div class="grp">Centro</div><nav>'+railBtn('inicio','Inicio')+railBtn('pacientes','Pacientes')+railBtn('agenda','Agenda')+'</nav>'+
+    '<img class="lockup" src="'+LOGO+'" alt="Revigen · Oncología Integrativa">'+ swi +
+    '<div class="grp">Centro</div><nav>'+railBtn('inicio','Inicio')+railBtn('pacientes','Pacientes')+railBtn('agenda','Agenda')+railBtn('calidad','Calidad de vida')+'</nav>'+
     openRow+ gest+
     '<div class="me"><span class="av">'+esc(initials(ME.full_name))+'</span>'+
       '<div class="minfo"><div class="mn">'+esc(ME.full_name||ME.email||'')+'</div>'+
@@ -1610,14 +2230,27 @@ function buildRail(){
       '</div></div>';
   buildBottomNav();
 }
+function railMe(){
+  return '<div class="me"><span class="av">'+esc(initials(ME.full_name))+'</span>'+
+    '<div class="minfo"><div class="mn">'+esc(ME.full_name||ME.email||'')+'</div>'+
+    '<div class="mr">'+esc(ROLE_LABEL[ME.role]||ME.role)+'</div>'+
+    '<div class="macts"><button class="linkbtn" onclick="openAccount()">Mi cuenta</button>'+
+    '<button class="linkbtn" onclick="doSignOut()">Salir</button></div></div></div>';
+}
 function bnavBtn(view,label){ return '<button class="'+(curView===view?'on':'')+'" onclick="navigate(\''+view+'\')">'+IC[view]+'<span>'+label+'</span></button>'; }
 function buildBottomNav(){
   const el=$('bottomNav'); if(!el) return;
-  let items=bnavBtn('inicio','Inicio')+bnavBtn('pacientes','Pacientes')+bnavBtn('agenda','Agenda');
-  if(CUR) items+='<button class="'+(curView==='ficha'?'on':'')+'" onclick="navigate(\'ficha\')">'+IC.ficha+'<span>Ficha</span></button>';
-  if(can.manageUsers()) items+=bnavBtn('equipo','Equipo');
-  else if(can.director()) items+=bnavBtn('archivados','Archivados');
-  if(can.negocio()) items+=bnavBtn('negocio','Negocio');
+  let items;
+  if(esVistaNeg(curView)){
+    items=bnavBtn('negocio','Resumen')+bnavBtn('ingresos','Ingresos')+bnavBtn('gastos','Gastos')+
+          bnavBtn('pl','P&L')+bnavBtn('inicio','Clínica');
+  }else{
+    items=bnavBtn('inicio','Inicio')+bnavBtn('pacientes','Pacientes')+bnavBtn('agenda','Agenda');
+    if(CUR) items+='<button class="'+(curView==='ficha'?'on':'')+'" onclick="navigate(\'ficha\')">'+IC.ficha+'<span>Ficha</span></button>';
+    if(can.manageUsers()) items+=bnavBtn('equipo','Equipo');
+    else if(can.director()) items+=bnavBtn('archivados','Archivados');
+    if(can.negocio()) items+=bnavBtn('negocio','Negocio');
+  }
   el.innerHTML=items;
 }
 function updateTop(){
@@ -1636,10 +2269,14 @@ function navigate(view){
   else if(view==='pacientes'){ CUR=null; buildRail(); renderPacientes(); }
   else if(view==='ficha'){ if(CUR) renderFicha(); else renderPacientes(); }
   else if(view==='agenda') renderAgenda();
+  else if(view==='calidad') renderCalidad();
   else if(view==='equipo'){ if(can.manageUsers()) renderEquipo(); else navigate('inicio'); }
   else if(view==='archivados'){ if(can.director()) renderArchivados(); else navigate('inicio'); }
   else if(view==='catalogo'){ if(can.catalog()) renderCatalogo(); else navigate('inicio'); }
   else if(view==='negocio'){ if(can.negocio()) renderNegocio(); else navigate('inicio'); }
+  else if(view==='ingresos'){ if(can.negocio()) renderIngresos(); else navigate('inicio'); }
+  else if(view==='gastos'){ if(can.negocio()) renderGastos(); else navigate('inicio'); }
+  else if(view==='pl'){ if(can.negocio()) renderPL(); else navigate('inicio'); }
   window.scrollTo(0,0);
 }
 
@@ -2357,12 +2994,14 @@ function renderSideA(){
     : '<p class="meta" style="margin:0">Sin comentarios cargados.</p>';
   $('sideA').innerHTML='<div class="sheet">'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Datos críticos</span><span class="meta">De la ficha</span></div><div class="crit-list">'+crit+'</div></div>'+
+    '<div id="sbSaldo"></div>'+
     (CUR.problem_list?'<div class="sec"><div class="sec-h"><span class="sec-t">Problemas activos</span></div><p class="bd-side">'+esc(CUR.problem_list)+'</p></div>':'')+
     (CUR.care_plan?'<div class="sec"><div class="sec-h"><span class="sec-t">Plan vigente</span></div><p class="bd-side">'+esc(CUR.care_plan)+'</p></div>':'')+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Estado funcional</span></div><div class="rows">'+efRows+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Diagnóstico</span></div><div class="rows">'+dxRows+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Comentarios del equipo</span></div>'+com+'</div>'+
     '</div>';
+  saldoFichaCargar();
 }
 function renderSideB(){
   const f=FCAL();
@@ -2388,6 +3027,53 @@ function renderSideB(){
     '<div class="sec"><div class="sec-h"><span class="sec-t">Quiénes la atienden</span></div><div class="people">'+ppl+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Consentimientos</span></div><div class="rows">'+consRow('vitamina_c','Megadosis de Vit. C')+(f.consBy.sueroterapia?consRow('sueroterapia','Sueroterapia'):'')+consRow('hc_compartida','Historia clínica compartida')+'</div></div>'+
     logHtml+'</div>';
+}
+
+/* ---------- programa y saldo de sesiones (lo ve todo el equipo, sin plata) ---------- */
+let SALDO_F=null;
+async function saldoFichaCargar(){
+  const host=$('sbSaldo'); if(!host||!CUR) return;
+  const pid=CUR.id;
+  try{
+    const {data,error}=await DB().from('v_programas').select('*').eq('patient_id',pid);
+    if(error) throw error;
+    const hoy=todayLocal();
+    const ps=(data||[]).filter(x=>String(x.covers_from||'').slice(0,10)<=hoy)
+      .sort((a,b)=>String(b.covers_from).localeCompare(String(a.covers_from)));
+    if(!ps.length){ host.innerHTML=''; SALDO_F=null; return; }
+    const pg=ps[0], desde=String(pg.covers_from).slice(0,10), hasta=masUnMes(desde);
+    const [VC,NT]=await Promise.all([
+      DB().from('vitc_administrations').select('administered_at').eq('patient_id',pid).is('deleted_at',null),
+      DB().from('notes').select('discipline,created_at').eq('patient_id',pid).is('deleted_at',null)
+    ]);
+    const usado={}; MOD_K.forEach(k=>usado[k]=0);
+    (VC.data||[]).forEach(v=>{ const f=String(v.administered_at).slice(0,10);
+      if(f>=desde&&f<=hasta) usado.suero++; });
+    (NT.data||[]).forEach(n=>{ const f=String(n.created_at).slice(0,10);
+      if(f<desde||f>hasta) return;
+      const m=MODS.find(x=>x.disc===n.discipline); if(m) usado[m.k]++; });
+    const inc={}; MOD_K.forEach(k=>inc[k]=Number((pg.included||{})[k])||0);
+    SALDO_F={pg,desde,hasta,inc,usado,dias:diasHasta(hasta)};
+    saldoFichaPintar();
+  }catch(e){ host.innerHTML=''; SALDO_F=null; }
+}
+function saldoFichaPintar(){
+  const host=$('sbSaldo'), s=SALDO_F;
+  if(!host||!s) return;
+  const filas=MODS.filter(m=>s.inc[m.k]).map(m=>{
+    const i=s.inc[m.k], u=Math.min(s.usado[m.k],i), q=i-u;
+    return '<div class="s-r"><span class="s-n">'+esc(m.n)+'</span>'+
+      '<span class="s-b"><i style="width:'+Math.round(u/i*100)+'%;background:'+m.col+'"></i></span>'+
+      '<span class="s-q'+(q?'':' zero')+'">'+(q? '<b>'+q+'</b> de '+i : 'sin saldo')+'</span></div>';
+  }).join('');
+  const aviso = s.dias<=7
+    ? '<div class="band" style="margin:0 0 12px">'+(s.dias<0
+        ? '<b>El programa venció el '+fmt(s.hasta)+'.</b> Hace '+(-s.dias)+' día'+(s.dias===-1?'':'s')+' que no se renueva.'
+        : '<b>Renueva el '+fmt(s.hasta)+'.</b> Quedan '+s.dias+' día'+(s.dias===1?'':'s')+'.')+'</div>'
+    : '';
+  host.innerHTML='<div class="sec"><div class="sec-h"><span class="sec-t">Programa y saldo</span>'+
+    '<span class="meta">desde el '+fmtDMShort(s.desde)+'</span></div>'+
+    aviso+'<div class="saldo">'+(filas||'<span class="meta">El programa no tiene prestaciones cargadas.</span>')+'</div></div>';
 }
 function setTab(t){
   if(t==='audit'&&!can.director()) t='resumen';
@@ -2496,13 +3182,28 @@ function renderResumen(){
       '<span class="meta">'+esc((DIR[n0.author_id]||{}).full_name||'Profesional')+' · '+esc(DISC_LABEL[n0.discipline]||n0.discipline)+(n0.is_confidential?' · confidencial':'')+' · firmada el '+fmtDMShort(n0.created_at)+'</span></div></div></section>'
     : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Última evolución</span></div><p class="meta" style="margin:0">Todavía no hay evoluciones cargadas.</p></div></section>';
 
+  // calidad de vida del paciente, si ya tiene tomas
+  const qt=((f.qlq||{}).tomas||[]).slice().sort((a,b)=>toDate(a.administered_at)-toDate(b.administered_at));
+  const calBlock = qt.length ? (function(){
+    const serie=calSerie(qt,'QL2');
+    const est=calEstado(qt);
+    return '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Calidad de vida</span>'+
+      '<span class="meta">'+qt.length+' toma'+(qt.length===1?'':'s')+' · última hace '+est.dias+' día'+(est.dias===1?'':'s')+'</span></div>'+
+      '<div class="calrow"><div class="calnow"><div class="n">'+(est.ultG!=null?est.ultG:'—')+'</div>'+
+        '<div class="k">global sobre 100</div><div class="d">'+calDelta(est.delta,true)+'</div></div>'+
+        '<div class="calsp">'+calChart(serie,true,'Calidad de vida')+'</div></div>'+
+      (est.peor.length?'<p class="meta" style="margin:10px 0 0;color:var(--alert)">Empeoró: '+
+        esc(est.peor.slice(0,3).map(c=>c.nom.toLowerCase()+' '+(c.d>0?'+':'')+c.d).join(' · '))+'</p>':'')+
+      '</div></section>';
+  })() : '';
+
   host.innerHTML=
     '<section class="card"><div class="sec" style="padding-bottom:0"><div class="sec-h" style="margin-bottom:4px"><span class="sec-t">Áreas del plan integrativo</span></div></div>'+
       (function(){const todas=['vitc','nutricion','psicooncologia','ejercicio'];
         const activas=todas.filter(k=>FCAL().areas[k]!=='none'), vacias=todas.filter(k=>FCAL().areas[k]==='none');
         return (activas.length?'<div class="plan">'+activas.map(k=>areaCard(k)).join('')+'</div>':'')+
           (vacias.length?'<div class="sec" style="padding-top:'+(activas.length?'14px':'0')+'"><p class="meta" style="margin:0">Sin registros todavía en: '+vacias.map(k=>AREA_NAME[k]).join(' · ')+'</p></div>':'');})()+'</section>'+
-    vitcBlock + labBlock;
+    calBlock + vitcBlock + labBlock;
 }
 
 
@@ -2787,61 +3488,13 @@ function openFichaMenu(){
   modalOpen('Acciones · '+(CUR.full_name||'paciente'),
     '<div class="menulist">'+
       fila('printPatient()','Exportar HC','Imprimir o guardar la historia como PDF')+
+      fila('calImprimirPaciente()','Informe de calidad de vida','La evolución del cuestionario, para darle al paciente')+
       (can.editPatient()?fila('setTab(\'hc\');setTimeout(corregirDatos,120)','Editar ficha','Diagnóstico, antecedentes, cobertura, G6PD…'):'')+
-      (can.negocio()?fila('openPagoModal()','Registrar un pago','Monto, medio y a qué mes corresponde'):'')+
-      (can.negocio()?fila('openPlanModal()','Plan y forma de cobro','Lo que se espera cobrar por mes'):'')+
+      (can.negocio()?fila('navigate(\'ingresos\')','Registrar un pago','Se carga desde Negocio › Ingresos'):'')+
       (can.director()?fila('archivePatient()','Archivar paciente','Sale del listado activo. Se puede recuperar desde Archivados.',true):'')+
     '</div>','Cerrar', async()=>true);
   // es un menú: alcanza con un botón para salir
   $('mFoot').innerHTML='<button class="btn" onclick="modalClose()" style="margin-left:auto">Cerrar</button>';
-}
-async function openPlanModal(){
-  if(!CUR || !can.negocio()) return;
-  const {data}=await DB().from('patient_plans').select('*').eq('patient_id',CUR.id).order('starts_on',{ascending:false}).limit(1);
-  const a=(data||[])[0]||{kind:'meg4', cobro:'facturado', discount_pct:0, starts_on:todayLocal()};
-  const op=(v,l)=>'<option value="'+v+'"'+(a.kind===v?' selected':'')+'>'+l+'</option>';
-  modalOpen('Plan de '+(CUR.full_name||'el paciente'),
-    '<div class="field"><label>Plan</label><select id="plKind" onchange="planPreset()">'+
-      op('meg8','Megadosis · 8 por mes (USD 1.000)')+op('meg4','Megadosis · 4 por mes (USD 550)')+
-      op('nut2','Nutrición · 2 por mes ($ 160.000)')+op('suelto','Consultas sueltas')+'</select></div>'+
-    '<div class="grid g2">'+
-      '<div class="field"><label>Precio en USD</label><input id="plUsd" inputmode="decimal" value="'+(a.price_usd!=null?a.price_usd:'')+'" placeholder="dejalo vacío si es en pesos"></div>'+
-      '<div class="field"><label>Precio en pesos</label><input id="plArs" inputmode="decimal" value="'+(a.price_ars!=null?a.price_ars:'')+'" placeholder="solo si no es en USD"></div>'+
-    '</div>'+
-    '<div class="grid g2">'+
-      '<div class="field"><label>Forma de cobro</label><select id="plCobro" onchange="planCobro()">'+
-        '<option value="facturado"'+(a.cobro!=='efectivo'?' selected':'')+'>Facturado</option>'+
-        '<option value="efectivo"'+(a.cobro==='efectivo'?' selected':'')+'>Efectivo</option></select></div>'+
-      '<div class="field"><label>Descuento (%)</label><input id="plDesc" inputmode="decimal" value="'+(a.discount_pct||0)+'"></div>'+
-    '</div>'+
-    '<div class="grid g2">'+
-      '<div class="field"><label>Sesiones incluidas por mes</label><input id="plInc" inputmode="numeric" value="'+(a.sessions_included!=null?a.sessions_included:'')+'" placeholder="según el plan"></div>'+
-      '<div class="field"><label>Desde</label><input id="plDesde" type="date" value="'+(a.starts_on||todayLocal())+'"></div>'+
-    '</div>'+
-    '<p class="meta" style="margin:0;line-height:1.6">En efectivo se aplica el 10 % de descuento y no se descuentan impuestos. '+
-    'Si cambiás el plan, se guarda uno nuevo desde la fecha que pongas: los meses anteriores quedan con el plan que tenían.</p>',
-    'Guardar', guardarPlan);
-}
-function planPreset(){
-  const k=$('plKind').value, t=PLAN_TIPOS[k]||{};
-  $('plUsd').value = t.usd!=null ? t.usd : '';
-  $('plArs').value = t.ars!=null ? t.ars : '';
-  $('plInc').value = t.inc||0;
-}
-function planCobro(){ if($('plCobro').value==='efectivo' && !Number($('plDesc').value)) $('plDesc').value=10; }
-async function guardarPlan(){
-  const kind=$('plKind').value;
-  const usd=$('plUsd').value.trim(), ars=$('plArs').value.trim();
-  if(kind!=='suelto' && !usd && !ars){ toast('Poné el precio en USD o en pesos'); return false; }
-  const {error}=await DB().from('patient_plans').insert({
-    patient_id:CUR.id, kind:kind, label:(PLAN_TIPOS[kind]||{}).n||null,
-    sessions_included:Number($('plInc').value)||0,
-    price_usd: usd? Number(usd.replace(',','.')) : null,
-    price_ars: ars? Number(ars.replace(/\./g,'').replace(',','.')) : null,
-    cobro:$('plCobro').value, discount_pct:Number($('plDesc').value)||0,
-    starts_on:$('plDesde').value||todayLocal(), created_by:ME.user_id});
-  if(error){ toast(error.message); return false; }
-  toast('Plan guardado'); return true;
 }
 function openG6pdModal(){
   if(!CUR) return;
