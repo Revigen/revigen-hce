@@ -417,6 +417,8 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;co
 @media(max-width:600px){.grid.g2,.grid.g3{grid-template-columns:1fr}}
 .btn[disabled]{opacity:.42;cursor:not-allowed}
 .btn.dg{border-color:rgba(212,112,94,.4);color:var(--crit)}
+.btn.dg-solid{background:var(--crit);border-color:var(--crit);color:#fff}
+.btn.dg-solid:hover{background:#B5231F;border-color:#B5231F;color:#fff;box-shadow:0 4px 14px rgba(220,38,38,.26)}
 .btn.dg:hover{border-color:var(--crit);background:rgba(212,112,94,.08);color:var(--crit)}
 .g6pd{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;font-family:var(--f-ui);font-size:12.5px;border:1px solid var(--line);color:var(--ink-2)}
 .g6pd.normal{border-color:rgba(222,242,196,.32);background:rgba(222,242,196,.07);color:var(--vital)}
@@ -477,6 +479,13 @@ code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;co
   --line:#E2E7DD; --div:#ECEFE8;
   --ink:#1B241F; --ink-2:#36423A; --muted:#566055; --faint:#667066;
   --vital:#3C6B3A; --sage:#5E7256; --alert:#B45309; --crit:#DC2626;
+  /* --- sistema de movimiento: cuatro duraciones, dos curvas --- */
+  --t-micro:120ms;   /* hover, presión, color */
+  --t-enter:180ms;   /* modal, toast, menú */
+  --t-layout:240ms;  /* plegables, pestañas, filtros */
+  --t-num:420ms;     /* números de los KPI, una sola vez al cargar */
+  --e-out:cubic-bezier(.2,.8,.2,1);
+  --e-in:cubic-bezier(.4,0,1,1);
 }
 body{background:var(--void);color:var(--ink)}
 .btn.primary{background:var(--vital);color:#fff;border-color:var(--vital)}
@@ -783,7 +792,7 @@ img,svg,video,canvas{max-width:100%}
 .cumple{display:flex;gap:10px;align-items:flex-start;background:#FBF1E1;border:1px solid #EBD6B6;border-radius:12px;padding:11px 14px;margin-bottom:16px;font-size:13.5px;color:#8A5212}
 .cumple .ic{font-size:16px;line-height:1.2}
 .cumple button{background:none;border:0;padding:0;font:inherit;font-weight:600;color:#8A5212;text-decoration:underline;cursor:pointer}
-.cumple i{font-style:normal;color:#9A6B33}
+.cumple i{font-style:normal;color:#7B5520}
 .cumple .sep{margin:0 8px;opacity:.5}
 
 /* pantalla de carga: se ve mientras averiguamos si la sesión sigue abierta */
@@ -997,6 +1006,229 @@ img,svg,video,canvas{max-width:100%}
   .band .list span{flex:1 1 100%}
 }
 
+
+/* ==================================================================
+   UX 2026-11 · movimiento, tablas, ergonomía, esqueletos
+   ================================================================== */
+
+/* ---------- 1. movimiento ---------- */
+.btn{transition:background var(--t-micro) var(--e-out),border-color var(--t-micro) var(--e-out),
+     color var(--t-micro) var(--e-out),box-shadow var(--t-micro) var(--e-out),transform var(--t-micro) var(--e-out)}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0) scale(.985)}
+.btn.primary:hover{box-shadow:0 4px 14px rgba(60,107,58,.26)}
+.card,.pcard{transition:box-shadow var(--t-micro) var(--e-out)}
+.tabs button{transition:color var(--t-micro) var(--e-out),border-color var(--t-layout) var(--e-out)}
+.filters button,.vi-chips button,.tl-chips button{transition:background var(--t-micro) var(--e-out),
+     border-color var(--t-micro) var(--e-out),color var(--t-micro) var(--e-out)}
+.rail nav button,#bottomNav button{transition:background var(--t-micro) var(--e-out),color var(--t-micro) var(--e-out)}
+.tbl tbody tr{transition:background var(--t-micro) var(--e-out)}
+.modal{animation:ux-sheet var(--t-enter) var(--e-out) both}
+@keyframes ux-sheet{from{opacity:0;transform:scale(.97) translateY(10px)}to{opacity:1;transform:none}}
+.ask-card{animation:ux-up var(--t-enter) var(--e-out) both}
+@keyframes ux-up{from{transform:translateY(22px);opacity:0}to{transform:none;opacity:1}}
+.ux-in{animation:ux-fade 300ms var(--e-out) both}
+@keyframes ux-fade{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* ---------- 2. tablas: sombras de scroll + primera columna fija ---------- */
+.scroll{
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  background:
+    linear-gradient(to right,var(--panel) 42%,rgba(255,255,255,0)) left center,
+    linear-gradient(to left,var(--panel) 42%,rgba(255,255,255,0)) right center,
+    radial-gradient(farthest-side at 0 50%,rgba(27,36,31,.22),rgba(27,36,31,0)) left center,
+    radial-gradient(farthest-side at 100% 50%,rgba(27,36,31,.22),rgba(27,36,31,0)) right center;
+  background-repeat:no-repeat;
+  background-size:56px 100%,56px 100%,22px 100%,22px 100%;
+  background-attachment:local,local,scroll,scroll;
+}
+.scroll>table.tbl>thead>tr>th:first-child,
+.scroll>table.tbl>tbody>tr>td:first-child,
+.scroll>table.tbl>tfoot>tr>td:first-child{position:sticky;left:0;z-index:1;background:var(--panel)}
+.scroll>table.tbl>thead>tr>th:first-child{z-index:2}
+.scroll>table.tbl>tbody>tr:hover>td:first-child{background:var(--panel-2);box-shadow:inset 3px 0 0 var(--vital)}
+
+.scroll-w{position:relative}
+.scroll-w>.ux-arr{position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:4;
+  width:32px;height:32px;border-radius:50%;background:var(--panel);border:1px solid var(--line);
+  box-shadow:0 3px 12px rgba(27,36,31,.16);display:grid;place-items:center;padding:0;
+  color:var(--muted);font-size:15px;line-height:1;cursor:pointer;
+  transition:opacity var(--t-layout) var(--e-out),transform var(--t-micro) var(--e-out),
+             background var(--t-micro) var(--e-out)}
+.scroll-w>.ux-arr:hover{background:var(--panel-2);transform:translateY(-50%) scale(1.08)}
+.scroll-w.ux-end>.ux-arr{opacity:0;pointer-events:none}
+@media (max-width:640px){ .scroll-w>.ux-arr{display:none} }
+
+/* ---------- 3. tablas como tarjetas en el teléfono ---------- */
+@media (max-width:640px){
+  .scroll:has(> table.cardify){background:none;overflow-x:visible}
+  table.cardify{display:block;min-width:0!important;width:100%}
+  table.cardify>thead{display:none}
+  table.cardify>tbody,table.cardify>tfoot{display:block}
+  table.cardify>tbody>tr,table.cardify>tfoot>tr{display:block;border:1px solid var(--line);border-radius:12px;
+    background:var(--panel);padding:11px 13px;margin-bottom:9px}
+  table.cardify>tbody>tr:hover{background:var(--panel)}
+  table.cardify>tbody>tr>td,table.cardify>tfoot>tr>td{display:flex;align-items:baseline;justify-content:space-between;
+    gap:14px;padding:5px 0;border:0!important;white-space:normal;text-align:right;box-shadow:none!important;position:static!important}
+  table.cardify>tbody>tr>td::before,table.cardify>tfoot>tr>td::before{
+    content:attr(data-l);font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--faint);text-align:left;flex:none;max-width:46%}
+  table.cardify>tbody>tr>td.ux-t,table.cardify>tfoot>tr>td.ux-t{display:block;text-align:left;font-size:15.5px;
+    color:var(--ink);padding:0 0 9px;margin-bottom:5px;border-bottom:1px solid var(--div)!important}
+  table.cardify>tbody>tr>td.ux-t::before{display:none}
+  table.cardify>tbody>tr>td.ux-hide{display:none}
+  table.cardify tr.ux-tot{display:flex;align-items:center;justify-content:space-between;gap:14px;
+    background:var(--panel-2);border-color:var(--line)}
+  table.cardify tr.ux-tot>td{display:block;padding:0;text-align:right;border:0!important}
+  table.cardify tr.ux-tot>td:first-child{text-align:left;font-size:13px;color:var(--muted);
+    border-bottom:0!important;margin:0;padding:0;text-transform:uppercase;letter-spacing:.07em;font-family:var(--f-ui)}
+  table.cardify tr.ux-tot>td::before{display:none}
+  table.cardify .who{gap:9px}
+  table.cardify td .btn{margin:3px 3px 0 0}
+}
+
+/* ---------- 4. ergonomía: 44 px en el teléfono ---------- */
+@media (max-width:760px){
+  .btn{min-height:44px}
+  .btn.sm{min-height:40px;padding:0 13px;display:inline-flex;align-items:center}
+  .filters button{min-height:44px;padding:0 15px;display:inline-flex;align-items:center}
+  .tag-btn{min-height:44px;padding:0 14px;display:inline-flex;align-items:center}
+  .vi-chips button,.tl-chips button,.ngpre button,.dstrip button{min-height:44px}
+  .swi button{min-height:44px}
+  .linkbtn,.hhint,.cumple button{position:relative}
+  .linkbtn::after,.hhint::after,.cumple button::after{content:'';position:absolute;left:50%;top:50%;
+    transform:translate(-50%,-50%);width:max(100%,44px);height:44px}
+  .tabs button{padding-top:15px;padding-bottom:15px}
+}
+
+/* ---------- 5. esqueletos de carga ---------- */
+@keyframes ux-shim{to{background-position:200% 0}}
+.sk{background:linear-gradient(90deg,var(--panel-2) 25%,var(--raise) 50%,var(--panel-2) 75%);
+  background-size:200% 100%;animation:ux-shim 1.25s linear infinite;border-radius:7px;height:13px}
+.sk-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:22px}
+.sk-kpis>div{padding:20px 22px}
+.sk-kpis>div+div{border-left:1px solid var(--div)}
+.sk-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;margin-bottom:20px}
+.sk-row{display:flex;align-items:center;gap:14px;padding:13px 0}
+.sk-row+.sk-row{border-top:1px solid var(--div)}
+@media (max-width:1040px){ .sk-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+
+/* ---------- 6. estados vacíos con salida ---------- */
+.vac{text-align:center;padding:28px 18px}
+.vac .ic{width:42px;height:42px;border-radius:13px;background:var(--panel-2);display:grid;place-items:center;
+  margin:0 auto 11px;font-size:19px;line-height:1}
+.vac .t{font-size:15px;color:var(--ink);margin-bottom:3px}
+.vac .s{font-family:var(--f-ui);font-size:13px;color:var(--muted);line-height:1.55;max-width:46ch;margin:0 auto 13px}
+.vac .btn{margin:0 4px}
+.vac.sm{padding:16px 10px} .vac.sm .ic{width:34px;height:34px;font-size:16px;margin-bottom:8px}
+.vac.sm .t{font-size:14px} .vac.sm .s{font-size:12.5px;margin-bottom:10px}
+
+/* ---------- 7. paneles plegables (teléfono) ---------- */
+.coll-b{display:grid;grid-template-rows:0fr;transition:grid-template-rows var(--t-layout) var(--e-out)}
+.sec.coll.open>.coll-b{grid-template-rows:1fr}
+.coll-i{overflow:hidden;min-height:0}
+.sec.coll>.sec-h{cursor:pointer;user-select:none;min-height:48px;align-items:center}
+.sec.coll>.sec-h .cv{width:15px;height:15px;stroke:var(--faint);fill:none;stroke-width:2;flex:none;margin-left:8px;
+  transition:transform var(--t-layout) var(--e-out)}
+.sec.coll.open>.sec-h .cv{transform:rotate(90deg)}
+.sec.coll:not(.open)>.coll-b .coll-i{padding-bottom:0}
+
+/* ---------- 8. encabezado pegajoso de la ficha (teléfono) ---------- */
+.pmini{display:none}
+.crit-m{display:none}
+@media (max-width:1040px){
+  .pmini{display:block;position:sticky;top:var(--topH,110px);z-index:25;background:rgba(255,255,255,.96);
+    -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--line);border-top:0;
+    padding:9px 14px;border-radius:0 0 13px 13px;box-shadow:0 6px 16px rgba(27,36,31,.10);
+    transform:translateY(-110%);opacity:0;pointer-events:none;max-height:0;overflow:hidden;
+    transition:transform var(--t-layout) var(--e-out),opacity var(--t-layout) var(--e-out)}
+  .pmini.on{transform:none;opacity:1;pointer-events:auto;max-height:120px}
+  .pmini .nm{font-size:15px;color:var(--ink);font-weight:500;display:flex;align-items:baseline;gap:8px}
+  .pmini .nm i{font-style:normal;font-family:var(--f-ui);font-size:12px;color:var(--faint)}
+  .pmini .cs{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+  .pmini{padding:8px 14px}
+  .pmini .mt{font-family:var(--f-ui);font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;
+    background:var(--panel-2);color:var(--muted)}
+  .pmini .mt.crit{background:#FDECEA;color:#A93226}
+  .pmini .mt.warn{background:#FDF2E2;color:#8A5212}
+  .fab{transition:transform var(--t-layout) var(--e-out),opacity var(--t-layout) var(--e-out)}
+  .fab.ux-off{transform:translateY(110px);opacity:0;pointer-events:none}
+  .crit-m{display:block;order:0;margin-bottom:14px;background:#FDF6F4;border:1px solid #F0DBD6;border-radius:12px;padding:12px 14px}
+  .crit-m .h{font-family:var(--f-ui);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:#A93226;margin-bottom:7px}
+  .crit-m .r{display:flex;justify-content:space-between;gap:14px;padding:5px 0;font-family:var(--f-ui);font-size:13px;color:var(--muted)}
+  .crit-m .r+.r{border-top:1px solid #F3E3DF}
+  .crit-m .r b{color:var(--ink);font-weight:600;text-align:right}
+  .crit-m .r b.al{color:var(--alert)}
+}
+
+/* ---------- 9. agenda ---------- */
+.dstrip{display:flex;gap:7px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:none;-ms-overflow-style:none}
+.dstrip::-webkit-scrollbar{display:none}
+.dstrip button{flex:none;width:58px;min-height:62px;padding:8px 0;border:1px solid var(--line);border-radius:12px;
+  background:var(--panel);text-align:center;color:var(--ink-2);
+  transition:transform var(--t-micro) var(--e-out),border-color var(--t-micro) var(--e-out),
+             background var(--t-micro) var(--e-out),color var(--t-micro) var(--e-out)}
+.dstrip button:hover{transform:translateY(-2px);border-color:var(--sage)}
+.dstrip button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.dstrip .dw{font-family:var(--f-ui);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.dstrip button.on .dw{color:#B6C3B4}
+.dstrip .dd{font-size:18px;letter-spacing:-.02em}
+.dstrip .dn{width:5px;height:5px;border-radius:50%;background:var(--sage);margin:4px auto 0}
+.dstrip button.on .dn{background:var(--vital);filter:brightness(1.8)}
+.dstrip .dz{height:9px}
+.ag-day{position:sticky;top:0;z-index:5;background:rgba(255,255,255,.95);-webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);font-family:var(--f-ui);font-size:11px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint);padding:10px 16px;border-bottom:1px solid var(--line)}
+.ag-s{display:flex;gap:14px;padding:13px 16px;align-items:flex-start;border-bottom:1px solid var(--div)}
+.ag-s:last-child{border-bottom:0}
+.ag-s .hh{font-size:14.5px;color:var(--ink-2);width:74px;flex:none;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ag-s .nm .linkbtn{font-size:15px;color:var(--ink);font-weight:500;text-decoration:none}
+.ag-s .nm .linkbtn:hover{text-decoration:underline}
+.ag-s .bar{width:3px;align-self:stretch;border-radius:2px;flex:none;background:var(--sage)}
+.ag-s .b{flex:1;min-width:0}
+.ag-s .nm{font-size:15px;color:var(--ink)}
+.ag-s .ds{font-family:var(--f-ui);font-size:12.5px;color:var(--muted);margin-top:2px}
+.ag-s .ac{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.ag-s.off{opacity:.55}
+@media (max-width:600px){ .ag-s{gap:10px;padding:13px 13px} .ag-s .hh{width:68px;font-size:13.5px} }
+
+/* ---------- 10. gráfico de negocio ---------- */
+.ngch{display:flex;align-items:flex-end;gap:16px;height:150px;padding:4px 2px 0;max-width:760px}
+.ngch .g{flex:1 1 0;max-width:108px;display:flex;gap:5px;align-items:flex-end;height:100%;min-width:0}
+.ngch .b{flex:1;border-radius:5px 5px 0 0;height:0;min-height:2px;
+  transition:height 620ms var(--e-out)}
+.ngch .b.c{background:var(--vital)} .ngch .b.g{background:#D9A441}
+.ngx{display:flex;gap:16px;margin-top:8px;max-width:760px}
+.ngx span{flex:1 1 0;max-width:108px;text-align:center;font-family:var(--f-ui);font-size:11.5px;color:var(--faint);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nglg{display:flex;gap:16px;font-family:var(--f-ui);font-size:12.5px;color:var(--muted);margin-bottom:12px}
+.nglg i{width:9px;height:9px;border-radius:3px;display:inline-block;margin-right:6px}
+.ngpre{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.ngpre button{min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);
+  color:var(--muted);font-family:var(--f-ui);font-size:13px;
+  transition:background var(--t-micro) var(--e-out),border-color var(--t-micro) var(--e-out),color var(--t-micro) var(--e-out)}
+.ngpre button:hover{border-color:var(--sage);color:var(--ink-2)}
+.ngpre button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+@media (max-width:760px){ .ngpre button{min-height:44px} .dstrip button{min-height:66px} }
+
+/* ---------- 11. toast con deshacer ---------- */
+.toast{transition:opacity var(--t-enter) var(--e-out),transform var(--t-enter) var(--e-out)}
+.toast{transform:translate(-50%,16px)}
+.toast.show{transform:translate(-50%,0)}
+.toast.undo{display:flex;align-items:center;gap:16px;pointer-events:auto;padding-bottom:13px;overflow:hidden}
+.toast.undo button{background:none;border:0;padding:4px 2px;font:inherit;font-family:var(--f-ui);font-size:13.5px;
+  font-weight:600;color:var(--vital);cursor:pointer;white-space:nowrap;min-height:36px}
+.toast .pg{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--vital);transform-origin:left}
+.toast .pg.run{animation:ux-drain 6s linear forwards}
+@keyframes ux-drain{to{transform:scaleX(0)}}
+
+/* ---------- 12. inicio: una sola columna cuando no hay agenda ---------- */
+.home.solo{grid-template-columns:minmax(0,1fr)}
+.home.solo .stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+@media (max-width:860px){ .home.solo .stack{grid-template-columns:minmax(0,1fr)} }
+.kpis .n{font-variant-numeric:tabular-nums}
 </style>
 <body>
 
@@ -1043,7 +1275,7 @@ document.getElementById('bootLogo').src = LOGO;
     <div class="top">
       <div class="find">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" placeholder="Buscar paciente, documento o N° de historia" autocomplete="off">
+        <input id="q" placeholder="Buscar paciente, documento o N° de historia" aria-label="Buscar paciente, documento o número de historia" autocomplete="off">
       </div>
       <div class="right">
         <span class="meta" id="topDate"></span>
@@ -1127,6 +1359,173 @@ function num(v){return v===''||v==null?null:Number(v);}
 function initials(name){const p=(name||'').trim().split(/\s+/).filter(Boolean);if(!p.length)return '··';return ((p[0][0]||'')+(p.length>1?p[p.length-1][0]:'')).toUpperCase();}
 function esES(n){return (n||0).toLocaleString('es-AR');}
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2600);}
+
+/* ==================================================================
+   UX · helpers de movimiento, tablas, vacíos, confirmación y carga
+   ================================================================== */
+const UX_RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* --- toast con «Deshacer» (6 s) para acciones recuperables --- */
+let UX_UNDO=null;
+function toastUndo(msg, deshacer){
+  const t=$('toast'); if(!t) return;
+  clearTimeout(t._t); UX_UNDO=deshacer;
+  t.classList.add('undo');
+  t.innerHTML='<span>'+esc(msg)+'</span><button type="button" onclick="uxUndo()">Deshacer</button><span class="pg"></span>';
+  const pg=t.querySelector('.pg'); if(pg && !UX_RM){ pg.classList.remove('run'); void pg.offsetWidth; pg.classList.add('run'); }
+  t.classList.add('show');
+  t._t=setTimeout(()=>uxToastCerrar(),6000);
+}
+function uxToastCerrar(){ const t=$('toast'); if(!t) return; t.classList.remove('show');
+  setTimeout(()=>{ t.classList.remove('undo'); t.innerHTML=''; },250); UX_UNDO=null; }
+async function uxUndo(){ const f=UX_UNDO; UX_UNDO=null; uxToastCerrar(); if(f) try{ await f(); }catch(e){ toast(e.message||'No se pudo deshacer'); } }
+
+/* --- confirmación propia, en vez de confirm() del navegador --- */
+async function confirmar(o){
+  o=o||{};
+  const r=await askChoice({
+    where:o.where, title:o.title||'¿Confirmás?', why:o.why,
+    existing:o.existing, detail:o.detail,
+    primary:o.primary||'Confirmar', secondary:o.secondary||'Volver', danger:o.danger
+  });
+  return r==='primary';
+}
+
+/* --- estados vacíos con la acción que los resuelve --- */
+function vacio(ic,t,sub,btns,cls){
+  return '<div class="vac'+(cls?' '+cls:'')+'"><div class="ic">'+ic+'</div><div class="t">'+t+'</div>'+
+    (sub?'<p class="s">'+sub+'</p>':'')+(btns||'')+'</div>';
+}
+
+/* --- esqueletos de carga con la forma del contenido final --- */
+function skBar(w,h){ return '<div class="sk" style="width:'+w+(h?';height:'+h+'px':'')+'"></div>'; }
+function skRows(n,alto){ let o=''; for(let i=0;i<n;i++) o+='<div class="sk-row">'+
+  (alto?'<div class="sk" style="width:36px;height:36px;border-radius:11px"></div>':'')+
+  '<div style="flex:1">'+skBar('38%')+'<div style="height:7px"></div>'+skBar('22%',9)+'</div>'+skBar('84px')+'</div>'; return o; }
+function skel(kind){
+  const kpis='<div class="sk-kpis">'+[0,1,2,3].map(()=>'<div>'+skBar('56%',11)+'<div style="height:12px"></div>'+
+    skBar('42%',26)+'<div style="height:10px"></div>'+skBar('70%',10)+'</div>').join('')+'</div>';
+  const card=(n,alto)=>'<div class="sk-card">'+skBar('30%',14)+'<div style="height:8px"></div>'+skRows(n,alto)+'</div>';
+  if(kind==='inicio')  return kpis+card(4,false)+card(3,true);
+  if(kind==='lista')   return '<div class="sk-card">'+skBar('26%',14)+'<div style="height:8px"></div>'+skRows(5,true)+'</div>';
+  if(kind==='negocio') return kpis+card(4,false)+card(4,false);
+  if(kind==='ficha')   return '<div class="sk-card">'+skBar('34%',22)+'<div style="height:12px"></div>'+skBar('60%',12)+
+    '<div style="height:18px"></div>'+skRows(3,false)+'</div>'+card(4,false);
+  return card(4,false);
+}
+
+/* --- números de los KPI: cuentan una sola vez al cargar --- */
+function uxNums(root){
+  if(UX_RM||!root) return;
+  root.querySelectorAll('.kpis .n, .sk-no').forEach(el=>{
+    if(el.dataset.uxn) return;
+    const txt=(el.textContent||'').trim();
+    const m=txt.match(/^(-?)([\d.]+)(\s?%?)$/);
+    if(!m) return;
+    const neg=m[1]==='-', fin=parseInt(m[2].replace(/\./g,''),10), suf=m[3]||'';
+    if(!isFinite(fin)||fin===0||fin>100000) return;
+    el.dataset.uxn='1';
+    const t0=performance.now(), dur=420, ease=x=>1-Math.pow(1-x,3);
+    const paso=t=>{ const q=Math.min(1,(t-t0)/dur);
+      el.textContent=(neg?'-':'')+esES(Math.round(ease(q)*fin))+suf;
+      if(q<1) requestAnimationFrame(paso); else el.textContent=txt; };
+    el.textContent=(neg?'-':'')+'0'+suf; requestAnimationFrame(paso);
+  });
+}
+
+/* --- tablas: en el teléfono cada fila se vuelve una tarjeta --- */
+function uxCardify(root){
+  (root||document).querySelectorAll('.scroll > table.tbl').forEach(t=>{
+    const ths=[...t.querySelectorAll(':scope > thead > tr > th')].map(th=>(th.textContent||'').replace(/\s*\?\s*$/,'').trim());
+    if(!ths.length) return;
+    t.classList.add('cardify');
+    t.querySelectorAll(':scope > tbody > tr, :scope > tfoot > tr').forEach(tr=>{
+      const tds=[...tr.children];
+      if(tds.some(td=>td.colSpan>1)){ tr.classList.add('ux-tot'); tds.forEach(td=>td.removeAttribute('data-l')); return; }
+      tds.forEach((td,i)=>{
+        const l=ths[i]||'';
+        if(!td.hasAttribute('data-l')) td.setAttribute('data-l',l);
+        if(i===0) td.classList.add('ux-t');
+        else{
+          const v=(td.textContent||'').trim();
+          td.classList.toggle('ux-hide', (v===''||v==='—') && !td.querySelector('button,a,svg,input'));
+        }
+      });
+    });
+  });
+}
+function uxScrollHint(root){
+  (root||document).querySelectorAll('.scroll').forEach(sc=>{
+    const hay = sc.scrollWidth > sc.clientWidth + 4;
+    let w = sc.parentElement && sc.parentElement.classList.contains('scroll-w') ? sc.parentElement : null;
+    if(!hay){ if(w) w.classList.add('ux-end'); return; }
+    if(!w){
+      w=document.createElement('div'); w.className='scroll-w';
+      sc.parentNode.insertBefore(w,sc); w.appendChild(sc);
+      const a=document.createElement('button');
+      a.type='button'; a.className='ux-arr'; a.innerHTML='&rsaquo;';
+      a.setAttribute('aria-label','Ver las columnas que siguen');
+      a.onclick=()=>sc.scrollBy({left:Math.round(sc.clientWidth*0.75),behavior:'smooth'});
+      w.appendChild(a);
+      sc.addEventListener('scroll',()=>{
+        w.classList.toggle('ux-end', sc.scrollLeft+sc.clientWidth >= sc.scrollWidth-4);
+      },{passive:true});
+    }
+    w.classList.toggle('ux-end', sc.scrollLeft+sc.clientWidth >= sc.scrollWidth-4);
+  });
+}
+let UX_MO=null;
+function uxObservar(){
+  if(UX_MO||!window.MutationObserver) return;
+  let pend=null;
+  UX_MO=new MutationObserver(()=>{ clearTimeout(pend); pend=setTimeout(()=>{
+    try{ uxCardify(document); uxScrollHint(document); }catch(e){} },60); });
+  ['page','mBody','gn'].forEach(id=>{ const el=$(id); if(el) UX_MO.observe(el,{childList:true,subtree:true}); });
+}
+
+/* --- paneles laterales plegables en el teléfono --- */
+function secsPlegables(host, abiertas){
+  if(!host || innerWidth>1040) return;
+  const secs=[...host.querySelectorAll('.sheet > .sec, :scope > .card > .sec, :scope > .sec')];
+  secs.forEach((sec,i)=>{
+    if(sec.dataset.uxc) return;
+    const h=sec.querySelector(':scope > .sec-h'); if(!h) return;
+    sec.dataset.uxc='1'; sec.classList.add('coll');
+    if(i < (abiertas==null?1:abiertas)) sec.classList.add('open');
+    const b=document.createElement('div'); b.className='coll-b';
+    const i2=document.createElement('div'); i2.className='coll-i'; b.appendChild(i2);
+    [...sec.children].forEach(c=>{ if(c!==h) i2.appendChild(c); });
+    sec.appendChild(b);
+    h.setAttribute('role','button'); h.tabIndex=0;
+    h.setAttribute('aria-expanded', sec.classList.contains('open')?'true':'false');
+    h.insertAdjacentHTML('beforeend','<svg class="cv" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>');
+    const tog=()=>{ sec.classList.toggle('open'); h.setAttribute('aria-expanded', sec.classList.contains('open')?'true':'false'); };
+    h.addEventListener('click',tog);
+    h.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tog(); } });
+  });
+}
+
+/* --- ficha en el teléfono: encabezado que se pega y botón que se esconde --- */
+let UX_LASTY=0;
+function uxMedirTop(){
+  const t=document.querySelector('.top');
+  if(t) document.documentElement.style.setProperty('--topH', Math.round(t.getBoundingClientRect().height)+'px');
+}
+addEventListener('resize',()=>{ try{ uxMedirTop(); }catch(e){} });
+function uxFichaScroll(){
+  const mini=$('pmini'), fab=document.querySelector('.fab');
+  const y=window.scrollY||document.documentElement.scrollTop;
+  if(mini){
+    const pc=document.querySelector('.pcard');
+    const lim=pc? pc.offsetTop+pc.offsetHeight-70 : 180;
+    mini.classList.toggle('on', y>lim);
+  }
+  if(fab) fab.classList.toggle('ux-off', y>UX_LASTY+8 && y>160);
+  if(Math.abs(y-UX_LASTY)>8) UX_LASTY=y;
+}
+addEventListener('scroll',()=>{ if(!UX_TICK){ UX_TICK=1; requestAnimationFrame(()=>{ UX_TICK=0; try{uxFichaScroll()}catch(e){} }); } },{passive:true});
+let UX_TICK=0;
+
 
 /* ---------- permisos: iguales a las políticas RLS de la base (si cambia una política, cambiar acá) ---------- */
 const can = {
@@ -1432,9 +1831,27 @@ function negCalcular(){
 }
 
 /* ===================== Negocio · pantallas ===================== */
-function negFiltroFechas(pref,extra){
+const NEG_PRESETS={
+  mes:    {l:'Este mes',       f:()=>{const h=new Date();      return [ymd(new Date(h.getFullYear(),h.getMonth(),1)), ymd(h)];}},
+  mespas: {l:'Mes pasado',     f:()=>{const h=new Date();      return [ymd(new Date(h.getFullYear(),h.getMonth()-1,1)), ymd(new Date(h.getFullYear(),h.getMonth(),0))];}},
+  d90:    {l:'Últimos 90 días',f:()=>{const h=new Date(), a=new Date(); a.setDate(a.getDate()-89); return [ymd(a), ymd(h)];}},
+  anio:   {l:'Este año',       f:()=>{const h=new Date();      return [ymd(new Date(h.getFullYear(),0,1)), ymd(h)];}}
+};
+function negPresetActivo(){
   const r=negRango();
-  return '<div class="filt">'+
+  for(const k in NEG_PRESETS){ const [a,b]=NEG_PRESETS[k].f(); if(a===r.d1&&b===r.d2) return k; }
+  return '';
+}
+function negPreset(k){ const [a,b]=NEG_PRESETS[k].f(); NEG_D1=a; NEG_D2=b;
+  document.querySelectorAll('.filt input[type=date]').forEach((el,i)=>{ el.value=i?b:a; });
+  document.querySelectorAll('.ngpre button[data-k]').forEach(el=>el.classList.toggle('on', el.dataset.k===k));
+  negRepintar(); }
+function negFiltroFechas(pref,extra){
+  const r=negRango(), act=negPresetActivo();
+  return '<div class="ngpre">'+Object.keys(NEG_PRESETS).map(k=>
+      '<button type="button" data-k="'+k+'" class="'+(act===k?'on':'')+'" onclick="negPreset(\''+k+'\')">'+NEG_PRESETS[k].l+'</button>').join('')+
+    '<span class="meta" style="margin-left:4px">o elegí las fechas · hoy '+fmt(ymd(new Date()))+'</span></div>'+
+    '<div class="filt">'+
     '<div class="fg"><label for="'+pref+'D1">Desde</label><input id="'+pref+'D1" type="date" value="'+r.d1+'" onchange="negSetFecha()"></div>'+
     '<div class="fg"><label for="'+pref+'D2">Hasta</label><input id="'+pref+'D2" type="date" value="'+r.d2+'" onchange="negSetFecha()"></div>'+
     (extra||'')+'</div>';
@@ -1442,6 +1859,8 @@ function negFiltroFechas(pref,extra){
 function negSetFecha(){
   const a=document.querySelector('.filt input[type=date]'), b=document.querySelectorAll('.filt input[type=date]')[1];
   if(a&&a.value) NEG_D1=a.value; if(b&&b.value) NEG_D2=b.value;
+  const act=negPresetActivo();
+  document.querySelectorAll('.ngpre button[data-k]').forEach(el=>el.classList.toggle('on', el.dataset.k===act));
   negRepintar();
 }
 function negRepintar(){
@@ -1461,7 +1880,7 @@ function negBanda(destacada){
 /* ---------- Resumen ---------- */
 async function renderNegocio(){
   const p=$('page');
-  p.innerHTML='<div class="loading">Calculando…</div>';
+  p.innerHTML=skel('negocio');
   try{ await negCargar(); }
   catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
   if(curView!=='negocio') return;
@@ -1477,6 +1896,11 @@ async function renderNegocio(){
        '<th class="n">Saldo</th><th class="n">Renueva</th><th class="n">Cobrado</th>'+
        '<th class="n">Margen</th><th class="n">%</th></tr></thead>'+
        '<tbody id="negRp"></tbody><tfoot id="negRpF"></tfoot></table></div>'+
+   '</div></section>'+
+   '<section class="card"><div class="sec">'+
+     '<div class="sec-h"><span class="sec-t">Cobrado y gastos, mes a mes</span><span class="meta" id="ngchSub"></span></div>'+
+     '<div class="nglg"><span><i style="background:var(--vital)"></i>Cobrado</span><span><i style="background:#D9A441"></i>Gastos</span></div>'+
+     '<div class="ngch" id="ngch"></div><div class="ngx" id="ngx"></div>'+
    '</div></section>'+
    '<div class="neg-cols">'+
      '<section class="card"><div class="sec">'+
@@ -1552,7 +1976,47 @@ function negPintarResumen(){
   $('negAv').innerHTML = av.length
     ? av.map(a=>'<div class="negav"><span class="d"></span><div>'+a+'</div></div>').join('')
     : '<p class="meta" style="margin:0">Nada que requiera una decisión en este período.</p>';
+  negGrafico();
   negSupuestos();
+  uxNums($('negKpis')); uxCardify($('page'));
+}
+
+/* ---- barra mensual: lo cobrado contra lo gastado, en dólares ---- */
+function negGrafico(){
+  const host=$('ngch'); if(!host||!NEG_DATA) return;
+  const {d1,d2}=negRango();
+  const mes=iso=>String(iso).slice(0,7);
+  const usdDe=(u,a,tc)=>(Number(u)||0)||((Number(a)||0)/(Number(tc)||SUP.tc||1));
+  const M={};
+  const tocar=k=>M[k]||(M[k]={c:0,g:0});
+  (NEG_DATA.pagos||[]).forEach(x=>{ const f=String(x.paid_on).slice(0,10); if(f<d1||f>d2) return;
+    tocar(mes(f)).c += usdDe(x.amount_usd,x.amount_ars,x.tc); });
+  (NEG_DATA.gastos||[]).forEach(x=>{ const f=String(x.spent_on).slice(0,10); if(f<d1||f>d2) return;
+    tocar(mes(f)).g += usdDe(x.amount_usd,x.amount_ars,x.tc); });
+  const ks=Object.keys(M).sort().slice(-12);
+  const sub=$('ngchSub');
+  if(!ks.length){
+    host.innerHTML=''; $('ngx').innerHTML='';
+    host.parentElement.querySelector('.nglg').style.display='none';
+    host.innerHTML=vacio('📊','Sin movimientos en este período','Elegí un rango con pagos o gastos cargados y el gráfico aparece acá.','',' sm');
+    if(sub) sub.textContent='';
+    return;
+  }
+  host.parentElement.querySelector('.nglg').style.display='';
+  const max=Math.max(1,...ks.map(k=>Math.max(M[k].c,M[k].g)));
+  if(sub) sub.textContent='en dólares · '+ks.length+' mes'+(ks.length===1?'':'es');
+  host.innerHTML=ks.map(k=>'<div class="g" title="'+k+'"><div class="b c"></div><div class="b g"></div></div>').join('');
+  $('ngx').innerHTML=ks.map(k=>{
+    const d=new Date(k+'-15T12:00:00');
+    return '<span>'+d.toLocaleDateString('es-AR',{month:'short'}).replace('.','')+(ks.length>6?'':' '+String(d.getFullYear()).slice(2))+'</span>';
+  }).join('');
+  const pintar=()=>[...host.children].forEach((g,i)=>{
+    const d=M[ks[i]];
+    g.children[0].style.transitionDelay=(i*45)+'ms'; g.children[1].style.transitionDelay=(i*45+35)+'ms';
+    g.children[0].style.height=(d.c/max*100)+'%'; g.children[1].style.height=(d.g/max*100)+'%';
+    g.title=ks[i]+' · cobrado '+negUSD(d.c)+' · gastos '+negUSD(d.g);
+  });
+  if(UX_RM) pintar(); else requestAnimationFrame(pintar);
 }
 function negKpi(l,n,d,c){
   return '<div class="'+(c==='hero'?'kpi-hero':'')+'"><div class="label">'+l+'</div><div class="n">'+n+'</div><div class="sub">'+d+'</div></div>';
@@ -1694,7 +2158,7 @@ async function pgGuardar(otro){
 
 async function renderIngresos(){
   const p=$('page');
-  p.innerHTML='<div class="loading">Cargando…</div>';
+  p.innerHTML=skel('negocio');
   try{ await negCargar(); }
   catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
   if(curView!=='ingresos') return;
@@ -1739,6 +2203,7 @@ function negPintarIngresos(){
   }).join('') || '<tr><td colspan="6" class="meta" style="padding:18px 0">Sin pagos en este período.</td></tr>';
   $('pgFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot,totU)+'</td></tr>':'';
   const t=$('pgTot'); if(t) t.textContent=lista.length+' pago'+(lista.length===1?'':'s');
+  uxNums($('pgKpis')); uxCardify($('page'));
 }
 function pgDetalle(id){
   const g=(NEG_DATA.pagos||[]).find(x=>x.id===id); if(!g) return;
@@ -1801,7 +2266,7 @@ async function pgBorrar(id){
 /* ---------- Gastos ---------- */
 async function renderGastos(){
   const p=$('page');
-  p.innerHTML='<div class="loading">Cargando…</div>';
+  p.innerHTML=skel('negocio');
   try{ await negCargar(); }
   catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
   if(curView!=='gastos') return;
@@ -1862,6 +2327,7 @@ function negPintarGastos(){
     || '<tr><td colspan="7" class="meta" style="padding:18px 0">Sin gastos en este período.</td></tr>';
   $('gaFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot,totU)+'</td><td></td></tr>':'';
   const t=$('gaTot'); if(t) t.textContent=lista.length+' movimiento'+(lista.length===1?'':'s');
+  uxNums($('gaKpis')); uxCardify($('page'));
 }
 function gaModal(id){
   const g=id?((NEG_DATA.gastos||[]).find(x=>x.id===id)||{}):{};
@@ -1904,7 +2370,7 @@ function gaModal(id){
 const PL_URL='https://docs.google.com/spreadsheets/d/1-PxDTfLbaZc_rcDAulQBEHa_wMNydSFnqHUPIeCqq-E/edit';
 async function renderPL(){
   const p=$('page');
-  p.innerHTML='<div class="loading">Cargando…</div>';
+  p.innerHTML=skel('negocio');
   try{ await negCargar(); }
   catch(e){ p.innerHTML='<div class="callout"><p>'+esc(e.message||'No se pudo cargar')+'</p></div>'; return; }
   if(curView!=='pl') return;
@@ -2048,7 +2514,7 @@ function calDelta(d,mejorAlto){
 }
 
 async function renderCalidad(){
-  const p=$('page'); p.innerHTML='<div class="loading">Cargando el seguimiento…</div>';
+  const p=$('page'); p.innerHTML=skel('negocio');
   const [QQ,PA]=await Promise.all([
     DB().from('questionnaires').select('*').is('deleted_at',null).order('administered_at',{ascending:true}),
     DB().from('patients').select('id,full_name').is('deleted_at',null)
@@ -2491,7 +2957,9 @@ async function startEnrollMfa(){
     });
 }
 async function disableMfa(fid){
-  if(!confirm('¿Desactivar la verificación en dos pasos?')) return;
+  if(!await confirmar({where:'Seguridad',title:'¿Desactivar la verificación en dos pasos?',
+      why:'La cuenta vuelve a entrar sólo con la contraseña. Podés volver a activarla cuando quieras.',
+      primary:'Desactivar',danger:true})) return;
   const {error}=await SB.auth.mfa.unenroll({factorId:fid});
   if(error){toast(error.message);return;}
   toast('2FA desactivada'); modalClose();
@@ -2657,7 +3125,7 @@ function areaDots(areas){
 /* ===================== INICIO — "Hoy en Revigen" ===================== */
 async function renderInicio(){
   const p=$('page');
-  p.innerHTML='<div class="loading">Cargando el panel del día…</div>';
+  p.innerHTML=skel('inicio');
   await loadCache();
   const pmap={}; CACHE.patients.forEach(x=>pmap[x.id]=x);
   // Cumpleaños de los próximos 7 días (se calcula acá; no sale ningún dato fuera de la historia clínica)
@@ -2718,7 +3186,13 @@ async function renderInicio(){
     return '<div class="sl'+(i===nowIdx?' now':'')+'"><span class="hh">'+fmtHM(a.starts_at)+'</span>'+
       '<div><div class="nm">'+esc(pt.full_name||'Paciente')+(qTocaHoy?'<span class="qq-chip">toca calidad de vida</span>':'')+'</div>'+
       '<div class="ds">'+esc(DISC_LABEL[a.discipline]||a.title||'Turno')+(prof?' · '+esc(prof.full_name):'')+(i===nowIdx?' · en curso':'')+'</div></div>'+right+'</div>';
-  }).join('')||'<div class="meta" style="padding:8px 0">No hay turnos para hoy.</div>';
+  }).join('')|| vacio('🗓','No hay turnos para hoy',
+      (CACHE.appts.filter(a=>new Date(a.starts_at).getTime()>now&&a.status!=='cancelado')
+        .sort((x,y)=>new Date(x.starts_at)-new Date(y.starts_at))[0]
+        ? 'El próximo es el '+fmtDMShort(CACHE.appts.filter(a=>new Date(a.starts_at).getTime()>now&&a.status!=='cancelado')
+            .sort((x,y)=>new Date(x.starts_at)-new Date(y.starts_at))[0].starts_at)+'.'
+        : 'No hay ninguno cargado más adelante.'),
+      '<button class="btn primary sm" onclick="openApptModal()">'+PLUS+'Agendar turno</button>',' sm');
 
   const profCount=new Set(hoy.map(a=>a.professional_id).filter(Boolean)).size;
 
@@ -2765,18 +3239,21 @@ async function renderInicio(){
      '<div><div class="label">Pendientes que frenan una infusión</div><div class="n" style="color:'+(pendItems.length?'var(--alert)':'var(--vital)')+'">'+pendItems.length+'</div><div class="sub">'+(pendItems.length?'G6PD, consentimiento y laboratorio':'todo al día')+'</div></div>'+
      '<div><div class="label">Asistencia a turnos</div><div class="n">'+(asist==null?'—':asist+' %')+'</div><div class="sub">Últimos 30 días · '+as+' de '+(as+ab)+'</div></div>'+
    '</div>'+
-   '<div class="home">'+
+   '<div class="home'+(hoy.length?'':' solo')+'">'+
      '<section class="card"><div class="sec">'+
        '<div class="sec-h"><span class="sec-t">Agenda del día</span><span class="meta">'+hoy.length+' turno'+(hoy.length===1?'':'s')+' · '+profCount+' profesional'+(profCount===1?'':'es')+'</span></div>'+
        '<div class="day">'+dayRows+'</div></div></section>'+
      '<div class="stack">'+
-       '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Pendientes del equipo</span><span class="meta">Calculado</span></div><div class="todo">'+pendRows+'</div></div></section>'+
+       '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Pendientes del equipo</span><span class="meta">'+(pendItems.length? pendItems.length+' que frena'+(pendItems.length===1?'':'n')+' una infusión' : 'todo al día')+'</span></div><div class="todo">'+pendRows+'</div></div></section>'+
        '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Calidad de vida</span><span class="meta">'+(qlqToca.length||'ninguno')+' por tomar</span></div><div class="todo">'+qlqRows+'</div></div></section>'+
-       '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Lo que se registró hoy</span></div><div class="rows">'+
-         '<div class="row"><span class="k">Administraciones de megadosis</span><span class="v">'+vitcHoy+'</span></div>'+
-         '<div class="row"><span class="k">Evoluciones firmadas</span><span class="v">'+notesHoy+'</span></div>'+
-         '<div class="row"><span class="k">Laboratorios cargados</span><span class="v">'+labsHoy+'</span></div>'+
-         '<div class="row"><span class="k">Estudios adjuntados</span><span class="v">'+attHoy+'</span></div></div></div></section>'+
+       '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Lo que se registró hoy</span></div>'+
+         ((vitcHoy+notesHoy+labsHoy+attHoy)===0
+           ? vacio('📝','Todavía no se registró nada hoy','Las infusiones, evoluciones, laboratorios y estudios de la jornada aparecen acá a medida que se cargan.','',' sm')
+           : '<div class="rows">'+
+             '<div class="row"><span class="k">Administraciones de megadosis</span><span class="v">'+vitcHoy+'</span></div>'+
+             '<div class="row"><span class="k">Evoluciones firmadas</span><span class="v">'+notesHoy+'</span></div>'+
+             '<div class="row"><span class="k">Laboratorios cargados</span><span class="v">'+labsHoy+'</span></div>'+
+             '<div class="row"><span class="k">Estudios adjuntados</span><span class="v">'+attHoy+'</span></div></div>')+'</div></section>'+
        '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Seguimiento del centro</span><span class="meta">Últimos 30 días</span></div><div class="rows">'+
          '<div class="row"><span class="k">Pacientes con infusión activa</span><span class="v">'+vitcActivos+'</span></div>'+
          '<div class="row"><span class="k">Administraciones registradas</span><span class="v">'+admin30+'</span></div>'+
@@ -2784,6 +3261,7 @@ async function renderInicio(){
          '<div class="row"><span class="k">Pacientes con las 4 áreas activas</span><span class="v">'+cuatro+'</span></div></div></div></section>'+
      '</div>'+
    '</div>';
+  uxNums(p); uxCardify(p);
 }
 
 
@@ -2794,7 +3272,7 @@ function proxTxt(a){ if(!a)return '—'; if(sameDay(a.starts_at)) return 'Hoy ·
 function lastNameOf(name){const p=(name||'').split(',')[0].trim();return p||name||'';}
 
 async function renderPacientes(){
-  const p=$('page'); p.innerHTML='<div class="loading">Cargando pacientes…</div>';
+  const p=$('page'); p.innerHTML=skel('lista');
   await loadCache();
   const nuevo = can.createPatient()?'<button class="btn primary" onclick="newPatient()">'+PLUS+'Nuevo paciente</button>':'';
   const nVitc=CACHE.patients.filter(x=>CACHE.calc[x.id].hasVitcInd).length;
@@ -2988,7 +3466,7 @@ async function loadFichaCalc(){
 }
 
 async function renderFicha(){
-  const p=$('page'); p.innerHTML='<div class="loading">Cargando la historia…</div>';
+  const p=$('page'); p.innerHTML=skel('ficha');
   $('q').value=''; $('q').placeholder='Buscar en la historia de '+(CUR.full_name||'—');
   await loadFichaCalc();
   const a=anthro(CUR.weight_kg,CUR.height_cm);
@@ -3019,12 +3497,19 @@ async function renderFicha(){
      '<div class="acts">'+
        '<button class="btn primary" onclick="openRegistrar()">'+PLUS+'Nueva nota</button>'+
        '<button class="btn" onclick="openFichaMenu()" title="Más acciones" aria-label="Más acciones">⋯</button></div></div>'+
+   '<div class="pmini" id="pmini"><div class="nm">'+esc(CUR.full_name||'—')+
+       '<i>'+(CUR.birth_date&&edad(CUR.birth_date)?edad(CUR.birth_date)+' · ':'')+'HC '+(CUR.hc_number!=null?CUR.hc_number:'—')+'</i></div>'+
+     '<div class="cs">'+
+       (CUR.allergies?'<span class="mt crit">'+esc(CUR.allergies.split(/[\.\n]/)[0].slice(0,26))+'</span>':'')+
+       '<span class="mt '+(g==='normal'?'':'warn')+'">'+esc(G6PD_LABEL[g])+'</span>'+
+     '</div></div>'+
    '<div class="subnav-wrap"><div class="tabs" role="tablist" id="tabBar">'+
      tabs.map(([t,l])=>'<button class="'+(curTab===t?'on':'')+'" data-t="'+t+'" onclick="setTab(\''+t+'\')">'+l+'</button>').join('')+'</div></div>'+
-   '<div class="fgrid"><div class="side-a" id="sideA"></div><div class="stack" id="paneHost"></div><div id="sideB"></div></div>'+
+   '<div class="fgrid"><div class="crit-m" id="critM"></div><div class="side-a" id="sideA"></div><div class="stack" id="paneHost"></div><div id="sideB"></div></div>'+
    '<button class="fab" onclick="openRegistrar()">'+PLUS+'Nueva nota</button>';
   renderSideA(); renderSideB();
   setTab(curTab);
+  UX_LASTY=0; uxMedirTop(); uxFichaScroll();
 }
 function critItem(cls,k,v){ return '<div class="it'+(cls?' '+cls:'')+'"><span class="d"></span><div><div class="k">'+k+'</div><div class="v">'+v+'</div></div></div>'; }
 function renderSideA(){
@@ -3060,10 +3545,21 @@ function renderSideA(){
     '<div class="sec"><div class="sec-h"><span class="sec-t">Diagnóstico</span></div><div class="rows">'+dxRows+'</div></div>'+
     '<div class="sec"><div class="sec-h"><span class="sec-t">Comentarios del equipo</span></div>'+com+'</div>'+
     '</div>';
+  const cm=$('critM');
+  if(cm){
+    const fila=(k,v,al)=>'<div class="r"><span>'+k+'</span><b'+(al?' class="al"':'')+'>'+v+'</b></div>';
+    cm.innerHTML='<div class="h">Datos críticos</div>'+
+      fila('Alergias', CUR.allergies?esc(CUR.allergies.slice(0,70)):'Sin alergias registradas', !!CUR.allergies)+
+      fila('Creatinina · último lab', lc?esc(lc.creatinina)+' mg/dL · '+fmtDMShort(lc.measured_at):'Sin laboratorios', !lc)+
+      fila('G6PD', esc(G6PD_LABEL[g]), g!=='normal')+
+      (CUR.usual_medication?fila('Medicación habitual', esc(String(CUR.usual_medication).slice(0,70))):'');
+  }
   saldoFichaCargar();
+  secsPlegables($('sideA'),1);
 }
 function renderSideB(){
   const f=FCAL();
+  setTimeout(()=>{ try{ secsPlegables($('sideB'),1); }catch(e){} },0);
   const tl = f.futureAppts.length ? f.futureAppts.slice(0,4).map((a,i)=>{
     const prof=DIR[a.professional_id];
     const w=(sameDay(a.starts_at)?'HOY':new Date(a.starts_at).toLocaleDateString('es-AR',{weekday:'long',day:'2-digit',month:'2-digit'}).toUpperCase())+' · '+fmtHM(a.starts_at);
@@ -3441,7 +3937,7 @@ async function renderRegistro(){
   host.innerHTML=
     '<div class="sec-h" style="margin:2px 2px 4px"><span class="sec-t">Historia</span></div>'+
     '<div class="tl-bar">'+chips+profSel+'</div>'+
-    (html||'<div class="empty"><p>'+(items.length?'No hay registros para este filtro.':'Todavía no hay registros. Tocá «Registrar» para sumar el primero.')+'</p></div>');
+    (html||'<div class="vac"><div class="ic">'+(items.length?'🔎':'📋')+'</div><div class="t">'+(items.length?'No hay registros para este filtro':'Todavía no hay nada en la historia')+'</div><p class="s">'+(items.length?'Probá con otro área o sacá el filtro para ver todo.':'La primera nota, infusión o laboratorio que cargues aparece acá, en orden de fecha.')+'</p>'+(items.length?'<button class="btn sm" onclick="setTlFilter(\'todo\')">Ver todo</button>':'<button class="btn primary sm" onclick="openRegistrar()">'+PLUS+'Registrar</button>')+'</div>');
 }
 
 function renderHCForm(){
@@ -4054,7 +4550,9 @@ async function gnClose(){
   if(GN_REC){ try{GN_REC.stop();}catch(e){} GN_REC=null; GN_REC_KEY=null; }
   const g=GN;
   await gnFlush(); await (g.wchain||Promise.resolve());
-  if((g.dirty || g.st==='retry') && !confirm('Todavía no se pudo guardar el último cambio (revisá la conexión). ¿Cerrar igual? Lo que ya figuraba como guardado queda en el registro.')) return;
+  if((g.dirty || g.st==='retry') && !await confirmar({where:'Nota sin guardar',title:'Todavía no se pudo guardar el último cambio',
+      why:'Revisá la conexión. Si cerrás ahora, lo que ya figuraba como guardado queda en el registro y el último cambio se pierde.',
+      primary:'Cerrar igual',secondary:'Seguir editando',danger:true})) return;
   clearTimeout(g.timer);
   if(g._io) g._io.disconnect();
   GN=null; $('gn').hidden=true; $('gn').innerHTML=''; document.body.classList.remove('gn-open');
@@ -4362,7 +4860,7 @@ async function renderVitc(hostEl){
   const table = rows? '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Infusiones registradas</span>'+btn+'</div></div>'+
       '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th style="min-width:180px">Componentes</th><th>Volumen</th><th>Goteo</th><th style="min-width:170px">Antes de la infusión</th><th style="min-width:170px">Después de la infusión</th><th style="min-width:130px">Eventos</th><th>Administró</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '</section>'
-    : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Infusiones registradas</span>'+btn+'</div><p class="meta" style="margin:0">Sin administraciones registradas.</p></div></section>';
+    : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Infusiones registradas</span>'+btn+'</div>'+vacio('💧','Sin infusiones registradas','Cuando enfermería administre la primera, queda acá con componentes, volumen, goteo y signos vitales.','',' sm')+'</div></section>';
   const relevant=!!FCAL().ind||!!(data&&data.length);
   const anyG6=(FCAL().inds||[]).some(indG6pd)||(data||[]).some(v=>Number(v.dose_g)>0);   // G6PD y consentimiento: solo si hay vitamina C
   host.innerHTML=(anyG6?gate+consentNote:'')+(relevant?labWarn:'')+table+(canReg?'':'<div class="callout"><p>Las infusiones de megadosis las registran enfermería, el médico funcional y la dirección médica.</p></div>');
@@ -4493,7 +4991,7 @@ async function renderEnf(hostEl){
     '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Control de signos vitales</span><button class="btn primary sm" onclick="openVitalModal()">'+PLUS+'Signos vitales</button></div></div>'+
       (vrows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th>T.A.</th><th>F.C.</th><th>F.R.</th><th>Temp.</th><th>Sat. O₂</th><th>HGT</th><th style="min-width:150px">Observación</th><th>Registró</th></tr></thead><tbody>'+vrows+'</tbody></table></div>':'<div class="sec" style="padding-top:0"><p class="meta" style="margin:0">Sin registros de signos vitales.</p></div>')+'</section>'+
     '<section class="card"><div class="sec" style="padding-bottom:14px"><div class="sec-h" style="margin-bottom:0"><span class="sec-t">Medicación administrada</span><button class="btn primary sm" onclick="openMedModal()">'+PLUS+'Registrar</button></div></div>'+
-      (mrows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th style="min-width:150px">Medicamento</th><th>Dosis</th><th style="min-width:150px">Dilución / vía</th><th>Tiempo</th><th style="min-width:150px">Observaciones</th><th>Administró</th></tr></thead><tbody>'+mrows+'</tbody></table></div>':'<div class="sec" style="padding-top:0"><p class="meta" style="margin:0">Sin medicación registrada.</p></div>')+alergia+'</section>';
+      (mrows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:120px">Fecha</th><th style="min-width:150px">Medicamento</th><th>Dosis</th><th style="min-width:150px">Dilución / vía</th><th>Tiempo</th><th style="min-width:150px">Observaciones</th><th>Administró</th></tr></thead><tbody>'+mrows+'</tbody></table></div>':'<div class="sec" style="padding-top:0">'+vacio('💉','Sin medicación administrada','Lo que se dé durante la sesión (antieméticos, analgesia) se registra acá para que quede en la historia.','',' sm')+'</div>')+alergia+'</section>';
 }
 async function openVitalModal(){
   const now=Date.now();
@@ -4658,7 +5156,7 @@ function labTable(data){
     const fix=canFix(x.recorded_by)?'<button class="btn sm" onclick="openDateFix(\'lab\',\''+x.id+'\')">Corregir fecha</button>'+(x.storage_path?'':'<button class="btn sm" onclick="openAttachLater(\'lab\',\''+x.id+'\')">Adjuntar</button>'):'';
     return '<tr><td style="white-space:nowrap">'+fmt(x.measured_at)+'</td><td>'+(x.hemoglobina??'—')+'</td><td>'+(x.hematocrito??'—')+'</td><td>'+(x.leucocitos!=null?esES(x.leucocitos):'—')+'</td><td>'+(x.plaquetas!=null?esES(x.plaquetas):'—')+'</td><td>'+(x.glucemia??'—')+'</td><td>'+(x.creatinina??'—')+'</td><td>'+(x.urea??'—')+'</td><td class="quiet">'+(x.otros?esc(x.otros):'—')+'</td><td style="white-space:nowrap">'+(ver+fix||'—')+'</td></tr>';
   }).join('');
-  return rows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:100px">Fecha</th><th>Hb</th><th>Hto</th><th>Leucocitos</th><th>Plaquetas</th><th>Glucemia</th><th>Creatinina</th><th>Urea</th><th style="min-width:140px">Otros</th><th style="min-width:200px">Archivo</th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="meta" style="margin:0">Sin laboratorios cargados.</p>';
+  return rows?'<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:100px">Fecha</th><th>Hb</th><th>Hto</th><th>Leucocitos</th><th>Plaquetas</th><th>Glucemia</th><th>Creatinina</th><th>Urea</th><th style="min-width:140px">Otros</th><th style="min-width:200px">Archivo</th></tr></thead><tbody>'+rows+'</tbody></table></div>':vacio('🧪','Sin laboratorios cargados','Creatinina, glucemia y el resto del control previo a la infusión se cargan desde acá.','<button class="btn primary sm" onclick="openLabModal()">Cargar laboratorio</button>',' sm');
 }
 function openLabModal(){
   LAB_BUILT=null;
@@ -4866,7 +5364,8 @@ async function renderIndic(hostEl){
       '<span class="meta" style="margin-left:auto">'+fmtDMShort(i.created_at)+' · '+esc(lastNameOf(whoName(i.prescribed_by)))+'</span></div>'+
       (i.kind!=='general'?'<p class="bd">'+esc(indSummary(i))+'</p>':'')+(i.detail?'<p class="bd">'+esc(i.detail)+'</p>':'')+'</div>'; }).join('');
   host.innerHTML='<div class="sec-h" style="margin:6px 2px 10px"><span class="sec-t">Historial de indicaciones</span>'+(can.indicate()?'<button class="btn sm" onclick="openIndicModal()">'+PLUS+'Indicación general</button>':'')+'</div>'+
-    (rows?'<section class="sheet">'+rows+'</section>':'<div class="empty" style="padding:28px 12px"><p>Sin indicaciones cargadas.</p></div>');
+    (rows?'<section class="sheet">'+rows+'</section>':vacio('🧾','Sin indicaciones cargadas','La indicación es lo que habilita a enfermería a administrar. Sin una vigente no se puede cargar una infusión.',
+      (can.indicate()?'<button class="btn primary sm" onclick="openIndicModal()">'+PLUS+'Indicación general</button>':'')));
 }
 
 /* indicación general (texto) */
@@ -5044,7 +5543,7 @@ function askChoice(o){
       (o.where?'<div class="ask-w">'+esc(o.where)+'</div>':'')+'<div class="ask-t">'+esc(o.title)+'</div>'+
       (o.existing?'<div class="ask-x"><b>'+esc(o.existing)+'</b>'+(o.detail?'<div>'+esc(o.detail)+'</div>':'')+'</div>':'')+
       (o.why?'<p class="ask-y">'+esc(o.why)+'</p>':'')+
-      '<div class="ask-b"><button class="btn primary" id="askP">'+esc(o.primary)+'</button><button class="btn" id="askS">'+esc(o.secondary)+'</button></div></div>';
+      '<div class="ask-b"><button class="btn '+(o.danger?'dg-solid':'primary')+'" id="askP">'+esc(o.primary)+'</button><button class="btn" id="askS">'+esc(o.secondary)+'</button></div></div>';
     el.hidden=false;
     const done=v=>{ el.hidden=true; el.innerHTML=''; el.onclick=null; res(v); };
     $('askP').onclick=()=>done('primary'); $('askS').onclick=()=>done('secondary');
@@ -5155,10 +5654,10 @@ async function renderDocs(){
   if(t==='recetas'||t==='todos') acts+='<button class="btn sm" onclick="openRecetaModal()">Receta</button>';
   if(t==='consent'||t==='todos') acts+='<button class="btn sm" onclick="openConsentModal()">Consentimiento</button>';
   const actRow='<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">'+acts+'</div>';
-  const estudiosBlock = atts.length?'<section class="sheet"><div class="sec"><div class="files">'+estudiosFiles(atts)+'</div></div></section>':'<div class="empty" style="padding:28px 12px"><p>Sin estudios cargados.</p></div>';
+  const estudiosBlock = atts.length?'<section class="sheet"><div class="sec"><div class="files">'+estudiosFiles(atts)+'</div></div></section>':vacio('📎','Sin estudios cargados','Tomografías, informes y cualquier archivo que mande el paciente o el oncólogo tratante van acá.','<button class="btn primary sm" onclick="openUploadModal()">Subir documento</button><button class="btn sm" onclick="openLinkModal()">Link a un estudio</button>');
   const labsBlock = '<section class="card"><div class="sec">'+labTable(labs)+'</div></section>';
-  const consentBlock = cons.length?'<section class="sheet">'+consentCards(cons)+'</section>':'<div class="empty" style="padding:28px 12px"><p>Sin consentimientos registrados.</p></div>';
-  const recetasBlock = recetas.length?'<section class="sheet">'+recetaCards(recetas)+'</section>':'<div class="empty" style="padding:28px 12px"><p>Sin recetas cargadas.</p></div>';
+  const consentBlock = cons.length?'<section class="sheet">'+consentCards(cons)+'</section>':vacio('✍️','Sin consentimientos registrados','La megadosis de vitamina C necesita consentimiento firmado antes de la primera infusión.','<button class="btn primary sm" onclick="openConsentModal()">Cargar consentimiento</button>');
+  const recetasBlock = recetas.length?'<section class="sheet">'+recetaCards(recetas)+'</section>':vacio('💊','Sin recetas cargadas','Las recetas que emita el equipo quedan guardadas acá, con fecha y profesional.','<button class="btn primary sm" onclick="openRecetaModal()">Nueva receta</button>');
   let body='';
   if(t==='estudios') body=estudiosBlock;
   else if(t==='labs') body=labsBlock;
@@ -5284,7 +5783,7 @@ async function renderAudit(){
       '<span class="meta" style="margin-left:auto">'+fmtDMShort(a.at)+' · '+fmtHM(a.at)+' · '+esc(who?who.full_name:(a.actor_role?ROLE_LABEL[a.actor_role]:'sistema'))+'</span></div>'+auditDiff(a)+'</div>';
   }).join('');
   host.innerHTML='<div class="callout"><span class="demo" style="flex:none">Solo dirección</span><p>Todo lo que se creó o modificó en esta historia, con el detalle de los campos que cambiaron, quién los cambió y cuándo.</p></div>'+
-    (rows?'<section class="sheet">'+rows+'</section>':'<div class="empty"><p>Sin registros de auditoría para este paciente todavía.</p></div>');
+    (rows?'<section class="sheet">'+rows+'</section>':'<div class="vac"><div class="ic">🗃</div><div class="t">Sin registros de auditoría</div><p class="s">Cada vez que alguien del equipo cree o modifique algo en esta ficha, queda asentado acá con fecha, hora y autor.</p></div>');
 }
 
 
@@ -5301,40 +5800,116 @@ function gcalLink(ap, patientName){
   const details=encodeURIComponent((ap.discipline?('Disciplina: '+(DISC_LABEL[ap.discipline]||ap.discipline)+'\n'):'')+(ap.notes||''));
   return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text='+text+'&dates='+f(s)+'/'+f(e)+'&details='+details;
 }
+const AG_COL={oncologia:'#3C6B3A',megadosis:'#0E9BB5',enfermeria:'#0E9BB5',nutricion:'#15803D',psicooncologia:'#7C3AED',ejercicio:'#D97706'};
+let AG_DIA=null, AG_PROF='', AG_DISC='';
+function agSetDia(d){ AG_DIA=(AG_DIA===d?null:d); renderAgenda(); }
+function agSetFiltro(k,v){ if(k==='prof') AG_PROF=v; else AG_DISC=v; renderAgenda(); }
 async function renderAgenda(){
-  const p=$('page'); p.innerHTML='<div class="loading">Cargando la agenda…</div>';
+  const p=$('page'); p.innerHTML=skel('lista');
   const {data,error}=await DB().from('appointments').select('*').order('starts_at',{ascending:true});
   if(error){p.innerHTML='<div class="callout"><p>'+esc(error.message)+'</p></div>';return;}
+  if(curView!=='agenda') return;
   const pids=[...new Set((data||[]).map(a=>a.patient_id))]; let pmap={};
   if(pids.length){ const {data:ps}=await DB().from('patients').select('id,full_name,hc_number').in('id',pids); (ps||[]).forEach(x=>pmap[x.id]=x); }
-  const now=Date.now();
-  const futuros=(data||[]).filter(a=>new Date(a.starts_at).getTime()>=now-12*3600*1000);
-  const pasados=(data||[]).filter(a=>new Date(a.starts_at).getTime()<now-12*3600*1000).reverse();
+  const now=Date.now(), todos=data||[];
+  const corte=now-12*3600*1000;
+  let futuros=todos.filter(a=>new Date(a.starts_at).getTime()>=corte);
+  const pasados=todos.filter(a=>new Date(a.starts_at).getTime()<corte).reverse();
+
+  /* --- tira de días: los próximos 14, con punto donde hay turnos --- */
+  const porDia={}; futuros.forEach(a=>{ const d=ymd(new Date(a.starts_at)); (porDia[d]=porDia[d]||[]).push(a); });
+  const hoy0=new Date(); hoy0.setHours(12,0,0,0);
+  const dias=[]; for(let k=0;k<14;k++){ const d=new Date(hoy0); d.setDate(d.getDate()+k); dias.push(d); }
+  const strip='<div class="dstrip">'+dias.map(d=>{
+    const key=ymd(d), n=(porDia[key]||[]).length;
+    return '<button class="'+(AG_DIA===key?'on':'')+'" onclick="agSetDia(\''+key+'\')" aria-label="'+
+      d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})+(n?' · '+n+' turnos':' · sin turnos')+'">'+
+      '<div class="dw">'+d.toLocaleDateString('es-AR',{weekday:'short'}).replace('.','')+'</div>'+
+      '<div class="dd">'+d.getDate()+'</div>'+(n?'<div class="dn"></div>':'<div class="dz"></div>')+'</button>';
+  }).join('')+'</div>';
+
+  /* --- filtros --- */
+  const profs=[...new Set(futuros.map(a=>a.professional_id).filter(Boolean))];
+  const discs=[...new Set(futuros.map(a=>a.discipline).filter(Boolean))];
+  const chip=(k,v,l,act)=>'<button class="'+(act?'on':'')+'" onclick="agSetFiltro(\''+k+'\',\''+v+'\')">'+l+'</button>';
+  const filtros=(profs.length>1||discs.length>1)
+    ? '<div class="filters" style="margin-bottom:14px">'+
+      chip('disc','','Todas las áreas',!AG_DISC)+
+      discs.map(d=>chip('disc',d,esc(DISC_LABEL[d]||d),AG_DISC===d)).join('')+
+      (profs.length>1? chip('prof','','Todo el equipo',!AG_PROF)+
+        profs.map(u=>chip('prof',u,esc((DIR[u]||{}).full_name||'—'),AG_PROF===u)).join('') : '')+
+      '</div>' : '';
+  if(AG_DISC) futuros=futuros.filter(a=>a.discipline===AG_DISC);
+  if(AG_PROF) futuros=futuros.filter(a=>a.professional_id===AG_PROF);
+  if(AG_DIA)  futuros=futuros.filter(a=>ymd(new Date(a.starts_at))===AG_DIA);
+
+  /* --- próximos turnos, agrupados por día --- */
   const stMap={programado:['','Programado'],asistio:['ok','Asistió'],ausente:['warn','Ausente'],cancelado:['off','Cancelado']};
+  const grupos={}; futuros.forEach(a=>{ const d=ymd(new Date(a.starts_at)); (grupos[d]=grupos[d]||[]).push(a); });
+  const claves=Object.keys(grupos).sort();
+  const slot=a=>{
+    const pt=pmap[a.patient_id]||{}, prof=DIR[a.professional_id], st=stMap[a.status]||['','—'];
+    const col=AG_COL[a.discipline]||'var(--sage)';
+    const acc=(a.status==='cancelado'?'':
+        '<button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'asistio\',\''+a.status+'\')">Asistió</button>'+
+        '<button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'ausente\',\''+a.status+'\')">Ausente</button>'+
+        '<button class="btn sm dg" onclick="setApptStatus(\''+a.id+'\',\'cancelado\',\''+a.status+'\')">Cancelar</button>')+
+      '<a class="btn sm" href="'+gcalLink(a,pt.full_name||'')+'" target="_blank" rel="noopener">Google Calendar</a>';
+    return '<div class="ag-s'+(a.status==='cancelado'?' off':'')+'"><span class="hh">'+fmtHM(a.starts_at)+'</span>'+
+      '<span class="bar" style="background:'+col+'"></span><div class="b">'+
+      '<div class="nm"><button class="linkbtn" onclick="openPatient(\''+a.patient_id+'\')">'+esc(pt.full_name||'Paciente')+'</button>'+
+        (pt.hc_number!=null?' <span class="meta">HC '+pt.hc_number+'</span>':'')+'</div>'+
+      '<div class="ds">'+esc(a.discipline?(DISC_LABEL[a.discipline]||a.discipline):(a.title||'Turno'))+
+        (prof?' · '+esc(prof.full_name):'')+' · <span class="st '+st[0]+'"><span class="d"></span>'+st[1]+'</span>'+
+        (a.absence_reason?' · '+esc(a.absence_reason):'')+'</div>'+
+      '<div class="ac">'+acc+'</div></div></div>';
+  };
+  const titDia=k=>{
+    const d=new Date(k+'T12:00:00'), h=ymd(new Date());
+    const pre = k===h ? 'Hoy · ' : (k===ymd(new Date(Date.now()+86400000)) ? 'Mañana · ' : '');
+    return pre+d.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})+' · '+grupos[k].length+' turno'+(grupos[k].length===1?'':'s');
+  };
+  const prox = claves.length
+    ? '<section class="card" style="margin-bottom:20px;overflow:hidden">'+
+        claves.map(k=>'<div class="ag-day">'+esc(titDia(k))+'</div>'+grupos[k].map(slot).join('')).join('')+
+      '</section>'
+    : '<section class="card" style="margin-bottom:20px">'+vacio('🗓',
+        (AG_DIA||AG_DISC||AG_PROF)?'No hay turnos con ese filtro':'No hay turnos por delante',
+        (AG_DIA||AG_DISC||AG_PROF)?'Probá con otro día o sacá los filtros.':'Cargá el primero y aparece acá y en la pantalla de inicio.',
+        (AG_DIA||AG_DISC||AG_PROF)
+          ? '<button class="btn sm" onclick="AG_DIA=null;AG_DISC=\'\';AG_PROF=\'\';renderAgenda()">Ver todos</button>'
+          : '<button class="btn primary sm" onclick="openApptModal()">'+PLUS+'Nuevo turno</button>')+'</section>';
+
+  /* --- turnos anteriores: la tabla de siempre --- */
   const rowsFor=list=>list.map(a=>{
     const pt=pmap[a.patient_id]||{}, prof=DIR[a.professional_id], st=stMap[a.status]||['','—'];
     return '<tr><td style="white-space:nowrap">'+fmtDTShort(a.starts_at)+'</td>'+
-      '<td><span class="nm" style="cursor:pointer;color:var(--ink)" onclick="openPatient(\''+a.patient_id+'\')">'+esc(pt.full_name||'Paciente')+'</span>'+(pt.hc_number!=null?' <span class="id" style="color:var(--faint)">HC '+pt.hc_number+'</span>':'')+'</td>'+
+      '<td><button class="linkbtn" onclick="openPatient(\''+a.patient_id+'\')">'+esc(pt.full_name||'Paciente')+'</button>'+(pt.hc_number!=null?' <span class="id" style="color:var(--faint)">HC '+pt.hc_number+'</span>':'')+'</td>'+
       '<td>'+esc(a.discipline?(DISC_LABEL[a.discipline]||a.discipline):(a.title||'—'))+'</td>'+
       '<td class="quiet">'+(prof?esc(prof.full_name):'—')+'</td>'+
-      '<td><span class="st '+st[0]+'"><span class="d"></span>'+st[1]+'</span>'+(a.absence_reason?' <span class="meta">· '+esc(a.absence_reason)+'</span>':'')+'</td>'+
-      '<td style="white-space:nowrap">'+(a.status==='cancelado'?'':'<button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'asistio\')">Asistió</button> '+
-        '<button class="btn sm" onclick="setApptStatus(\''+a.id+'\',\'ausente\')">Ausente</button> '+
-        '<button class="btn sm dg" onclick="setApptStatus(\''+a.id+'\',\'cancelado\')">Cancelar</button> ')+
-        '<a class="btn sm" href="'+gcalLink(a,pt.full_name||'')+'" target="_blank" rel="noopener">Google Calendar</a></td></tr>';
+      '<td><span class="st '+st[0]+'"><span class="d"></span>'+st[1]+'</span>'+(a.absence_reason?' <span class="meta">· '+esc(a.absence_reason)+'</span>':'')+'</td></tr>';
   }).join('');
-  const tbl=(title,list)=> list.length? '<section class="card" style="margin-bottom:20px"><div class="sec" style="padding-bottom:0"><div class="sec-h"><span class="sec-t">'+title+'</span><span class="meta">'+list.length+'</span></div></div>'+
-      '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:150px">Fecha y hora</th><th style="min-width:180px">Paciente</th><th>Disciplina</th><th>Profesional</th><th style="min-width:150px">Estado</th><th style="min-width:230px">Acciones</th></tr></thead><tbody>'+rowsFor(list)+'</tbody></table></div></section>':'';
+  const antes = pasados.length? '<section class="card"><div class="sec" style="padding-bottom:0"><div class="sec-h"><span class="sec-t">Turnos anteriores</span><span class="meta">'+pasados.length+'</span></div></div>'+
+      '<div class="scroll"><table class="tbl tight"><thead><tr><th style="min-width:150px">Fecha y hora</th><th style="min-width:180px">Paciente</th><th>Disciplina</th><th>Profesional</th><th style="min-width:150px">Estado</th></tr></thead><tbody>'+rowsFor(pasados)+'</tbody></table></div></section>':'';
+
   p.innerHTML='<div class="phead-page"><div><div class="eyebrow">Centro Revigen</div><h1>Agenda de turnos</h1></div><button class="btn primary" onclick="openApptModal()">'+PLUS+'Nuevo turno</button></div>'+
-    (futuros.length||pasados.length? (tbl('Próximos turnos',futuros)+tbl('Turnos anteriores',pasados)) : '<div class="empty"><p>No hay turnos cargados.</p></div>');
+    strip+filtros+prox+antes;
+  uxCardify(p);
 }
-async function setApptStatus(id,st){
+async function setApptStatus(id,st,prev){
   let reason=null;
-  if(st==='cancelado' && !confirm('¿Cancelar este turno?')) return;
   if(st==='ausente'){ reason=prompt('Motivo de la ausencia (opcional):'); if(reason==='')reason=null; }
   const {error}=await DB().from('appointments').update({status:st, absence_reason:reason, updated_by:ME.user_id}).eq('id',id);
   if(error){toast(error.message);return;}
-  toast({asistio:'Marcado: asistió',ausente:'Marcado: ausente',cancelado:'Turno cancelado'}[st]||'Turno actualizado');
+  const volver=prev&&prev!==st;
+  const msg={asistio:'Marcado: asistió',ausente:'Marcado: ausente',cancelado:'Turno cancelado'}[st]||'Turno actualizado';
+  if(volver) toastUndo(msg, async()=>{
+    const {error:e2}=await DB().from('appointments').update({status:prev, absence_reason:null, updated_by:ME.user_id}).eq('id',id);
+    if(e2){toast(e2.message);return;}
+    toast('Listo, quedó como estaba');
+    if(curView==='agenda') renderAgenda(); else if(curView==='ficha') afterChange();
+  });
+  else toast(msg);
   if(curView==='agenda') renderAgenda(); else if(curView==='ficha') afterChange();
 }
 async function openApptModal(presetPid){
@@ -5370,7 +5945,7 @@ async function createAppt(){
 
 /* ===================== EQUIPO (admin) ===================== */
 async function renderEquipo(){
-  const p=$('page'); p.innerHTML='<div class="loading">Cargando equipo…</div>';
+  const p=$('page'); p.innerHTML=skel('lista');
   if(!can.manageUsers()){ p.innerHTML='<div class="callout"><p>Solo el rol Admin puede administrar el equipo.</p></div>'; return; }
   const {data,error}=await DB().from('staff').select('*').order('created_at',{ascending:true});
   if(error){p.innerHTML='<div class="callout"><p>'+esc(error.message)+'</p></div>';return;}
@@ -5411,14 +5986,19 @@ async function renderArchivados(){
     '<td><button class="btn primary sm" onclick="restorePatient(\''+x.id+'\')">Recuperar</button></td></tr>').join('');
   p.innerHTML='<div class="phead-page"><div><div class="eyebrow">Centro Revigen</div><h1>Pacientes archivados</h1></div></div>'+
     '<div class="callout" style="margin-bottom:20px"><span class="demo" style="flex:none">Solo dirección</span><p>Pacientes archivados. Podés recuperarlos cuando lo necesites; nada se borra de la base.</p></div>'+
-    (rows?'<div class="card"><div class="scroll"><table class="tbl"><thead><tr><th>HC</th><th style="min-width:220px">Paciente</th><th>Documento</th><th>Archivado</th><th>Acción</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>':'<div class="empty"><p>No hay pacientes archivados.</p></div>');
+    (rows?'<div class="card"><div class="scroll"><table class="tbl"><thead><tr><th>HC</th><th style="min-width:220px">Paciente</th><th>Documento</th><th>Archivado</th><th>Acción</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>':'<div class="vac"><div class="ic">🗄</div><div class="t">No hay pacientes archivados</div><p class="s">Cuando archives a alguien desde su ficha, aparece acá y lo podés recuperar sin perder nada.</p></div>');
 }
 async function archivePatient(){
   if(!can.director())return;
-  if(!confirm('¿Archivar a '+(CUR.full_name||'este paciente')+'? Deja de aparecer en la lista, pero lo recuperás desde "Archivados".'))return;
-  const {error}=await DB().from('patients').update({deleted_at:new Date().toISOString(),deleted_by:ME.user_id}).eq('id',CUR.id);
+  const pid=CUR.id, nom=CUR.full_name||'este paciente';
+  const {error}=await DB().from('patients').update({deleted_at:new Date().toISOString(),deleted_by:ME.user_id}).eq('id',pid);
   if(error){toast(error.message);return;}
-  toast('Paciente archivado'); CACHE=null; CUR=null; navigate('pacientes');
+  CACHE=null; CUR=null; navigate('pacientes');
+  toastUndo(nom+' pasó a Archivados', async()=>{
+    const {error:e2}=await DB().from('patients').update({deleted_at:null,deleted_by:null}).eq('id',pid);
+    if(e2){toast(e2.message);return;}
+    CACHE=null; toast('Listo, vuelve a la lista'); if(curView==='pacientes') renderPacientes();
+  });
 }
 async function restorePatient(id){
   const {error}=await DB().from('patients').update({deleted_at:null,deleted_by:null}).eq('id',id);
@@ -5523,6 +6103,7 @@ async function printPatient(){
   SB.auth.getSession()
     .then(({data})=>{ dejarDeEsperar(); if(data && data.session) loadMe(); else mostrarLogin(); })
     .catch(()=>{ dejarDeEsperar(); mostrarLogin(); });
+  try{ uxObservar(); }catch(e){}
 })();
 
 </script>
