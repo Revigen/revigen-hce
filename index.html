@@ -1752,7 +1752,10 @@ async function negCargar(){
     DB().from('vitc_administrations').select('id,patient_id,indication_id,dose_g,administered_at').is('deleted_at',null),
     DB().from('infusion_components_given').select('administration_id,name,unit,dose,given'),
     DB().from('indications').select('id,vehicle,vitc_dilution_ml'),
-    DB().from('notes').select('patient_id,discipline,created_at').is('deleted_at',null),
+    /* Las notas sólo se usan para saber cuánto consumió un programa, así que acá
+       entran únicamente las clínicas: las correcciones de la ficha son auditoría,
+       no una prestación, y si entraran bajarían el saldo del paciente sin motivo. */
+    DB().from('v_notas_clinicas').select('patient_id,discipline,created_at').is('deleted_at',null),
     DB().from('patients').select('id,full_name,created_at').is('deleted_at',null),
     DB().from('payments').select('*').is('deleted_at',null).order('paid_on',{ascending:false}),
     DB().from('expenses').select('*').is('deleted_at',null).order('spent_on',{ascending:false})
@@ -1772,12 +1775,35 @@ async function negCargar(){
 }
 
 /* ---------- el cálculo ---------- */
+/* Qué prestaciones «paga» un ingreso y cuánto cuestan los profesionales que las dan.
+   La sueroterapia no entra acá: su costo (insumos y enfermería) sale de la infusión
+   realmente administrada, no del pago. Una seña o pago parcial no cuenta ninguna:
+   la prestación se cuenta cuando se carga el pago entero de esa consulta. */
+const COSTO_PROF={medica:'consulta_costo', nutri:'nutricion', psico:'psico', ef:'ejercicio'};
+function prestacionesDe(g){
+  const k=g&&g.concept_kind;
+  if(!k || k==='sena' || k==='suelta') return {n:0, ars:0};
+  if(k==='programa'){
+    const inc=(g.included)||{}; let n=0, ars=0;
+    Object.keys(COSTO_PROF).forEach(mk=>{
+      const q=Number(inc[mk])||0; if(!q) return;
+      n+=q; ars += q*(Number(SUP[COSTO_PROF[mk]])||0);
+    });
+    return {n, ars};
+  }
+  const campo=COSTO_PROF[k];
+  if(!campo) return {n:0, ars:0};
+  /* si el pago dice que cubre más de una, valen todas; si no dice nada, es una */
+  const q=Math.max(Number(((g.included)||{})[k])||0, 1);
+  return {n:q, ars:q*(Number(SUP[campo])||0)};
+}
+
 function negCalcular(){
   const {d1,d2}=negRango(), dentro=x=>x>=d1&&x<=d2;
   const porDia={}; NEG_DATA.ses.forEach(x=>porDia[x.d]=(porDia[x.d]||0)+1);
   const pmap={}; NEG_DATA.pacientes.forEach(p=>pmap[p.id]=p);
   const R={};
-  const nuevo=pid=>R[pid]||(R[pid]={pid, n:(pmap[pid]||{}).full_name||'Paciente', ses:0, cons:0,
+  const nuevo=pid=>R[pid]||(R[pid]={pid, n:(pmap[pid]||{}).full_name||'Paciente', ses:0, cons:0, notas:0,
     insumos:0, enf:0, prof:0, pagos:[], bruto:0, brutoUsd:0, brutoFact:0, brutoEfe:0});
 
   NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>{
@@ -1785,15 +1811,23 @@ function negCalcular(){
     r.insumos += negInsumos(x);
     r.enf     += SUP.enf_hora*SUP.horas_sesion/porDia[x.d];
   });
+  /* Las notas clínicas ya no generan costo, pero siguen siendo la señal de que
+     alguien fue atendido: sirven para avisar si se atendió y no se cobró. */
   NEG_DATA.notas.filter(n=>dentro(String(n.created_at).slice(0,10))).forEach(n=>{
-    if(n.discipline==='enfermeria'||n.discipline==='megadosis') return;   // ya entran por la sesión
-    const r=nuevo(n.patient_id); r.cons++;
-    r.prof += n.discipline==='nutricion'?SUP.nutricion : n.discipline==='psicooncologia'?SUP.psico
-            : n.discipline==='ejercicio'?SUP.ejercicio : SUP.consulta_costo;
+    if(n.discipline==='enfermeria'||n.discipline==='megadosis') return;
+    nuevo(n.patient_id).notas++;
   });
-  /* un pago cuenta el día que entró la plata */
+
+  /* Un pago cuenta el día que entró la plata.
+     El costo del profesional sale del ingreso, no de las notas: una nota puede ser
+     un comentario, un control de enfermería o una corrección de la ficha, y nada de
+     eso se cobra. La consulta se cuenta cuando se carga el ingreso de esa prestación.
+     Una seña no cuenta: la prestación se cuenta cuando se cobra entera. */
   (NEG_DATA.pagos||[]).filter(g=>dentro(String(g.paid_on).slice(0,10))).forEach(g=>{
     const r=nuevo(g.patient_id), m=Number(g.amount_ars)||0;
+    const costo=prestacionesDe(g);
+    r.cons += costo.n;
+    r.prof += costo.ars;
     r.pagos.push(g); r.bruto+=m;
     r.brutoUsd += (Number(g.amount_usd)||0) || (m/(Number(g.tc)||SUP.tc));
     if(g.method==='electronico') r.brutoFact+=m; else r.brutoEfe+=m;
@@ -1814,7 +1848,7 @@ function negCalcular(){
     const margen = antes - gan;
     return Object.assign(r,{saldo:s,iva,iibb,ingNeto,directos,eche,banco,gan,margen,
       pct:bruto?margen/bruto:0});
-  }).filter(r=>r.ses||r.cons||r.pagos.length).sort((a,b)=>b.margen-a.margen);
+  }).filter(r=>r.ses||r.cons||r.notas||r.pagos.length).sort((a,b)=>b.margen-a.margen);
 
   const T=k=>filas.reduce((a,f)=>a+(f[k]||0),0);
   const dias={}; NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>dias[x.d]=(dias[x.d]||0)+1);
@@ -1962,9 +1996,15 @@ function negPintarResumen(){
   const av=[], pv=porRenovar();
   if(pv.length) av.push('<b>'+pv.length+' programa'+(pv.length>1?'s':'')+' por renovar.</b> '+
     pv.slice(0,4).map(p=>esc(String(p.n).split(',')[0])+' '+fmtDMShort(p.hasta)).join(' · ')+'.');
-  const sinPago=filas.filter(f=>!f.pagos.length && (f.ses||f.cons));
+  const sinPago=filas.filter(f=>!f.pagos.length && (f.ses||f.notas));
   if(sinPago.length) av.push('<b>'+sinPago.length+' paciente'+(sinPago.length>1?'s':'')+' con atención y sin ningún pago cargado.</b> '+
-    'Suman costo pero no ingreso, así que el margen de arriba está por debajo del real.');
+    esc(sinPago.slice(0,4).map(f=>String(f.n).split(',')[0]).join(' · '))+'. '+
+    'Si la atención ocurrió, falta el ingreso: el cobrado de arriba está por debajo del real.');
+  const atendidoSinCobrar=filas.filter(f=>f.pagos.length && f.notas>f.cons && !f.saldo);
+  if(atendidoSinCobrar.length) av.push('<b>'+atendidoSinCobrar.length+' paciente'+(atendidoSinCobrar.length>1?'s':'')+
+    ' con más consultas registradas que cobradas.</b> '+
+    esc(atendidoSinCobrar.slice(0,4).map(f=>String(f.n).split(',')[0]+' ('+f.notas+' vs '+f.cons+')').join(' · '))+
+    '. Puede ser una consulta sin cobrar o una nota que no era una consulta.');
   if(solos.length) av.push('<b>'+solos.length+' turno'+(solos.length>1?'s':'')+' con un solo paciente.</b> '+
     'La enfermería de ese día ('+negARS(SUP.enf_hora*SUP.horas_sesion)+') cae entera sobre esa persona. Con dos, baja a la mitad.');
   filas.forEach(f=>{ const s=f.saldo; if(!s||!s.totI) return;
@@ -2423,7 +2463,12 @@ const NEG_PCT=[['eche_pct','Comisión Eche'],['iva','IVA'],['iibb','Ingresos Bru
 function negSupuestos(){
   const h=$('negSupBody'); if(!h || h.dataset.listo) return;
   h.dataset.listo='1';
-  h.innerHTML='<div class="grid g3">'+
+  h.innerHTML='<p class="meta" style="margin:0 2px 14px">Las consultas se cuentan desde el ingreso, no desde las notas: '+
+      'cuando cargás el pago de una consulta médica, de nutrición, de psico o de actividad física, '+
+      'ahí se imputa el honorario del profesional. Una seña o pago parcial no cuenta ninguna; la prestación '+
+      'se cuenta cuando se cobra entera. Un programa mensual imputa de una las consultas que incluye. '+
+      'La sueroterapia es la excepción: sus insumos y la enfermería se cuentan el día que se administra la infusión.</p>'+
+    '<div class="grid g3">'+
     NEG_CAMPOS.map(([k,l])=>'<div class="field"><label for="sup_'+k+'">'+l+'</label>'+
       '<input id="sup_'+k+'" value="'+SUP[k]+'" inputmode="decimal" onchange="negSupSet(\''+k+'\',this.value,1)"></div>').join('')+
     NEG_PCT.map(([k,l])=>'<div class="field"><label for="sup_'+k+'">'+l+' (%)</label>'+
@@ -2998,7 +3043,8 @@ async function loadCache(){
     DB().from('indications').select('id,patient_id,kind,active,vitc_target_dose_g').in('kind',['vitamina_c','infusion']).eq('active',true),
     DB().from('consents').select('patient_id,kind,signed_at').eq('kind','vitamina_c'),
     DB().from('labs').select('patient_id,measured_at,creatinina,recorded_by').order('measured_at',{ascending:false}),
-    DB().from('notes').select('patient_id,discipline,author_id,created_at').order('created_at',{ascending:false}),
+    /* idem: para el panel del día cuentan las evoluciones, no las correcciones de ficha */
+    DB().from('v_notas_clinicas').select('patient_id,discipline,author_id,created_at').order('created_at',{ascending:false}),
     DB().from('vitc_administrations').select('patient_id,administered_at,adverse_events,administered_by').order('administered_at',{ascending:false}),
     DB().from('vitals').select('patient_id,measured_at,recorded_by').order('measured_at',{ascending:false}),
     DB().from('attachments').select('patient_id,created_at,uploaded_by').order('created_at',{ascending:false}),
@@ -3599,7 +3645,8 @@ async function saldoFichaCargar(){
     const pg=ps[0], desde=String(pg.covers_from).slice(0,10), hasta=masUnMes(desde);
     const [VC,NT]=await Promise.all([
       DB().from('vitc_administrations').select('administered_at').eq('patient_id',pid).is('deleted_at',null),
-      DB().from('notes').select('discipline,created_at').eq('patient_id',pid).is('deleted_at',null)
+      /* la vista deja afuera las correcciones de ficha: completar un dato no gasta una prestación */
+      DB().from('v_notas_clinicas').select('discipline,created_at').eq('patient_id',pid).is('deleted_at',null)
     ]);
     const usado={}; MOD_K.forEach(k=>usado[k]=0);
     (VC.data||[]).forEach(v=>{ const f=String(v.administered_at).slice(0,10);
