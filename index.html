@@ -1229,6 +1229,15 @@ img,svg,video,canvas{max-width:100%}
 .home.solo .stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
 @media (max-width:860px){ .home.solo .stack{grid-template-columns:minmax(0,1fr)} }
 .kpis .n{font-variant-numeric:tabular-nums}
+
+/* ---------- 13. de dónde salió el tipo de cambio ---------- */
+.tc-hint{font-family:var(--f-ui);font-size:12px;color:var(--faint);margin-top:5px;line-height:1.45}
+.tc-hint.old{color:var(--alert)}
+.tc-pill{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-ui);font-size:12.5px;
+  padding:2px 9px;border-radius:999px;background:var(--panel-2);color:var(--muted);
+  border:1px solid var(--line);white-space:nowrap}
+.tc-pill.old{background:#FDF2E2;border-color:#EBD6B6;color:#8A5212}
+.tag.per{background:#EDE9FA;border-color:#D6CCF5;color:#5B3FA8}
 </style>
 <body>
 
@@ -1306,7 +1315,7 @@ const DB = () => SB.schema('clinica');
 const DIAS_LAB_VIGENTE = 30;
 const DIAS_AREA_ACTIVA = 45;
 
-const ROLE_LABEL = {admin:'Admin', director_medico:'Director médico', oncologo:'Médico oncólogo', medico_funcional:'Médico funcional', enfermeria:'Enfermería',
+const ROLE_LABEL = {admin:'Admin', director_medico:'Director médico', oncologo:'Médico oncólogo', medico_funcional:'Médica integrativa', enfermeria:'Enfermería',
   nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
 const DISC_LABEL = {oncologia:'Oncología', megadosis:'Megadosis de Vitamina C', enfermeria:'Enfermería', nutricion:'Nutrición', psicooncologia:'Psicooncología', ejercicio:'Actividad física'};
 const ROLE_TO_DISC = {admin:'oncologia', director_medico:'oncologia', oncologo:'oncologia', medico_funcional:'oncologia', enfermeria:'enfermeria', nutricion:'nutricion', psicooncologia:'psicooncologia', ejercicio:'ejercicio'};
@@ -1529,9 +1538,9 @@ let UX_TICK=0;
 
 /* ---------- permisos: iguales a las políticas RLS de la base (si cambia una política, cambiar acá) ---------- */
 const can = {
-  createPatient:()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),   // patients_insert
-  editPatient:  ()=>['admin','director_medico','oncologo','enfermeria'].includes(ME.role),   // patients_update
-  indicate:     ()=>['admin','director_medico','oncologo','medico_funcional'].includes(ME.role),  // ind_write: is_medic() o médico funcional
+  createPatient:()=>['admin','director_medico','oncologo','enfermeria','medico_funcional'].includes(ME.role),   // patients_insert
+  editPatient:  ()=>['admin','director_medico','oncologo','enfermeria','medico_funcional'].includes(ME.role),   // patients_update
+  indicate:     ()=>['admin','director_medico','oncologo','medico_funcional'].includes(ME.role),  // ind_write: is_medic() o médica integrativa
   vitc:         ()=>['admin','enfermeria','director_medico','medico_funcional'].includes(ME.role),  // vitc_write
   confidential: ()=>['admin','psicooncologia','director_medico'].includes(ME.role),
   director:     ()=>['admin','director_medico'].includes(ME.role),
@@ -1606,7 +1615,11 @@ const SUP_DEF={tc:1580, enf_hora:20000, horas_sesion:3, nutricion:40000, psico:4
 let SUP=Object.assign({},SUP_DEF), SUP_ID=null, NEG_DATA=null;
 let NEG_D1=null, NEG_D2=null;                 // rango elegido a mano
 let PG_FILTRO={q:'',d1:null,d2:null};         // filtros del listado de pagos
-let GA_FILTRO={cat:'',d1:null,d2:null};
+let GA_FILTRO={cat:'',d1:null,d2:null,scope:'revigen'};
+/* Una compra personal facturada a nombre de Revigen: se guarda el rastro de la
+   factura, pero no es un gasto del centro ni plata que un socio puso en el centro. */
+function esPersonal(g){ return (g&&g.scope)==='personal'; }
+function gaSetScope(v){ GA_FILTRO.scope=v; negPintarGastos(); }
 
 /* ---------- plata ---------- */
 function negARS(n){ return '$ '+esES(Math.round(n||0)); }
@@ -1620,6 +1633,27 @@ function negPct(n){ return (n*100).toFixed(1).replace('.',',')+' %'; }
    en pesos— se expresa al tipo de cambio promedio de lo cobrado en el período. */
 let TC_PER = 0;
 function tcPer(){ return TC_PER || SUP.tc || 1; }
+
+/* De dónde salió el tipo de cambio vigente y hace cuánto. La tarea diaria del BNA
+   deja anotada la fuente y la hora; si alguien lo puso a mano no hay nada anotado. */
+function tcEdad(){
+  const at=SUP.tc_leido_at; if(!at) return null;
+  const d=String(at).slice(0,10);
+  const a=new Date(d+'T12:00:00'), b=new Date(todayLocal()+'T12:00:00');
+  if(isNaN(a)) return null;
+  return Math.max(0, Math.round((b-a)/86400000));
+}
+function tcCuando(){
+  const dias=tcEdad(); if(dias==null) return 'cargado a mano';
+  if(dias===0) return 'hoy '+String(SUP.tc_leido_at).slice(11);
+  if(dias===1) return 'ayer';
+  return 'hace '+dias+' días';
+}
+function tcViejo(){ const d=tcEdad(); return d==null || d>=3; }
+function tcHint(){
+  const f=SUP.tc_fuente||'cargado a mano';
+  return '<div class="tc-hint'+(tcViejo()?' old':'')+'">'+(tcViejo()?'⚠ ':'')+esc(f)+' · '+esc(tcCuando())+'</div>';
+}
 function dual(ars, usd){
   const u = (usd!=null && isFinite(usd)) ? usd : (ars/tcPer());
   return '<span class="usd">'+negUSD(u)+'<span class="ars">'+negARS(ars)+'</span></span>';
@@ -1690,8 +1724,11 @@ function consumoDesde(pid,desde,hasta){
   return o;
 }
 /* todo lo que hay que saber del programa de un paciente, para la ficha y para el aviso */
-function saldoDe(pid){
-  const pg=programaDe(pid);
+function saldoDe(pid, corte){
+  /* «corte» es el cierre del período que se está mirando. Sin él, el programa que
+     se muestra es el de hoy, y filtrando una semana vieja aparecía un programa
+     comprado después de esa semana. */
+  const pg=programaDe(pid, corte);
   if(!pg) return null;
   const desde=String(pg.covers_from).slice(0,10), hasta=masUnMes(desde);
   const inc=incDe(pg), usado=consumoDesde(pid,desde,hasta);
@@ -1834,7 +1871,7 @@ function negCalcular(){
   });
 
   const filas=Object.values(R).map(r=>{
-    const s=saldoDe(r.pid);
+    const s=saldoDe(r.pid, d2);
     const bruto=r.bruto, share = bruto? r.brutoFact/bruto : 0;
     const directos = r.insumos + r.enf + r.prof;
     const netoFact = r.brutoFact/(1+SUP.iva);
@@ -1853,7 +1890,9 @@ function negCalcular(){
   const T=k=>filas.reduce((a,f)=>a+(f[k]||0),0);
   const dias={}; NEG_DATA.ses.filter(x=>dentro(x.d)).forEach(x=>dias[x.d]=(dias[x.d]||0)+1);
   const altas=NEG_DATA.pacientes.filter(p=>dentro(String(p.created_at).slice(0,10))).length;
-  const gastos=(NEG_DATA.gastos||[]).filter(g=>dentro(String(g.spent_on).slice(0,10)));
+  /* Las compras personales facturadas a Revigen quedan afuera del P&L: la factura
+     existe, el gasto no es del centro. Se revisan en la pestaña Gastos. */
+  const gastos=(NEG_DATA.gastos||[]).filter(g=>dentro(String(g.spent_on).slice(0,10)) && !esPersonal(g));
   const gTot=gastos.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
   const gTotUsd=gastos.reduce((a,g)=>a+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc))),0);
   return {filas,dias,altas,d1,d2,gastos,
@@ -1861,7 +1900,8 @@ function negCalcular(){
     tot:{bruto:T('bruto'),iva:T('iva'),iibb:T('iibb'),ingNeto:T('ingNeto'),insumos:T('insumos'),
       enf:T('enf'),prof:T('prof'),directos:T('directos'),eche:T('eche'),
       banco:T('banco'),gan:T('gan'),margen:T('margen'),ses:T('ses'),
-      brutoUsd:T('brutoUsd'),gastos:gTot,gastosUsd:gTotUsd}};
+      brutoUsd:T('brutoUsd'),gastos:gTot,gastosUsd:gTotUsd,
+      nPagos:filas.reduce((a,f)=>a+f.pagos.length,0)}};
 }
 
 /* ===================== Negocio · pantallas ===================== */
@@ -1925,7 +1965,7 @@ async function renderNegocio(){
    '<div class="kpis" id="negKpis"></div>'+
    '<section class="card"><div class="sec">'+
      '<div class="sec-h"><span class="sec-t">Qué hace y qué deja cada paciente</span>'+
-       '<span class="meta">sale de lo que se cargó en los pagos</span></div>'+
+       '<span class="meta">Cobrado = sólo los pagos con fecha dentro del período</span></div>'+
      '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Paciente</th><th>Programa</th>'+
        '<th class="n">Saldo</th><th class="n">Renueva</th><th class="n">Cobrado</th>'+
        '<th class="n">Margen</th><th class="n">%</th></tr></thead>'+
@@ -1953,24 +1993,36 @@ function negPintarResumen(){
   if(!NEG_DATA||!$('negKpis')) return;
   const {filas,tot,dias,altas}=negCalcular(), r=negRango();
   TC_PER = (tot.bruto>0 && tot.brutoUsd>0) ? tot.bruto/tot.brutoUsd : 0;
-  const sub=$('negSub'); if(sub) sub.textContent='Del '+fmt(r.d1)+' al '+fmt(r.d2)+' · '+filas.length+' paciente'+(filas.length===1?'':'s')+' con actividad';
+  const sub=$('negSub'); if(sub) sub.innerHTML='Del '+fmt(r.d1)+' al '+fmt(r.d2)+' · '+filas.length+' paciente'+(filas.length===1?'':'s')+' con actividad'+
+    ' · <span class="tc-pill'+(tcViejo()?' old':'')+'" title="'+esc((SUP.tc_fuente||'cargado a mano')+' · '+tcCuando())+'">TC $ '+esES(Math.round(SUP.tc))+(tcViejo()?' ⚠':'')+'</span>';
   $('negBanda').innerHTML=negBanda(false);
   $('negKpis').innerHTML=
     negKpi('Pacientes con actividad',filas.length,altas+' alta'+(altas===1?'':'s')+' en el período')+
     negKpi('Sesiones de sueroterapia',tot.ses,Object.keys(dias).length+' día'+(Object.keys(dias).length===1?'':'s')+' de infusión')+
-    negKpi('Cobrado',negUSD(tot.brutoUsd),negARS(tot.bruto)+(TC_PER?' · TC promedio '+esES(Math.round(TC_PER)):''))+
+    negKpi('Cobrado en el período',negUSD(tot.brutoUsd),negARS(tot.bruto)+' · '+tot.nPagos+' pago'+(tot.nPagos===1?'':'s')+(TC_PER?' · TC promedio '+esES(Math.round(TC_PER)):''))+
     negKpi('Margen',negUSD(tot.margen/tcPer()),negPct(tot.margen/(tot.bruto||1))+' de lo cobrado','hero');
 
   const cls=x=>x<0?'neg':x<.2?'low':'';
   $('negRp').innerHTML=filas.map(f=>{
     const s=f.saldo;
+    /* Un programa comprado antes del período sigue rigiendo adentro, pero conviene
+       que se vea la fecha: si no, parece un pago de otra semana metido en esta. */
+    const viejo = s && s.desde < r.d1;
+    const prog = s
+      ? esc(programaCorto(s.pg)) + (viejo? ' <span class="meta">· del '+fmtDMShort(s.desde)+'</span>' : '')
+      : '<span class="meta">Sin programa</span>';
+    /* Fila sin un peso cobrado en el período: está por lo que se le hizo, no por lo que pagó. */
+    const porQue = f.ses? (f.ses+' infusión'+(f.ses===1?'':'es')) : (f.notas? f.notas+' consulta'+(f.notas===1?'':'s') : 'actividad');
+    const cobrado = f.bruto
+      ? dual(f.bruto, f.brutoUsd)
+      : '<span class="meta" title="No entró plata en este período. Figura por '+esc(porQue)+' de estos días, que ya estaban pagos o todavía no se cobraron.">sin cobros</span>';
     return '<tr><td class="nm"><button class="linkbtn" onclick="openPatient(\''+f.pid+'\')">'+esc(f.n)+'</button></td>'+
-    '<td class="meta">'+esc(s?programaCorto(s.pg):'Sin programa')+'</td>'+
+    '<td class="meta">'+prog+'</td>'+
     '<td class="n">'+(s? (s.totQ?s.totQ:'<span class="meta">sin saldo</span>') : '—')+'</td>'+
     '<td class="n">'+(s? (s.porVencer?venceChip(s):fmtDMShort(s.hasta)) : '—')+'</td>'+
-    '<td class="n">'+dual(f.bruto,f.brutoUsd)+'</td>'+
+    '<td class="n">'+cobrado+'</td>'+
     '<td class="n mg '+cls(f.pct)+'">'+dual(f.margen)+'</td>'+
-    '<td class="n mg '+cls(f.pct)+'">'+negPct(f.pct)+'</td></tr>';}).join('')
+    '<td class="n mg '+cls(f.pct)+'">'+(f.bruto?negPct(f.pct):'<span class="meta">—</span>')+'</td></tr>';}).join('')
     || '<tr><td colspan="7" class="meta" style="padding:18px 0">No hay actividad en este período.</td></tr>';
   $('negRpF').innerHTML = filas.length? '<tr><td colspan="4">Total</td><td class="n">'+dual(tot.bruto,tot.brutoUsd)+'</td>'+
     '<td class="n">'+dual(tot.margen)+'</td><td class="n">'+negPct(tot.margen/(tot.bruto||1))+'</td></tr>':'';
@@ -2031,7 +2083,7 @@ function negGrafico(){
   const tocar=k=>M[k]||(M[k]={c:0,g:0});
   (NEG_DATA.pagos||[]).forEach(x=>{ const f=String(x.paid_on).slice(0,10); if(f<d1||f>d2) return;
     tocar(mes(f)).c += usdDe(x.amount_usd,x.amount_ars,x.tc); });
-  (NEG_DATA.gastos||[]).forEach(x=>{ const f=String(x.spent_on).slice(0,10); if(f<d1||f>d2) return;
+  (NEG_DATA.gastos||[]).forEach(x=>{ const f=String(x.spent_on).slice(0,10); if(f<d1||f>d2||esPersonal(x)) return;
     tocar(mes(f)).g += usdDe(x.amount_usd,x.amount_ars,x.tc); });
   const ks=Object.keys(M).sort().slice(-12);
   const sub=$('ngchSub');
@@ -2151,7 +2203,7 @@ function pgForm(){
        Object.keys(MEDIOS).map(k=>'<option value="'+k+'"'+(PG.medio===k?' selected':'')+'>'+MEDIOS[k].n+'</option>').join('')+'</select></div>'+
    '</div>'+
    '<div class="grid g2">'+
-     '<div class="field"><label for="pgTc">Tipo de cambio del día</label><input id="pgTc" inputmode="decimal" value="'+esES(SUP.tc)+'"></div>'+
+     '<div class="field"><label for="pgTc">Tipo de cambio del día</label><input id="pgTc" inputmode="decimal" value="'+esES(SUP.tc)+'">'+tcHint()+'</div>'+
      '<div class="field"><label for="pgNota">Nota (opcional)</label><input id="pgNota" value="'+esc(guarda.nota||'')+'" placeholder="Ej: pagó la mitad, el resto el 20"></div>'+
    '</div>'+
    '<div class="savebar" style="margin-top:12px"><button class="btn primary sm" onclick="pgGuardar(0)">Guardar pago</button>'+
@@ -2258,7 +2310,7 @@ function pgDetalle(id){
     '</div>'+
     '<div class="grid g2">'+
       '<div class="field"><label for="pdArs">Monto en pesos</label><input id="pdArs" inputmode="decimal" value="'+esES(Math.round(Number(g.amount_ars)||0))+'"></div>'+
-      '<div class="field"><label for="pdTc">Tipo de cambio</label><input id="pdTc" inputmode="decimal" value="'+esES(Number(g.tc)||SUP.tc)+'"></div>'+
+      '<div class="field"><label for="pdTc">Tipo de cambio</label><input id="pdTc" inputmode="decimal" value="'+esES(Number(g.tc)||SUP.tc)+'">'+(Number(g.tc)?'':tcHint())+'</div>'+
     '</div>'+
     (g.concept_kind==='sena'?'<div class="field"><label for="pdSena">¿A cuenta de qué?</label>'+
       '<select id="pdSena">'+SENA_DE.map(k=>'<option value="'+k+'"'+(g.sena_kind===k?' selected':'')+'>'+
@@ -2318,11 +2370,13 @@ async function renderGastos(){
   }
   p.innerHTML=
    '<div class="phead-page"><div><h1>Gastos</h1>'+
-     '<p class="sub">Entran por el grupo de Telegram. Acá se revisan y se corrigen.</p></div>'+
+     '<p class="sub">Entran por el grupo de Telegram. Acá se revisan y se corrigen.<br>'+
+       '<span class="meta">Las compras personales facturadas a nombre de Revigen se cargan acá también, marcadas aparte, y no entran en el P&amp;L.</span></p></div>'+
      '<button class="btn primary sm" onclick="gaModal()">'+PLUS+'Cargar a mano</button></div>'+
    negFiltroFechas('ga','<div class="fg"><label for="gaCat">Categoría</label>'+
      '<select id="gaCat" onchange="GA_FILTRO.cat=this.value;negPintarGastos()"><option value="">Todas</option>'+
      GASTO_CATS.map(c=>'<option'+(GA_FILTRO.cat===c?' selected':'')+'>'+c+'</option>').join('')+'</select></div>')+
+   '<div class="filters" id="gaScope" style="margin-bottom:16px"></div>'+
    '<div class="kpis" id="gaKpis"></div>'+
    '<section class="card"><div class="sec">'+
      '<div class="sec-h"><span class="sec-t">Movimientos</span><span class="meta" id="gaTot"></span></div>'+
@@ -2336,10 +2390,18 @@ async function renderGastos(){
 function negPintarGastos(){
   if(!NEG_DATA||!$('gaBody')) return;
   const {d1,d2}=negRango();
-  const lista=(NEG_DATA.gastos||[]).filter(g=>{
+  const enRango=(NEG_DATA.gastos||[]).filter(g=>{
     const f=String(g.spent_on).slice(0,10);
     return f>=d1 && f<=d2 && (!GA_FILTRO.cat || g.category===GA_FILTRO.cat);
   }).sort((a,b)=>String(b.spent_on).localeCompare(String(a.spent_on)));
+  const nRev=enRango.filter(g=>!esPersonal(g)).length, nPer=enRango.length-nRev;
+  const sc=GA_FILTRO.scope||'revigen';
+  const lista = sc==='todas' ? enRango
+              : sc==='personal' ? enRango.filter(esPersonal)
+              : enRango.filter(g=>!esPersonal(g));
+  const chip=(v,l,n)=>'<button class="'+(sc===v?'on':'')+'" onclick="gaSetScope(\''+v+'\')">'+l+' · '+n+'</button>';
+  const sh=$('gaScope');
+  if(sh) sh.innerHTML = chip('revigen','De Revigen',nRev) + chip('personal','Personales con factura',nPer) + chip('todas','Todas',enRango.length);
   const sumU=l=>l.reduce((a,g)=>a+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc))),0);
   const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), totU=sumU(lista);
   TC_PER = (tot>0 && totU>0) ? tot/totU : 0;
@@ -2351,22 +2413,28 @@ function negPintarGastos(){
     porQuien[k]=(porQuien[k]||0)+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc)));});
   const quienTxt=Object.keys(porQuien).sort((a,b)=>porQuien[b]-porQuien[a])
     .map(k=>(PAGADO[k]||k)+' '+negUSD(porQuien[k])).join(' · ')||'—';
-  $('gaKpis').innerHTML=
-    negKpi('Total del período',negUSD(totU),negARS(tot)+' · '+lista.length+' movimiento'+(lista.length===1?'':'s'))+
-    negKpi('Insumos',negUSD(insU),tot?negPct(ins/tot)+' del total':'—')+
-    negKpi('En efectivo',negUSD(efeU),negUSD(totU-efeU)+' electrónico')+
-    negKpi('Quién puso la plata',Object.keys(porQuien).length||'—',quienTxt);
+  $('gaKpis').innerHTML = sc==='personal'
+    ? negKpi('Facturado a Revigen',negUSD(totU),negARS(tot)+' · '+lista.length+' factura'+(lista.length===1?'':'s'))+
+      negKpi('A nombre de quién',Object.keys(porQuien).length||'—',quienTxt)+
+      negKpi('En efectivo',negUSD(efeU),negUSD(totU-efeU)+' electrónico')+
+      negKpi('Fuera del P&L',negUSD(totU),'no cuenta como gasto del centro','hero')
+    : negKpi(sc==='todas'?'Total, todo junto':'Gastos del período',negUSD(totU),negARS(tot)+' · '+lista.length+' movimiento'+(lista.length===1?'':'s'))+
+      negKpi('Insumos',negUSD(insU),tot?negPct(ins/tot)+' del total':'—')+
+      negKpi('En efectivo',negUSD(efeU),negUSD(totU-efeU)+' electrónico')+
+      negKpi('Quién puso la plata',Object.keys(porQuien).length||'—',quienTxt);
   $('gaBody').innerHTML=lista.map(g=>
     '<tr class="cl" onclick="gaModal(\''+g.id+'\')"><td class="n" style="text-align:left">'+fmtDMShort(g.spent_on)+'</td>'+
-    '<td class="nm">'+esc(g.concept||'—')+'</td>'+
+    '<td class="nm">'+esc(g.concept||'—')+(esPersonal(g)?' <span class="tag per" title="Compra personal facturada a nombre de Revigen. No cuenta como gasto del centro.">personal</span>':'')+'</td>'+
     '<td><span class="tag">'+esc(g.category||'Sin categoría')+'</span></td>'+
     '<td>'+esc(PAGADO[g.paid_by]||g.paid_by||'—')+'</td>'+
     '<td class="meta">'+esc((MEDIOS[g.method]||{n:g.method||'—'}).n)+'</td>'+
     '<td class="n">'+dual(Number(g.amount_ars)||0, Number(g.amount_usd))+'</td>'+
     '<td>'+(g.source==='telegram'?'<span class="tag tg">Telegram</span>':'<span class="meta">a mano</span>')+'</td></tr>').join('')
-    || '<tr><td colspan="7" class="meta" style="padding:18px 0">Sin gastos en este período.</td></tr>';
+    || '<tr><td colspan="7" class="meta" style="padding:18px 0">'+(sc==='personal'?'No hay facturas personales en este período.':'Sin gastos en este período.')+'</td></tr>';
   $('gaFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot,totU)+'</td><td></td></tr>':'';
-  const t=$('gaTot'); if(t) t.textContent=lista.length+' movimiento'+(lista.length===1?'':'s');
+  const t=$('gaTot'); if(t) t.textContent = sc==='personal'
+    ? lista.length+' factura'+(lista.length===1?'':'s')+' · a nombre de Revigen, gasto de ellos'
+    : lista.length+' movimiento'+(lista.length===1?'':'s')+(nPer&&sc!=='todas'?' · '+nPer+' factura'+(nPer===1?'':'s')+' personal'+(nPer===1?'':'es')+' aparte':'');
   uxNums($('gaKpis')); uxCardify($('page'));
 }
 function gaModal(id){
@@ -2380,12 +2448,16 @@ function gaModal(id){
     '<div class="field"><label for="gxConc">Concepto *</label><input id="gxConc" value="'+esc(g.concept||'')+'" placeholder="Ej: vitamina C Farmados"></div>'+
     '<div class="field"><label for="gxCat">Categoría</label><select id="gxCat"><option value="">Sin categoría</option>'+
       GASTO_CATS.map(c=>'<option'+(g.category===c?' selected':'')+'>'+c+'</option>').join('')+'</select></div>'+
+    '<div class="field"><label for="gxScope">¿De quién es el gasto?</label><select id="gxScope">'+
+      '<option value="revigen"'+(esPersonal(g)?'':' selected')+'>De Revigen · entra en el P&amp;L</option>'+
+      '<option value="personal"'+(esPersonal(g)?' selected':'')+'>Personal, facturado a Revigen · no entra en el P&amp;L</option>'+
+      '</select><div class="tc-hint">Elegí «personal» cuando la compra es de ustedes y sólo pidieron la factura a nombre de Revigen. Queda registrada y visible, pero fuera del margen.</div></div>'+
     '<div class="grid g3">'+
       '<div class="field"><label for="gxQuien">Lo pagó *</label><select id="gxQuien">'+
         Object.keys(PAGADO).map(k=>'<option value="'+k+'"'+((g.paid_by||'revigen')===k?' selected':'')+'>'+PAGADO[k]+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="gxMedio">Medio</label><select id="gxMedio">'+
         Object.keys(MEDIOS).map(k=>'<option value="'+k+'"'+((g.method||'electronico')===k?' selected':'')+'>'+MEDIOS[k].n+'</option>').join('')+'</select></div>'+
-      '<div class="field"><label for="gxTc">Tipo de cambio</label><input id="gxTc" inputmode="decimal" value="'+esES(Number(g.tc)||SUP.tc)+'"></div>'+
+      '<div class="field"><label for="gxTc">Tipo de cambio</label><input id="gxTc" inputmode="decimal" value="'+esES(Number(g.tc)||SUP.tc)+'">'+(Number(g.tc)?'':tcHint())+'</div>'+
     '</div>'+
     (g.raw_text?'<p class="meta" style="margin:0;line-height:1.7">Vino de Telegram'+(g.tg_from?' · lo mandó '+esc(g.tg_from):'')+
       ':<br>«'+esc(g.raw_text)+'»</p>':''),
@@ -2396,7 +2468,7 @@ function gaModal(id){
       if(!conc){ toast('Poné el concepto'); return false; }
       const tc=parseFloat(String($('gxTc').value).replace(/\./g,'').replace(',','.'))||SUP.tc;
       const rec={spent_on:$('gxFecha').value||hoy, concept:conc, category:$('gxCat').value||null,
-        paid_by:$('gxQuien').value, method:$('gxMedio').value,
+        paid_by:$('gxQuien').value, method:$('gxMedio').value, scope:$('gxScope').value||'revigen',
         amount_ars:Math.round(ars), amount_usd:Math.round(ars/tc*100)/100, tc:tc};
       let error;
       if(id){ rec.updated_at=new Date().toISOString(); ({error}=await DB().from('expenses').update(rec).eq('id',id)); }
@@ -2468,6 +2540,9 @@ function negSupuestos(){
       'ahí se imputa el honorario del profesional. Una seña o pago parcial no cuenta ninguna; la prestación '+
       'se cuenta cuando se cobra entera. Un programa mensual imputa de una las consultas que incluye. '+
       'La sueroterapia es la excepción: sus insumos y la enfermería se cuentan el día que se administra la infusión.</p>'+
+    '<p class="meta" style="margin:-6px 2px 14px">Tipo de cambio vigente: <b>$ '+esES(Math.round(SUP.tc))+'</b> · '+
+      esc(SUP.tc_fuente||'cargado a mano')+' · '+esc(tcCuando())+
+      '. Una tarea diaria lee el BNA al mediodía y lo deja actualizado; si lo cambiás a mano acá, el próximo paso de la tarea lo vuelve a tomar del banco.</p>'+
     '<div class="grid g3">'+
     NEG_CAMPOS.map(([k,l])=>'<div class="field"><label for="sup_'+k+'">'+l+'</label>'+
       '<input id="sup_'+k+'" value="'+SUP[k]+'" inputmode="decimal" onchange="negSupSet(\''+k+'\',this.value,1)"></div>').join('')+
@@ -2873,7 +2948,7 @@ function renderAuth(mode){
     (signup?
       '<div class="field"><label>Nombre y apellido</label><input id="suName" placeholder="Ej: Dra. Ana Gómez"></div>'+
       '<div class="field"><label>Rol en el centro</label><select id="suRole">'+
-        '<option value="oncologo">Médico oncólogo</option><option value="medico_funcional">Médico funcional</option><option value="director_medico">Director médico</option>'+
+        '<option value="oncologo">Médico oncólogo</option><option value="medico_funcional">Médica integrativa</option><option value="director_medico">Director médico</option>'+
         '<option value="enfermeria">Enfermería</option><option value="nutricion">Nutrición</option>'+
         '<option value="psicooncologia">Psicooncología</option><option value="ejercicio">Actividad física</option></select></div>'+
       '<div class="field"><label>Matrícula (opcional)</label><input id="suLicense" placeholder="Ej: MP 12345"></div>'
@@ -4910,7 +4985,7 @@ async function renderVitc(hostEl){
     : '<section class="card"><div class="sec"><div class="sec-h"><span class="sec-t">Infusiones registradas</span>'+btn+'</div>'+vacio('💧','Sin infusiones registradas','Cuando enfermería administre la primera, queda acá con componentes, volumen, goteo y signos vitales.','',' sm')+'</div></section>';
   const relevant=!!FCAL().ind||!!(data&&data.length);
   const anyG6=(FCAL().inds||[]).some(indG6pd)||(data||[]).some(v=>Number(v.dose_g)>0);   // G6PD y consentimiento: solo si hay vitamina C
-  host.innerHTML=(anyG6?gate+consentNote:'')+(relevant?labWarn:'')+table+(canReg?'':'<div class="callout"><p>Las infusiones de megadosis las registran enfermería, el médico funcional y la dirección médica.</p></div>');
+  host.innerHTML=(anyG6?gate+consentNote:'')+(relevant?labWarn:'')+table+(canReg?'':'<div class="callout"><p>Las infusiones de megadosis las registran enfermería, la médica integrativa y la dirección médica.</p></div>');
 }
 function goConsent(){ DOC_TAB='consent'; setTab('docs'); }
 /* ---------- Registrar una infusión ----------
@@ -4940,7 +5015,7 @@ function dupInfusionHTML(list){
   return t.length?'<div class="gate"><span class="ic"></span><p><b style="color:var(--ink)">Ya hay una infusión'+(VI?' de este protocolo':'')+' hoy a las '+fmtHM(t[0].administered_at)+'</b>, registrada por '+esc(whoName(t[0].administered_by))+'. Si es otra infusión, registrala igual.</p></div>':'';
 }
 function openVitcModal(indId){
-  if(!can.vitc()){ toast('Las infusiones las registran enfermería, el médico funcional y la dirección médica'); return; }
+  if(!can.vitc()){ toast('Las infusiones las registran enfermería, la médica integrativa y la dirección médica'); return; }
   const inds=FCAL().inds||[];
   if(!inds.length) return openVitcLegacy();
   VI={indId:(indId&&inds.some(i=>i.id===indId))?indId:inds[0].id};
@@ -5371,7 +5446,7 @@ function renderIndCard(host){
   const inds=FCAL().inds||[], ci=can.indicate(), g=CUR.g6pd_status||'no_evaluado';
   const head='<div class="sec-h" style="margin:0 2px 10px"><span class="sec-t">Infusiones vigentes · '+inds.length+'</span>'+(ci?'<button class="btn primary sm" onclick="openInfusionModal()">'+PLUS+'Indicar tratamiento</button>':'')+'</div>';
   if(!inds.length){
-    host.innerHTML=head+'<section class="card"><div class="sec"><p class="meta" style="margin:0">'+(ci?'No hay infusiones indicadas. Elegí los componentes del catálogo, el vehículo, el goteo y la frecuencia: enfermería los ve precargados en cada infusión.':'No hay infusiones indicadas. Las indican la dirección médica, oncología y el médico funcional.')+'</p></div></section>';
+    host.innerHTML=head+'<section class="card"><div class="sec"><p class="meta" style="margin:0">'+(ci?'No hay infusiones indicadas. Elegí los componentes del catálogo, el vehículo, el goteo y la frecuencia: enfermería los ve precargados en cada infusión.':'No hay infusiones indicadas. Las indican la dirección médica, oncología y la médica integrativa.')+'</p></div></section>';
     return;
   }
   host.innerHTML=head+'<div class="stack">'+inds.map(i=>indCardHTML(i,ci,g)).join('')+'</div>';
@@ -5417,7 +5492,7 @@ async function renderIndic(hostEl){
 
 /* indicación general (texto) */
 function openIndicModal(){
-  if(!can.indicate()){ toast('Las indicaciones las cargan la dirección médica, oncología y el médico funcional'); return; }
+  if(!can.indicate()){ toast('Las indicaciones las cargan la dirección médica, oncología y la médica integrativa'); return; }
   modalOpen('Nueva indicación general',
     '<div class="field"><label>Indicación *</label><textarea id="iDetail" placeholder="Indicación, aclaraciones, controles…"></textarea></div>','Guardar indicación', addIndic);
 }
@@ -5436,7 +5511,7 @@ async function addIndic(){
 
 /* indicar / modificar una infusión */
 async function openInfusionModal(prevId, fromNote){
-  if(!can.indicate()){ toast('Las infusiones las indican la dirección médica, oncología y el médico funcional'); return; }
+  if(!can.indicate()){ toast('Las infusiones las indican la dirección médica, oncología y la médica integrativa'); return; }
   await loadCatalog();
   const prev=prevId?(FCAL().inds||[]).find(i=>i.id===prevId)||null:null;
   const cat=(CATALOG||[]).filter(c=>c.active);
