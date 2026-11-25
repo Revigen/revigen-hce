@@ -1238,6 +1238,10 @@ img,svg,video,canvas{max-width:100%}
   border:1px solid var(--line);white-space:nowrap}
 .tc-pill.old{background:#FDF2E2;border-color:#EBD6B6;color:#8A5212}
 .tag.per{background:#EDE9FA;border-color:#D6CCF5;color:#5B3FA8}
+.tag.rev{background:#FDF2E2;border-color:#EBD6B6;color:#8A5212}
+.cmp{text-decoration:none;font-size:13px;opacity:.75;cursor:pointer}
+.cmp:hover{opacity:1}
+.cmp.pend{opacity:.4;cursor:help}
 </style>
 <body>
 
@@ -2397,11 +2401,14 @@ function negPintarGastos(){
   const nRev=enRango.filter(g=>!esPersonal(g)).length, nPer=enRango.length-nRev;
   const sc=GA_FILTRO.scope||'revigen';
   const lista = sc==='todas' ? enRango
+              : sc==='revisar' ? enRango.filter(g=>g.review_note)
               : sc==='personal' ? enRango.filter(esPersonal)
               : enRango.filter(g=>!esPersonal(g));
+  const nRevisar=enRango.filter(g=>g.review_note).length;
   const chip=(v,l,n)=>'<button class="'+(sc===v?'on':'')+'" onclick="gaSetScope(\''+v+'\')">'+l+' · '+n+'</button>';
   const sh=$('gaScope');
-  if(sh) sh.innerHTML = chip('revigen','De Revigen',nRev) + chip('personal','Personales con factura',nPer) + chip('todas','Todas',enRango.length);
+  if(sh) sh.innerHTML = chip('revigen','De Revigen',nRev) + chip('personal','Personales con factura',nPer) +
+    chip('todas','Todas',enRango.length) + (nRevisar?chip('revisar','⚠ Para revisar',nRevisar):'');
   const sumU=l=>l.reduce((a,g)=>a+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc))),0);
   const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), totU=sumU(lista);
   TC_PER = (tot>0 && totU>0) ? tot/totU : 0;
@@ -2424,7 +2431,11 @@ function negPintarGastos(){
       negKpi('Quién puso la plata',Object.keys(porQuien).length||'—',quienTxt);
   $('gaBody').innerHTML=lista.map(g=>
     '<tr class="cl" onclick="gaModal(\''+g.id+'\')"><td class="n" style="text-align:left">'+fmtDMShort(g.spent_on)+'</td>'+
-    '<td class="nm">'+esc(g.concept||'—')+(esPersonal(g)?' <span class="tag per" title="Compra personal facturada a nombre de Revigen. No cuenta como gasto del centro.">personal</span>':'')+'</td>'+
+    '<td class="nm">'+esc(g.concept||'—')+
+      (esPersonal(g)?' <span class="tag per" title="Compra personal facturada a nombre de Revigen. No cuenta como gasto del centro.">personal</span>':'')+
+      (g.receipt_drive_url?' <a class="cmp" href="'+esc(g.receipt_drive_url)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Ver el comprobante en Drive">📎</a>':
+        (g.receipt_tg_file_id?' <span class="cmp pend" title="Comprobante recibido, todavía no archivado en Drive.">📎</span>':''))+
+      (g.review_note?' <span class="tag rev" title="'+esc(g.review_note)+'">revisar</span>':'')+'</td>'+
     '<td><span class="tag">'+esc(g.category||'Sin categoría')+'</span></td>'+
     '<td>'+esc(PAGADO[g.paid_by]||g.paid_by||'—')+'</td>'+
     '<td class="meta">'+esc((MEDIOS[g.method]||{n:g.method||'—'}).n)+'</td>'+
@@ -2459,6 +2470,21 @@ function gaModal(id){
         Object.keys(MEDIOS).map(k=>'<option value="'+k+'"'+((g.method||'electronico')===k?' selected':'')+'>'+MEDIOS[k].n+'</option>').join('')+'</select></div>'+
       '<div class="field"><label for="gxTc">Tipo de cambio</label><input id="gxTc" inputmode="decimal" value="'+esES(Number(g.tc)||SUP.tc)+'">'+(Number(g.tc)?'':tcHint())+'</div>'+
     '</div>'+
+    (g.review_note?'<div class="callout" style="margin:0 0 12px"><p><b>Para revisar.</b> '+esc(g.review_note)+'</p></div>':'')+
+    (function(){
+      if(!g.receipt_drive_url && !g.receipt_tg_file_id) return '';
+      const d=g.receipt_data||{};
+      const leido = g.receipt_read_at
+        ? '<div class="rows" style="margin-top:8px">'+
+            ['proveedor','fecha','total','cuit','tipo'].filter(k=>d[k]!=null&&d[k]!=='').map(k=>
+              '<div class="row"><span class="k">'+({proveedor:'Proveedor',fecha:'Fecha de la factura',total:'Total de la factura',cuit:'CUIT',tipo:'Tipo'})[k]+
+              '</span><span class="v">'+esc(k==='total'?negARS(d[k]):(k==='fecha'?fmt(d[k]):d[k]))+'</span></div>').join('')+'</div>'
+        : '<p class="meta" style="margin:6px 0 0">Todavía no se leyó. La tarea de las 18 lo lee y completa lo que falte.</p>';
+      return '<div class="sec" style="padding:0;margin:0 0 12px">'+
+        '<div class="sec-h" style="margin-bottom:0"><span class="sec-t">Comprobante</span>'+
+          (g.receipt_drive_url?'<a class="btn sm" href="'+esc(g.receipt_drive_url)+'" target="_blank" rel="noopener">Ver en Drive</a>'
+            :'<span class="meta">recibido, se archiva en Drive</span>')+'</div>'+leido+'</div>';
+    })()+
     (g.raw_text?'<p class="meta" style="margin:0;line-height:1.7">Vino de Telegram'+(g.tg_from?' · lo mandó '+esc(g.tg_from):'')+
       ':<br>«'+esc(g.raw_text)+'»</p>':''),
     id?'Guardar cambios':'Guardar gasto', async ()=>{
