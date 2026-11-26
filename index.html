@@ -154,6 +154,34 @@ svg{stroke-linecap:round;stroke-linejoin:round}
   color:var(--muted);font-family:var(--f-ui);font-size:10.5px;font-weight:600;line-height:1;cursor:pointer;
   display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;padding:0;text-transform:none;letter-spacing:0}
 .hhint:hover{border-color:var(--sage);color:var(--ink-2)}
+/* encabezado de columna que se toca para ordenar */
+.thsort{all:unset;display:inline-flex;align-items:baseline;gap:5px;cursor:pointer;
+  font:inherit;color:inherit;letter-spacing:inherit;text-transform:inherit;
+  border-radius:4px;padding:1px 2px;max-width:100%}
+.thsort:hover{color:var(--ink-2)}
+.thsort:focus-visible{outline:2px solid var(--sage);outline-offset:2px}
+.thsort.on{color:var(--ink)}
+.thsort .ar{font-size:11px;line-height:1;color:var(--sage);width:8px;flex:none}
+.thsort.on .ar{opacity:1}
+.thsort:not(.on):hover .ar::before{content:'\2195';opacity:.45}
+/* control de orden para el teléfono: en pantalla grande se usan los títulos */
+.ordm{display:none}
+.ordm-hide{display:inline}
+@media (max-width:640px){
+  .ordm{display:flex;align-items:center;gap:8px;padding:0 0 2px;width:100%}
+  .ordm-hide{display:none}
+  .ordm label{font-family:var(--f-ui);font-size:11px;font-weight:600;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--faint);flex:none}
+  .ordm select{flex:1;min-width:0;min-height:44px}
+  .ordm-dir{flex:none;width:44px;height:44px;border:1px solid var(--line);border-radius:9px;
+    background:var(--panel);color:var(--sage);font-size:16px;line-height:1;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center}
+  .ordm-dir:hover{border-color:var(--sage)}
+  #pgOrd,#gaOrd{margin:2px 0 14px}
+}
+/* el aviso de las fichas cargadas sin coma */
+.nm-warn{margin-left:6px;font-family:var(--f-ui);font-size:10.5px;color:var(--alert);
+  border:1px solid rgba(190,74,58,.32);border-radius:4px;padding:0 4px;white-space:nowrap;vertical-align:1px}
 .filters button{padding:6px 13px;border-radius:999px;border:1px solid transparent;font-size:13.5px;color:var(--muted)}
 .filters button:hover{color:var(--ink-2);background:var(--panel-2)}
 .filters button.on{color:var(--ink);border-color:var(--line);background:var(--panel-2)}
@@ -1095,8 +1123,8 @@ img,svg,video,canvas{max-width:100%}
   .tag-btn{min-height:44px;padding:0 14px;display:inline-flex;align-items:center}
   .vi-chips button,.tl-chips button,.ngpre button,.dstrip button{min-height:44px}
   .swi button{min-height:44px}
-  .linkbtn,.hhint,.cumple button{position:relative}
-  .linkbtn::after,.hhint::after,.cumple button::after{content:'';position:absolute;left:50%;top:50%;
+  .linkbtn,.hhint,.cumple button,.thsort{position:relative}
+  .linkbtn::after,.hhint::after,.cumple button::after,.thsort::after{content:'';position:absolute;left:50%;top:50%;
     transform:translate(-50%,-50%);width:max(100%,44px);height:44px}
   .tabs button{padding-top:15px;padding-bottom:15px}
 }
@@ -1288,7 +1316,7 @@ document.getElementById('bootLogo').src = LOGO;
     <div class="top">
       <div class="find">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" placeholder="Buscar paciente, documento o N° de historia" aria-label="Buscar paciente, documento o número de historia" autocomplete="off">
+        <input id="q" type="search" placeholder="Buscar paciente, documento o N° de historia" aria-label="Buscar paciente, documento o número de historia" autocomplete="off">
       </div>
       <div class="right">
         <span class="meta" id="topDate"></span>
@@ -1449,7 +1477,12 @@ function uxNums(root){
 /* --- tablas: en el teléfono cada fila se vuelve una tarjeta --- */
 function uxCardify(root){
   (root||document).querySelectorAll('.scroll > table.tbl').forEach(t=>{
-    const ths=[...t.querySelectorAll(':scope > thead > tr > th')].map(th=>(th.textContent||'').replace(/\s*\?\s*$/,'').trim());
+    const ths=[...t.querySelectorAll(':scope > thead > tr > th')].map(el=>{
+      /* si la columna es ordenable, el rótulo son los textos del botón sin la flecha */
+      const b=el.querySelector('.thsort');
+      const txt=(b ? [...b.childNodes].filter(x=>x.nodeType===3).map(x=>x.textContent).join('') : el.textContent)||'';
+      return txt.replace(/\s*\?\s*$/,'').trim();
+    });
     if(!ths.length) return;
     t.classList.add('cardify');
     t.querySelectorAll(':scope > tbody > tr, :scope > tfoot > tr').forEach(tr=>{
@@ -1619,7 +1652,7 @@ const SUP_DEF={tc:1580, enf_hora:20000, horas_sesion:3, nutricion:40000, psico:4
 let SUP=Object.assign({},SUP_DEF), SUP_ID=null, NEG_DATA=null;
 let NEG_D1=null, NEG_D2=null;                 // rango elegido a mano
 let PG_FILTRO={q:'',d1:null,d2:null};         // filtros del listado de pagos
-let GA_FILTRO={cat:'',d1:null,d2:null,scope:'revigen'};
+let GA_FILTRO={cat:'',q:'',d1:null,d2:null,scope:'revigen'};
 /* Una compra personal facturada a nombre de Revigen: se guarda el rastro de la
    factura, pero no es un gasto del centro ni plata que un socio puso en el centro. */
 function esPersonal(g){ return (g&&g.scope)==='personal'; }
@@ -2266,25 +2299,50 @@ async function renderIngresos(){
    '</div></section>'+
    '<section class="card"><div class="sec">'+
      '<div class="sec-h"><span class="sec-t">Pagos cargados</span><span class="meta" id="pgTot"></span></div>'+
-     negFiltroFechas('pg','<div class="fg"><label for="pgQ">Paciente</label>'+
-       '<input id="pgQ" placeholder="Buscar por nombre" oninput="PG_FILTRO.q=this.value;negPintarIngresos()" value="'+esc(PG_FILTRO.q||'')+'"></div>')+
-     '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Fecha</th><th>Paciente</th><th>Concepto</th>'+
-       '<th>Qué incluyó</th><th>Medio</th><th class="n">Monto</th></tr></thead>'+
+     negFiltroFechas('pg','<div class="fg"><label for="pgQ">Buscar</label>'+
+       '<input id="pgQ" type="search" placeholder="Paciente, concepto, medio o monto" oninput="PG_FILTRO.q=this.value;negPintarIngresos()" value="'+esc(PG_FILTRO.q||'')+'"></div>')+
+     '<div id="pgOrd"></div>'+
+     '<div class="scroll"><table class="tbl neg-t"><thead id="pgHead"></thead>'+
        '<tbody id="pgBody"></tbody><tfoot id="pgFoot"></tfoot></table></div>'+
      '<p class="meta" style="margin:10px 0 0">Tocá una fila para ver el pago entero y corregirlo.</p>'+
    '</div></section>';
   pgForm(); negPintarIngresos();
 }
+let PG_SORT={k:'fecha',dir:-1};
+const PG_SORT_DEF={fecha:-1,pac:1,conc:1,medio:1,monto:-1};
+function setPgSort(k,fijo){
+  if(PG_SORT.k===k && !fijo) PG_SORT.dir=-PG_SORT.dir; else { PG_SORT.k=k; PG_SORT.dir=PG_SORT_DEF[k]||1; }
+  negPintarIngresos();
+}
 function negPintarIngresos(){
   if(!NEG_DATA||!$('pgBody')) return;
-  const {d1,d2}=negRango(), q=(PG_FILTRO.q||'').toLowerCase();
+  const {d1,d2}=negRango(), q=PG_FILTRO.q||'';
   const pmap={}; NEG_DATA.pacientes.forEach(x=>pmap[x.id]=x.full_name||'—');
   $('pgBanda').innerHTML=negBanda(true);
-  const lista=(NEG_DATA.pagos||[]).filter(g=>{
+  const hh=$('pgHead');
+  const ho=$('pgOrd');
+  if(ho) ho.innerHTML=ordSelect(PG_SORT,'setPgSort',['fecha','pac','conc','medio','monto'],PG_SORT_OPC);
+  if(hh) hh.innerHTML='<tr>'+th('fecha','Fecha',PG_SORT,'setPgSort')+th('pac','Paciente',PG_SORT,'setPgSort')+
+    th('conc','Concepto',PG_SORT,'setPgSort')+'<th>Qué incluyó</th>'+
+    th('medio','Medio',PG_SORT,'setPgSort')+th('monto','Monto',PG_SORT,'setPgSort',' class="n"')+'</tr>';
+  const lista0=(NEG_DATA.pagos||[]).filter(g=>{
     const f=String(g.paid_on).slice(0,10);
     if(f<d1||f>d2) return false;
-    return !q || String(pmap[g.patient_id]||'').toLowerCase().indexOf(q)>-1;
-  }).sort((a,b)=>String(b.paid_on).localeCompare(String(a.paid_on)));
+    if(!q) return true;
+    /* se busca por paciente, concepto, medio, nota y monto: es lo que una
+       persona recuerda de un pago cuando lo va a buscar */
+    return coincide([pmap[g.patient_id]||'', conceptoCorto(g), (MEDIOS[g.method]||{}).n||g.method||'',
+                     g.notes||'', g.amount_ars, Math.round(Number(g.amount_usd)||0)].join(' '), q);
+  });
+  const claves={
+    fecha: g=>String(g.paid_on).slice(0,10),
+    pac:   g=>claveNombre(pmap[g.patient_id]||''),
+    conc:  g=>normBusq(conceptoCorto(g)),
+    medio: g=>normBusq((MEDIOS[g.method]||{}).n||g.method||''),
+    monto: g=>Number(g.amount_ars)||0
+  };
+  const kk=claves[PG_SORT.k]?PG_SORT.k:'fecha';
+  const lista=ordenar(lista0, claves[kk], PG_SORT.dir, kk==='pac'||kk==='conc'||kk==='medio');
   const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
   const totU=lista.reduce((a,g)=>a+(Number(g.amount_usd)||0),0);
   TC_PER = (tot>0 && totU>0) ? tot/totU : 0;
@@ -2379,31 +2437,67 @@ async function renderGastos(){
      '<button class="btn primary sm" onclick="gaModal()">'+PLUS+'Cargar a mano</button></div>'+
    negFiltroFechas('ga','<div class="fg"><label for="gaCat">Categoría</label>'+
      '<select id="gaCat" onchange="GA_FILTRO.cat=this.value;negPintarGastos()"><option value="">Todas</option>'+
-     GASTO_CATS.map(c=>'<option'+(GA_FILTRO.cat===c?' selected':'')+'>'+c+'</option>').join('')+'</select></div>')+
+     GASTO_CATS.map(c=>'<option'+(GA_FILTRO.cat===c?' selected':'')+'>'+c+'</option>').join('')+'</select></div>'+
+     '<div class="fg"><label for="gaQ">Buscar</label>'+
+     '<input id="gaQ" type="search" placeholder="Concepto, proveedor, quién pagó o monto" oninput="GA_FILTRO.q=this.value;negPintarGastos()" value="'+esc(GA_FILTRO.q||'')+'"></div>')+
    '<div class="filters" id="gaScope" style="margin-bottom:16px"></div>'+
    '<div class="kpis" id="gaKpis"></div>'+
    '<section class="card"><div class="sec">'+
      '<div class="sec-h"><span class="sec-t">Movimientos</span><span class="meta" id="gaTot"></span></div>'+
-     '<div class="scroll"><table class="tbl neg-t"><thead><tr><th>Fecha</th><th>Concepto</th><th>Categoría</th>'+
-       '<th>Pagó</th><th>Medio</th><th class="n">Monto</th><th>Origen</th></tr></thead>'+
+     '<div id="gaOrd"></div>'+
+     '<div class="scroll"><table class="tbl neg-t"><thead id="gaHead"></thead>'+
        '<tbody id="gaBody"></tbody><tfoot id="gaFoot"></tfoot></table></div>'+
      '<p class="meta" style="margin:10px 0 0">Tocá una fila para corregir el concepto, la categoría, quién lo pagó o el monto.</p>'+
    '</div></section>';
   negPintarGastos();
 }
+let GA_SORT={k:'fecha',dir:-1};
+const GA_SORT_DEF={fecha:-1,conc:1,cat:1,quien:1,medio:1,monto:-1,orig:1};
+function setGaSort(k,fijo){
+  if(GA_SORT.k===k && !fijo) GA_SORT.dir=-GA_SORT.dir; else { GA_SORT.k=k; GA_SORT.dir=GA_SORT_DEF[k]||1; }
+  negPintarGastos();
+}
 function negPintarGastos(){
   if(!NEG_DATA||!$('gaBody')) return;
-  const {d1,d2}=negRango();
+  const {d1,d2}=negRango(), q=GA_FILTRO.q||'';
+  const hh=$('gaHead'), ho=$('gaOrd');
+  if(ho) ho.innerHTML=ordSelect(GA_SORT,'setGaSort',['fecha','conc','cat','quien','medio','monto','orig'],GA_SORT_OPC);
+  if(hh) hh.innerHTML='<tr>'+th('fecha','Fecha',GA_SORT,'setGaSort')+th('conc','Concepto',GA_SORT,'setGaSort')+
+    th('cat','Categoría',GA_SORT,'setGaSort')+th('quien','Pagó',GA_SORT,'setGaSort')+
+    th('medio','Medio',GA_SORT,'setGaSort')+th('monto','Monto',GA_SORT,'setGaSort',' class="n"')+
+    th('orig','Origen',GA_SORT,'setGaSort')+'</tr>';
   const enRango=(NEG_DATA.gastos||[]).filter(g=>{
     const f=String(g.spent_on).slice(0,10);
-    return f>=d1 && f<=d2 && (!GA_FILTRO.cat || g.category===GA_FILTRO.cat);
-  }).sort((a,b)=>String(b.spent_on).localeCompare(String(a.spent_on)));
+    if(f<d1 || f>d2) return false;
+    if(GA_FILTRO.cat && g.category!==GA_FILTRO.cat) return false;
+    if(!q) return true;
+    /* el texto que escribió quien lo cargó por Telegram también entra en la
+       búsqueda: muchas veces el proveedor quedó ahí y no en el concepto */
+    return coincide([g.concept||'', g.category||'', PAGADO[g.paid_by]||g.paid_by||'',
+                     (MEDIOS[g.method]||{}).n||g.method||'', g.raw_text||'', g.review_note||'',
+                     g.amount_ars, Math.round(Number(g.amount_usd)||0)].join(' '), q);
+  });
   const nRev=enRango.filter(g=>!esPersonal(g)).length, nPer=enRango.length-nRev;
   const sc=GA_FILTRO.scope||'revigen';
-  const lista = sc==='todas' ? enRango
+  const lista0 = sc==='todas' ? enRango
               : sc==='revisar' ? enRango.filter(g=>g.review_note)
               : sc==='personal' ? enRango.filter(esPersonal)
               : enRango.filter(g=>!esPersonal(g));
+  /* Cada clave de texto es exactamente lo que muestra la celda. Si la celda
+     dice «Sin categoría», eso ordena como una palabra más y no queda siempre
+     al final; si la celda está vacía («—»), la fila va al final en los dos
+     sentidos, que es lo que uno espera de un dato que falta. */
+  const gclaves={
+    fecha: g=>String(g.spent_on).slice(0,10),
+    conc:  g=>normBusq(g.concept||''),
+    cat:   g=>normBusq(g.category||'Sin categoría'),
+    quien: g=>normBusq(PAGADO[g.paid_by]||g.paid_by||''),
+    medio: g=>normBusq((MEDIOS[g.method]||{}).n||g.method||''),
+    monto: g=>Number(g.amount_ars)||0,
+    orig:  g=>normBusq(g.source==='telegram'?'Telegram':'a mano')
+  };
+  const gk=gclaves[GA_SORT.k]?GA_SORT.k:'fecha';
+  const lista=ordenar(lista0, gclaves[gk], GA_SORT.dir, gk!=='monto');
   const nRevisar=enRango.filter(g=>g.review_note).length;
   const chip=(v,l,n)=>'<button class="'+(sc===v?'on':'')+'" onclick="gaSetScope(\''+v+'\')">'+l+' · '+n+'</button>';
   const sh=$('gaScope');
@@ -3434,11 +3528,23 @@ async function renderPacientes(){
          '<button data-f="vitc" class="'+(PFILTER==='vitc'?'on':'')+'" onclick="setPFilter(\'vitc\')">Con infusión activa · '+nVitc+'</button>'+
          '<button data-f="pend" class="'+(PFILTER==='pend'?'on':'')+'" onclick="setPFilter(\'pend\')">Con pendientes · '+nPend+'</button>'+
          '<button data-f="sinturno" class="'+(PFILTER==='sinturno'?'on':'')+'" onclick="setPFilter(\'sinturno\')">Sin turno próximo · '+nSinTurno+'</button>'+
-       '</div><span class="meta">Ordenado por próximo turno</span></div>'+
+       '</div><span class="meta ordm-hide">'+esc(PSORT_TXT[PSORT.k]||'')+' · '+(PSORT.dir>0?'ascendente':'descendente')+'</span>'+ordSelect(PSORT,'setPSort',['nom','diag','sit','prox','ult'],PSORT_OPC)+'</div>'+
+     (PSORT.k==='nom'&&can.director()&&CACHE.patients.some(x=>sinComa(x.full_name))
+       ? '<div class="sec" style="padding:0 20px 16px"><p class="meta" style="margin:0">'+
+         '<span class="nm-warn">revisar</span> '+CACHE.patients.filter(x=>sinComa(x.full_name)).length+
+         ' ficha'+(CACHE.patients.filter(x=>sinComa(x.full_name)).length===1?'':'s')+' no tiene'+
+         (CACHE.patients.filter(x=>sinComa(x.full_name)).length===1?'':'n')+
+         ' el apellido separado con coma, así que ordena'+(CACHE.patients.filter(x=>sinComa(x.full_name)).length===1?'':'n')+
+         ' por el nombre: '+esc(CACHE.patients.filter(x=>sinComa(x.full_name)).map(x=>x.full_name||'(sin nombre)').join(' · '))+
+         '. Se corrige desde la ficha, en Apellido y Nombre.</p></div>'
+       : '')+
      '<div class="scroll"><table class="tbl wide"><thead><tr>'+
-       '<th style="min-width:250px">Paciente</th><th style="min-width:230px">Diagnóstico</th>'+
+       th('nom','Paciente',PSORT,'setPSort',' style="min-width:250px"')+
+       th('diag','Diagnóstico',PSORT,'setPSort',' style="min-width:230px"')+
        '<th style="min-width:130px">Áreas<button type="button" class="hhint" onclick="openAreasLegend()" title="Qué significan los colores" aria-label="Qué significan los colores">?</button></th>'+
-       '<th style="min-width:190px">Situación</th><th style="min-width:150px">Próximo turno</th><th>Último registro</th></tr></thead>'+
+       th('sit','Situación',PSORT,'setPSort',' style="min-width:190px"')+
+       th('prox','Próximo turno',PSORT,'setPSort',' style="min-width:150px"')+
+       th('ult','Último registro',PSORT,'setPSort')+'</tr></thead>'+
        '<tbody id="patRows"></tbody></table></div>'+
    '</div>';
   applyList();
@@ -3464,16 +3570,108 @@ function openAreasLegend(){
   $('mFoot').innerHTML='<button class="btn" onclick="modalClose()" style="margin-left:auto">Cerrar</button>';
 }
 function setPFilter(f){ PFILTER=f; document.querySelectorAll('#patFilters button').forEach(b=>b.classList.toggle('on',b.dataset.f===f)); applyList(); }
+/* ---------- buscar sin pensar en cómo está escrito ----------
+   Una persona escribe «perez omar» o «omar perez», con acento o sin acento, el
+   documento con puntos o sin puntos. Las tres cosas tienen que encontrar lo
+   mismo. La regla es simple: cada palabra que se escribe tiene que aparecer en
+   algún lugar del texto, en cualquier orden. Así «gonz» sigue encontrando a
+   González y «maria guerrero» encuentra a «Guerrero, María Lorena».
+   Los números se comparan aparte: si se escriben sólo números (con o sin
+   puntos) se buscan contra los dígitos del texto, así «17.969.408» encuentra
+   el documento 17969408; y un número corto suelto, como el 7 de «hc 7», tiene
+   que ser una palabra entera y no un pedazo de otro número.                  */
+function normBusq(s){
+  return normTxt(s).replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function digitos(s){ return String(s==null?'':s).replace(/[^0-9]/g,''); }
+function coincide(texto, consulta){
+  const q=normBusq(consulta); if(!q) return true;
+  const h=normBusq(texto);
+  const qd=digitos(consulta);
+  if(qd && !/[a-z]/.test(q)) return digitos(texto).includes(qd);
+  return q.split(' ').every(w=>{
+    if(!/^[0-9]+$/.test(w)) return h.includes(w);
+    return new RegExp('(^| )'+w+'( |$)').test(h) || (w.length>=4 && digitos(texto).includes(w));
+  });
+}
+/* Para ordenar de la A a la Z por apellido. La mayoría de las fichas están
+   cargadas como «Apellido, Nombre»; si no hay coma no se puede adivinar cuál
+   de las palabras es el apellido, así que esa ficha ordena por como está
+   escrita. Esas se señalan en la lista para poder corregirlas. */
+function sinComa(n){ return !String(n||'').includes(','); }
+function claveNombre(n){
+  const s=String(n||'').trim();
+  if(!s) return '\uffff';
+  const i=s.indexOf(',');
+  return i<0 ? normBusq(s) : (normBusq(s.slice(0,i))+' '+normBusq(s.slice(i+1))).trim();
+}
+const cmpTxt=(a,b)=>String(a||'').localeCompare(String(b||''),'es',{sensitivity:'base',numeric:true});
+/* Ordenar una lista por una clave, en un sentido o en el otro. Las filas sin
+   dato van siempre al final, en los dos sentidos: si pedís por próximo turno,
+   los que no tienen turno no deberían encabezar la lista por invertirla.   */
+function ordenar(arr, clave, dir, texto){
+  return arr.map((x,i)=>({x,i,v:clave(x)})).sort((a,b)=>{
+    const va=a.v, vb=b.v, na=(va==null||va===''), nb=(vb==null||vb==='');
+    if(na&&nb) return a.i-b.i;
+    if(na) return 1;
+    if(nb) return -1;
+    const c = texto ? cmpTxt(va,vb) : (va<vb?-1:va>vb?1:0);
+    return c? c*dir : a.i-b.i;
+  }).map(o=>o.x);
+}
+/* Encabezado de tabla que se puede tocar para ordenar. Un clic ordena, otro
+   clic invierte. La flecha dice en qué sentido está. */
+/* En el teléfono las filas se muestran como tarjetas y el encabezado de la
+   tabla no existe, así que los títulos clickeables no sirven. Para eso va este
+   control, que aparece sólo en pantallas chicas: se elige la columna y el
+   botón de al lado invierte el sentido. */
+function ordSelect(estado, fn, opciones, etiquetas){
+  const dirTxt = estado.dir>0 ? 'de menor a mayor' : 'de mayor a menor';
+  return '<div class="ordm"><label for="ord_'+fn+'">Ordenar por</label>'+
+    '<select id="ord_'+fn+'" onchange="'+fn+'(this.value,true)">'+
+      opciones.map(k=>'<option value="'+k+'"'+(estado.k===k?' selected':'')+'>'+esc(etiquetas[k]||k)+'</option>').join('')+
+    '</select>'+
+    '<button type="button" class="ordm-dir" onclick="'+fn+'(\''+estado.k+'\')" '+
+      'aria-label="Invertir el orden, ahora '+dirTxt+'" title="Invertir el orden">'+
+      (estado.dir>0?'\u2191':'\u2193')+'</button></div>';
+}
+function th(k, label, estado, fn, extra){
+  const act=estado.k===k;
+  return '<th'+(extra||'')+'><button type="button" class="thsort'+(act?' on':'')+'" data-k="'+k+'" '+
+    'onclick="'+fn+'(\''+k+'\')" aria-label="Ordenar por '+label.replace(/<[^>]+>/g,'')+'">'+
+    label+'<span class="ar">'+(act?(estado.dir>0?'\u2191':'\u2193'):'')+'</span></button></th>';
+}
+
+let PSORT={k:'nom',dir:1};
+const PSORT_TXT={nom:'Ordenado por apellido',diag:'Ordenado por diagnóstico',sit:'Ordenado por situación',prox:'Ordenado por próximo turno',ult:'Ordenado por último registro'};
+const PSORT_OPC={nom:'Apellido',diag:'Diagnóstico',sit:'Situación',prox:'Próximo turno',ult:'Último registro'};
+const PG_SORT_OPC={fecha:'Fecha',pac:'Paciente',conc:'Concepto',medio:'Medio',monto:'Monto'};
+const GA_SORT_OPC={fecha:'Fecha',conc:'Concepto',cat:'Categoría',quien:'Quién pagó',medio:'Medio',monto:'Monto',orig:'Origen'};
+const PSORT_DEF={nom:1,diag:1,sit:-1,prox:1,ult:-1};
+function setPSort(k,fijo){
+  if(PSORT.k===k && !fijo) PSORT.dir=-PSORT.dir;
+  else { PSORT.k=k; PSORT.dir=PSORT_DEF[k]||1; }
+  renderPacientes();
+}
+const SIT_RANK={crit:0,warn:1,ok:2,quiet:3};
 function applyList(){
   const body=$('patRows'); if(!body||!CACHE) return;
-  const term=($('q').value||'').toLowerCase().trim();
+  const term=($('q').value||'').trim();
   let arr=CACHE.patients.slice();
-  if(term) arr=arr.filter(p=>((p.full_name||'')+' '+(p.doc_id||'')+' '+(p.hc_number||'')).toLowerCase().includes(term));
+  if(term) arr=arr.filter(p=>coincide((p.full_name||'')+' '+(p.doc_id||'')+' hc '+(p.hc_number!=null?p.hc_number:''), term));
   if(PFILTER==='vitc') arr=arr.filter(p=>CACHE.calc[p.id].hasVitcInd);
   else if(PFILTER==='pend') arr=arr.filter(p=>CACHE.calc[p.id].pend.length);
   else if(PFILTER==='sinturno') arr=arr.filter(p=>!CACHE.calc[p.id].proximo);
-  arr.sort((a,b)=>{const pa=CACHE.calc[a.id].proximo,pb=CACHE.calc[b.id].proximo;
-    const ta=pa?new Date(pa.starts_at).getTime():Infinity, tb=pb?new Date(pb.starts_at).getTime():Infinity; return ta-tb;});
+  const tms=d=>d?new Date(d).getTime():null;
+  const claves={
+    nom:  p=>claveNombre(p.full_name),
+    diag: p=>normBusq(p.base_diagnosis||''),
+    sit:  p=>{const r=SIT_RANK[CACHE.calc[p.id].sit.cls]; return r==null?9:r;},
+    prox: p=>tms((CACHE.calc[p.id].proximo||{}).starts_at),
+    ult:  p=>tms((CACHE.calc[p.id].ultimo||{}).t)
+  };
+  const k=claves[PSORT.k]?PSORT.k:'nom';
+  arr=ordenar(arr, claves[k], PSORT.dir, k==='nom'||k==='diag');
   if(!arr.length){ body.innerHTML='<tr><td colspan="6"><div class="empty" style="padding:40px 12px"><p>'+(CACHE.patients.length?'Sin resultados para esta búsqueda o filtro.':'Todavía no hay pacientes cargados.')+'</p></div></td></tr>'; return; }
   body.innerHTML=arr.map(p=>{
     const c=CACHE.calc[p.id];
