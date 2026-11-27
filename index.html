@@ -162,6 +162,8 @@ svg{stroke-linecap:round;stroke-linejoin:round}
 .thsort:focus-visible{outline:2px solid var(--sage);outline-offset:2px}
 .thsort.on{color:var(--ink)}
 .thsort .ar{font-size:11px;line-height:1;color:var(--sage);width:8px;flex:none}
+/* comprobante recibido al que todavía le falta el monto */
+.tag.pend-m{border-color:rgba(224,164,88,.45);color:var(--alert);background:rgba(224,164,88,.08);font-style:normal}
 .thsort.on .ar{opacity:1}
 .thsort:not(.on):hover .ar::before{content:'\2195';opacity:.45}
 /* control de orden para el teléfono: en pantalla grande se usan los títulos */
@@ -1655,6 +1657,11 @@ let PG_FILTRO={q:'',d1:null,d2:null};         // filtros del listado de pagos
 let GA_FILTRO={cat:'',q:'',d1:null,d2:null,scope:'revigen'};
 /* Una compra personal facturada a nombre de Revigen: se guarda el rastro de la
    factura, pero no es un gasto del centro ni plata que un socio puso en el centro. */
+/* Un comprobante que llegó como foto suelta queda sin monto hasta que lo
+   complete la lectura de la factura o una persona. Mientras tanto se ve en la
+   lista, para que nadie se olvide, pero no suma en ningún total: un gasto en
+   cero sería mentira y un gasto inventado, peor. */
+function sinCargar(g){ return g && (g.amount_ars===null || g.amount_ars===undefined || g.amount_ars===''); }
 function esPersonal(g){ return (g&&g.scope)==='personal'; }
 function gaSetScope(v){ GA_FILTRO.scope=v; negPintarGastos(); }
 
@@ -1929,7 +1936,7 @@ function negCalcular(){
   const altas=NEG_DATA.pacientes.filter(p=>dentro(String(p.created_at).slice(0,10))).length;
   /* Las compras personales facturadas a Revigen quedan afuera del P&L: la factura
      existe, el gasto no es del centro. Se revisan en la pestaña Gastos. */
-  const gastos=(NEG_DATA.gastos||[]).filter(g=>dentro(String(g.spent_on).slice(0,10)) && !esPersonal(g));
+  const gastos=(NEG_DATA.gastos||[]).filter(g=>dentro(String(g.spent_on).slice(0,10)) && !esPersonal(g) && !sinCargar(g));
   const gTot=gastos.reduce((a,g)=>a+(Number(g.amount_ars)||0),0);
   const gTotUsd=gastos.reduce((a,g)=>a+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc))),0);
   return {filas,dias,altas,d1,d2,gastos,
@@ -2120,7 +2127,7 @@ function negGrafico(){
   const tocar=k=>M[k]||(M[k]={c:0,g:0});
   (NEG_DATA.pagos||[]).forEach(x=>{ const f=String(x.paid_on).slice(0,10); if(f<d1||f>d2) return;
     tocar(mes(f)).c += usdDe(x.amount_usd,x.amount_ars,x.tc); });
-  (NEG_DATA.gastos||[]).forEach(x=>{ const f=String(x.spent_on).slice(0,10); if(f<d1||f>d2||esPersonal(x)) return;
+  (NEG_DATA.gastos||[]).forEach(x=>{ const f=String(x.spent_on).slice(0,10); if(f<d1||f>d2||esPersonal(x)||sinCargar(x)) return;
     tocar(mes(f)).g += usdDe(x.amount_usd,x.amount_ars,x.tc); });
   const ks=Object.keys(M).sort().slice(-12);
   const sub=$('ngchSub');
@@ -2481,6 +2488,7 @@ function negPintarGastos(){
   const sc=GA_FILTRO.scope||'revigen';
   const lista0 = sc==='todas' ? enRango
               : sc==='revisar' ? enRango.filter(g=>g.review_note)
+              : sc==='sincargar' ? enRango.filter(sinCargar)
               : sc==='personal' ? enRango.filter(esPersonal)
               : enRango.filter(g=>!esPersonal(g));
   /* Cada clave de texto es exactamente lo que muestra la celda. Si la celda
@@ -2493,33 +2501,39 @@ function negPintarGastos(){
     cat:   g=>normBusq(g.category||'Sin categoría'),
     quien: g=>normBusq(PAGADO[g.paid_by]||g.paid_by||''),
     medio: g=>normBusq((MEDIOS[g.method]||{}).n||g.method||''),
-    monto: g=>Number(g.amount_ars)||0,
+    monto: g=>sinCargar(g)?null:(Number(g.amount_ars)||0),
     orig:  g=>normBusq(g.source==='telegram'?'Telegram':'a mano')
   };
   const gk=gclaves[GA_SORT.k]?GA_SORT.k:'fecha';
   const lista=ordenar(lista0, gclaves[gk], GA_SORT.dir, gk!=='monto');
   const nRevisar=enRango.filter(g=>g.review_note).length;
+  const nSinCargar=enRango.filter(sinCargar).length;
   const chip=(v,l,n)=>'<button class="'+(sc===v?'on':'')+'" onclick="gaSetScope(\''+v+'\')">'+l+' · '+n+'</button>';
   const sh=$('gaScope');
   if(sh) sh.innerHTML = chip('revigen','De Revigen',nRev) + chip('personal','Personales con factura',nPer) +
-    chip('todas','Todas',enRango.length) + (nRevisar?chip('revisar','⚠ Para revisar',nRevisar):'');
+    chip('todas','Todas',enRango.length) + (nRevisar?chip('revisar','⚠ Para revisar',nRevisar):'') +
+    (nSinCargar?chip('sincargar','⏳ Sin monto',nSinCargar):'');
   const sumU=l=>l.reduce((a,g)=>a+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc))),0);
-  const tot=lista.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), totU=sumU(lista);
+  /* Todo lo que sigue se calcula sobre los que ya tienen monto. Los que
+     llegaron como foto suelta siguen visibles en la lista pero no suman. */
+  const conMonto=lista.filter(g=>!sinCargar(g)), nPend=lista.length-conMonto.length;
+  const tot=conMonto.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), totU=sumU(conMonto);
   TC_PER = (tot>0 && totU>0) ? tot/totU : 0;
-  const insL=lista.filter(g=>g.category==='Insumos y materia prima');
-  const efeL=lista.filter(g=>g.method==='efectivo');
+  const insL=conMonto.filter(g=>g.category==='Insumos y materia prima');
+  const efeL=conMonto.filter(g=>g.method==='efectivo');
   const ins=insL.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), insU=sumU(insL);
   const efe=efeL.reduce((a,g)=>a+(Number(g.amount_ars)||0),0), efeU=sumU(efeL);
-  const porQuien={}; lista.forEach(g=>{const k=g.paid_by;
+  const porQuien={}; conMonto.forEach(g=>{const k=g.paid_by||'—';
     porQuien[k]=(porQuien[k]||0)+((Number(g.amount_usd)||0)||((Number(g.amount_ars)||0)/(Number(g.tc)||SUP.tc)));});
   const quienTxt=Object.keys(porQuien).sort((a,b)=>porQuien[b]-porQuien[a])
     .map(k=>(PAGADO[k]||k)+' '+negUSD(porQuien[k])).join(' · ')||'—';
+  const colaPend = nPend ? ' · '+nPend+' sin monto todavía' : '';
   $('gaKpis').innerHTML = sc==='personal'
-    ? negKpi('Facturado a Revigen',negUSD(totU),negARS(tot)+' · '+lista.length+' factura'+(lista.length===1?'':'s'))+
+    ? negKpi('Facturado a Revigen',negUSD(totU),negARS(tot)+' · '+conMonto.length+' factura'+(conMonto.length===1?'':'s')+colaPend)+
       negKpi('A nombre de quién',Object.keys(porQuien).length||'—',quienTxt)+
       negKpi('En efectivo',negUSD(efeU),negUSD(totU-efeU)+' electrónico')+
       negKpi('Fuera del P&L',negUSD(totU),'no cuenta como gasto del centro','hero')
-    : negKpi(sc==='todas'?'Total, todo junto':'Gastos del período',negUSD(totU),negARS(tot)+' · '+lista.length+' movimiento'+(lista.length===1?'':'s'))+
+    : negKpi(sc==='todas'?'Total, todo junto':'Gastos del período',negUSD(totU),negARS(tot)+' · '+conMonto.length+' movimiento'+(conMonto.length===1?'':'s')+colaPend)+
       negKpi('Insumos',negUSD(insU),tot?negPct(ins/tot)+' del total':'—')+
       negKpi('En efectivo',negUSD(efeU),negUSD(totU-efeU)+' electrónico')+
       negKpi('Quién puso la plata',Object.keys(porQuien).length||'—',quienTxt);
@@ -2533,13 +2547,16 @@ function negPintarGastos(){
     '<td><span class="tag">'+esc(g.category||'Sin categoría')+'</span></td>'+
     '<td>'+esc(PAGADO[g.paid_by]||g.paid_by||'—')+'</td>'+
     '<td class="meta">'+esc((MEDIOS[g.method]||{n:g.method||'—'}).n)+'</td>'+
-    '<td class="n">'+dual(Number(g.amount_ars)||0, Number(g.amount_usd))+'</td>'+
+    '<td class="n">'+(sinCargar(g)?'<span class="tag pend-m" title="Llegó el comprobante pero todavía no tiene monto. No cuenta en los totales.">sin monto</span>'
+                                  :dual(Number(g.amount_ars)||0, Number(g.amount_usd)))+'</td>'+
     '<td>'+(g.source==='telegram'?'<span class="tag tg">Telegram</span>':'<span class="meta">a mano</span>')+'</td></tr>').join('')
     || '<tr><td colspan="7" class="meta" style="padding:18px 0">'+(sc==='personal'?'No hay facturas personales en este período.':'Sin gastos en este período.')+'</td></tr>';
   $('gaFoot').innerHTML = lista.length? '<tr><td colspan="5">Total</td><td class="n">'+dual(tot,totU)+'</td><td></td></tr>':'';
   const t=$('gaTot'); if(t) t.textContent = sc==='personal'
     ? lista.length+' factura'+(lista.length===1?'':'s')+' · a nombre de Revigen, gasto de ellos'
-    : lista.length+' movimiento'+(lista.length===1?'':'s')+(nPer&&sc!=='todas'?' · '+nPer+' factura'+(nPer===1?'':'s')+' personal'+(nPer===1?'':'es')+' aparte':'');
+    : lista.length+' movimiento'+(lista.length===1?'':'s')+
+      (nPend?' · '+nPend+' esperando el monto':'')+
+      (nPer&&sc!=='todas'?' · '+nPer+' factura'+(nPer===1?'':'s')+' personal'+(nPer===1?'':'es')+' aparte':'');
   uxNums($('gaKpis')); uxCardify($('page'));
 }
 function gaModal(id){
@@ -2610,7 +2627,7 @@ async function renderPL(){
   const hoy=new Date(), d=hoy.getDay(), atras=(d+2)%7||7;
   const desde=ymd(new Date(hoy.getFullYear(),hoy.getMonth(),hoy.getDate()-atras));
   const pagos=(NEG_DATA.pagos||[]).filter(x=>String(x.paid_on).slice(0,10)>=desde);
-  const gastos=(NEG_DATA.gastos||[]).filter(x=>String(x.spent_on).slice(0,10)>=desde);
+  const gastos=(NEG_DATA.gastos||[]).filter(x=>String(x.spent_on).slice(0,10)>=desde && !sinCargar(x));
   const ses=(NEG_DATA.ses||[]).filter(x=>x.d>=desde);
   const diasInf=new Set(ses.map(x=>x.d)).size;
   const sum=(l,k)=>l.reduce((a,x)=>a+(Number(x[k])||0),0);
